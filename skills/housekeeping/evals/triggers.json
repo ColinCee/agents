@@ -1,0 +1,18 @@
+[
+  { "query": "ok im done with the feature, can you clean up the repo before i call it a night", "should_trigger": true },
+  { "query": "Do a housekeeping pass on this project, it's been a month of experiments and it shows", "should_trigger": true },
+  { "query": "getting this ready to hand over to the contractor next week. make sure nothing embarrassing is left lying around, old branches, dead files, docs that lie", "should_trigger": true },
+  { "query": "tidy up pls, lint is probably screaming and i think half of utils.py isnt used anymore", "should_trigger": true },
+  { "query": "Review the state of this repository and tell me what's stale. I have like 15 local branches and three worktrees", "should_trigger": true },
+  { "query": "the .cache and logs folders are getting huge, plus there's leftover junk from the refactor. can you sort the whole thing out", "should_trigger": true },
+  { "query": "end of sprint, give the codebase a once over: unused deps, outdated README bits, that kind of thing", "should_trigger": true },
+  { "query": "is this repo in good shape? fix whatever is safe to fix and list the rest for me", "should_trigger": true },
+  { "query": "clean up this function, it's 200 lines and impossible to read", "should_trigger": false },
+  { "query": "my disk is full, find the biggest folders on C: and tell me what I can delete", "should_trigger": false },
+  { "query": "Review my PR for bugs before I merge it, branch is feature/checkout-v2", "should_trigger": false },
+  { "query": "delete the branch fix/login-redirect, it's merged", "should_trigger": false },
+  { "query": "the linter fails on src/api/client.ts line 88, fix it", "should_trigger": false },
+  { "query": "rewrite the README so it's friendlier for new contributors and add a quickstart", "should_trigger": false },
+  { "query": "tidy up this csv, there are duplicate rows and the dates are in three different formats", "should_trigger": false },
+  { "query": "refactor the payments module to use the new repository pattern across all the services", "should_trigger": false }
+]

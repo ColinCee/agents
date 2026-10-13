@@ -1,14 +1,12 @@
 ---
 name: housekeeping
-description: Tidies a git repository after a stretch of work. Finds lint errors, unused code, documents that no longer match the code, stale branches and worktrees, and old data or cache files; fixes what is safe and lists what needs the user's yes. Use when the user asks to clean up, tidy, review, do housekeeping, or get a repository ready to hand over.
+description: Tidies a git repository after a stretch of work. Fixes lint, unused code and stale docs, and lists old branches, worktrees and data files for the user's yes. Use when asked to clean up, tidy, do housekeeping or get a repository ready to hand over.
 license: MIT
-compatibility: Requires git and Python 3.9 or later.
+compatibility: Requires git and Python 3.11 or later.
 metadata:
   author: ColinCee
   version: "0.1.0"
 ---
-
-# Housekeeping
 
 Leave the repository smaller, current and passing its own checks. Fix what is safe. Ask before anything that deletes.
 

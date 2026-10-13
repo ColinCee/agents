@@ -32,14 +32,19 @@ Or copy a folder from `skills/` into your agent's skills folder by hand.
 
 - **Scripts report by default.** Nothing is deleted or written unless you pass a flag that says so, and the skill tells the agent to ask you first.
 - **No paths, names or accounts of the author's.** Scripts take arguments.
-- **Standard library only**, unless the skill's `compatibility` line says otherwise.
+- **Python 3.11 or later, standard library only**, unless the skill's `compatibility` line says otherwise.
 - **No agent's own tools are named.** Instructions say what to do, not which tool does it.
+- **Tested before it is added.** Each skill carries the tasks it was tried on, in its `evals/` folder.
 
 Installing a skill lets its scripts run on your machine. Read them first: they are short.
 
 ## Adding a skill
 
-One folder under `skills/`, named as the skill is. A `SKILL.md` with `name` and `description` at the top (the description says what it does and when to use it), kept under 500 lines. Code in `scripts/`, longer text in `references/`.
+The rules are in [AGENTS.md](AGENTS.md): what earns a place, how `SKILL.md` and scripts are written, and how a skill is tested. Check a skill against them with:
+
+```bash
+python scripts/validate.py
+```
 
 ## Licence
 

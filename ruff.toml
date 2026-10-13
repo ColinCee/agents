@@ -1,0 +1,7 @@
+target-version = "py311"
+line-length = 120
+
+[lint]
+select = ["E", "F", "I", "B", "UP", "SIM"]
+# The formatter keeps lines short where it can; a long string is left whole.
+ignore = ["E501"]

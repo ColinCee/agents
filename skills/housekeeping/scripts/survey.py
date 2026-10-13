@@ -8,7 +8,7 @@ repo     the repository to look at (default: the current folder)
 --big    what counts as a big file, in MB (default 5)
 --json   print JSON instead of text
 
-Needs Python 3.9 or later and git. Uses only the standard library.
+Needs Python 3.11 or later and git. Uses only the standard library.
 """
 
 import argparse
@@ -19,13 +19,32 @@ import sys
 import time
 from pathlib import Path
 
-SKIP = {".git", "node_modules", ".venv", "venv", "__pycache__", ".mypy_cache", ".ruff_cache", ".pytest_cache", "dist", "build", "target"}
+SKIP = {
+    ".git",
+    "node_modules",
+    ".venv",
+    "venv",
+    "__pycache__",
+    ".mypy_cache",
+    ".ruff_cache",
+    ".pytest_cache",
+    "dist",
+    "build",
+    "target",
+}
 
 
 def git(repo: Path, *args: str) -> list[str]:
     """The lines git prints, or none when it fails (not a repository, no remote, an old git)."""
     try:
-        done = subprocess.run(["git", "-C", str(repo), *args], capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=60)
+        done = subprocess.run(
+            ["git", "-C", str(repo), *args],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=60,
+        )
     except (OSError, subprocess.TimeoutExpired):
         return []
     return [line for line in done.stdout.splitlines() if line.strip()] if done.returncode == 0 else []
@@ -61,13 +80,24 @@ def repo_facts(repo: Path, days: int, big_mb: int) -> dict:
     main = default_branch(repo)
     status = git(repo, "status", "--porcelain")
     branches = []
-    for line in git(repo, "for-each-ref", "refs/heads", "--format=%(refname:short)\t%(committerdate:unix)\t%(upstream:track)"):
+    for line in git(
+        repo, "for-each-ref", "refs/heads", "--format=%(refname:short)\t%(committerdate:unix)\t%(upstream:track)"
+    ):
         name, when, track = (line.split("\t") + ["", ""])[:3]
         if name == main:
             continue
         ahead = git(repo, "rev-list", "--count", f"{main}..{name}") if main else []
-        branches.append({"name": name, "days_old": int((now - int(when or 0)) / 86400), "commits_not_in_default": int(ahead[0]) if ahead else None, "upstream_gone": "gone" in track})
-    worktrees = [line.split(" ", 1)[1] for line in git(repo, "worktree", "list", "--porcelain") if line.startswith("worktree ")][1:]
+        branches.append(
+            {
+                "name": name,
+                "days_old": int((now - int(when or 0)) / 86400),
+                "commits_not_in_default": int(ahead[0]) if ahead else None,
+                "upstream_gone": "gone" in track,
+            }
+        )
+    worktrees = [
+        line.split(" ", 1)[1] for line in git(repo, "worktree", "list", "--porcelain") if line.startswith("worktree ")
+    ][1:]
     big = []
     for line in git(repo, "ls-files", "-z"):
         for name in line.split("\0"):
@@ -112,20 +142,39 @@ def folder_facts(folder: Path, days: int) -> dict:
         try:
             if entry.is_dir() and not entry.is_symlink():
                 size, count = size_of(entry)
-                newest = max((os.lstat(os.path.join(r, f)).st_mtime for r, _d, fs in os.walk(entry) for f in fs), default=entry.stat().st_mtime)
+                newest = max(
+                    (os.lstat(os.path.join(r, f)).st_mtime for r, _d, fs in os.walk(entry) for f in fs),
+                    default=entry.stat().st_mtime,
+                )
             else:
                 size, count, newest = entry.lstat().st_size, 1, entry.lstat().st_mtime
         except OSError:
             continue
         age = int((now - newest) / 86400)
-        rows.append({"name": entry.name + ("/" if entry.is_dir() else ""), "mb": mb(size), "files": count, "days_untouched": age, "old": age >= days})
-    return {"folder": str(folder), "total_mb": round(sum(r["mb"] for r in rows), 1), "entries": sorted(rows, key=lambda r: -r["mb"])}
+        rows.append(
+            {
+                "name": entry.name + ("/" if entry.is_dir() else ""),
+                "mb": mb(size),
+                "files": count,
+                "days_untouched": age,
+                "old": age >= days,
+            }
+        )
+    return {
+        "folder": str(folder),
+        "total_mb": round(sum(r["mb"] for r in rows), 1),
+        "entries": sorted(rows, key=lambda r: -r["mb"]),
+    }
 
 
 def as_text(out: dict) -> str:
     r, lines = out["repo"], []
-    lines.append(f"Repository: {r['repo']} (default branch: {r['default_branch'] or 'unknown'}, last commit {r['days_since_last_commit']} days ago)")
-    lines.append(f"Uncommitted changes: {len(r['uncommitted'])}   Untracked: {len(r['untracked'])}   Stashes: {r['stashes']}   Commits not pushed: {r['unpushed_commits']}")
+    lines.append(
+        f"Repository: {r['repo']} (default branch: {r['default_branch'] or 'unknown'}, last commit {r['days_since_last_commit']} days ago)"
+    )
+    lines.append(
+        f"Uncommitted changes: {len(r['uncommitted'])}   Untracked: {len(r['untracked'])}   Stashes: {r['stashes']}   Commits not pushed: {r['unpushed_commits']}"
+    )
     for name in r["untracked"][:20]:
         lines.append(f"  untracked: {name}")
     for b in r["other_branches"]:
@@ -149,7 +198,10 @@ def as_text(out: dict) -> str:
             continue
         lines.append(f"\n{folder['folder']}: {folder['total_mb']} MB")
         for e in folder["entries"][:40]:
-            lines.append(f"  {e['mb']:>10} MB  {e['days_untouched']:>4} days untouched  {e['name']}" + ("  (old)" if e["old"] else ""))
+            lines.append(
+                f"  {e['mb']:>10} MB  {e['days_untouched']:>4} days untouched  {e['name']}"
+                + ("  (old)" if e["old"] else "")
+            )
     lines.append("\nNothing was changed. This is a report.")
     return "\n".join(lines)
 
@@ -167,7 +219,10 @@ def main() -> int:
     if not top:
         print(f"{repo} is not a git repository (or git is not installed)", file=sys.stderr)
         return 2
-    out = {"repo": repo_facts(Path(top[0]), args.days, args.big), "also": [folder_facts(Path(d).expanduser(), args.days) for d in args.also]}
+    out = {
+        "repo": repo_facts(Path(top[0]), args.days, args.big),
+        "also": [folder_facts(Path(d).expanduser(), args.days) for d in args.also],
+    }
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     print(json.dumps(out, indent=2) if args.json else as_text(out))
     return 0
