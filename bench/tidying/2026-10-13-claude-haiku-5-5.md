@@ -1,6 +1,8 @@
-# housekeeping on Claude Haiku 5.5, 13 October 2026
+# tidying on Claude Haiku 5.5, 13 October 2026
 
-Task `tasks/housekeeping`, agent Claude Code, Harbor 0.24.0, five runs each way. Skill at commit 6757387.
+The skill was named `housekeeping` when this was run.
+
+Task `tasks/tidying`, agent Claude Code, Harbor 0.24.0, five runs each way. Skill at commit 6757387.
 
 | | Without the skill | With the skill |
 |---|---|---|

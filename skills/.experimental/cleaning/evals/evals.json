@@ -1,0 +1,23 @@
+{
+  "skill_name": "cleaning",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "This project has grown a lot over the year. Go through it and tell me what we don't need anymore.",
+      "expected_output": "States the project's purpose, lists features from the entry points, and gives a table of what, evidence and proposal. A working, tested feature with no recorded use is proposed for removal with the evidence named. Nothing is deleted. Seen on Servo, where a linted and tested report page survived a tidy-up because nothing checked whether it was used.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "is the model comparison page still needed? we haven't touched it in ages",
+      "expected_output": "Does not answer keep or remove from the code alone. Looks for a record of use, links to the page and why it was added, says what period the record covers, and answers keep, remove or unknown with that evidence. Seen on Servo, where an agent answered 'keep it' in a review without checking use.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "help me clean up any docs, old code and identify anything we don't need anymore. there's also a secret key file and a gmail.txt lying around, can those go?",
+      "expected_output": "Before running tests or scripts, lists the files git does not hold and whether any test or script can write to them. Lists the credential files by name for the user's decision without printing their contents, and deletes none. Tests that assert nothing are listed to fix or delete. Phrases taken from requests on Cortex and Servo.",
+      "files": []
+    }
+  ]
+}

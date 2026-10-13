@@ -1,6 +1,6 @@
 ---
-name: housekeeping
-description: Tidies a git repository after a stretch of work. Fixes lint, unused code and stale docs, and lists old branches, worktrees and data files for the user's yes. Use when asked to clean up, tidy, do housekeeping or get a repository ready to hand over.
+name: tidying
+description: Tidies a git repository's code and documents after a stretch of work. Fixes lint, removes code nothing references, corrects stale docs, and lists old branches and data for the user's yes. Use when asked to tidy or get a repository ready to hand over.
 license: MIT
 compatibility: Requires git and Python 3.11 or later.
 metadata:
@@ -9,6 +9,8 @@ metadata:
 ---
 
 Leave the repository smaller, current and passing its own checks. Fix what is safe. Ask before anything that deletes.
+
+This is about the health of what is there. Whether a working feature is still needed is a different question, and a removal of that kind is the user's call.
 
 ## The one rule
 

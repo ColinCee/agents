@@ -27,6 +27,7 @@ skills/<name>/
 ```
 
 - Flat: one folder per skill directly under `skills/`. The folder name is the skill's `name`.
+- A skill that has not been measured yet lives in `skills/.experimental/`. It moves up when a run shows it helps, and is deleted when a run shows it does not.
 - Every file in `scripts/`, `references/` and `assets/` is named in `SKILL.md` with its path and when to use it. No file is reached only through another reference.
 - Paths are relative to the skill folder and use forward slashes.
 - Each skill is listed in the table in `README.md`.
@@ -35,7 +36,7 @@ skills/<name>/
 
 **Frontmatter.** Only the fields of the specification: `name`, `description`, `license`, `compatibility`, `metadata`, `allowed-tools`. Each value on one line, because some agents read frontmatter with a simple parser.
 
-- `name`: lowercase letters, digits and single hyphens, 64 characters at most. Says the activity (`housekeeping`), not `helper` or `utils`.
+- `name`: lowercase letters, digits and single hyphens, 64 characters at most. Says the activity (`tidying`), not `helper` or `utils`.
 - `description`: what the skill does, then `Use when ...` with the words a user would really say. Third person. Aim for 250 characters or fewer; 1024 is the limit. This is the only text the agent sees when deciding to load the skill. In one large test agents loaded an installed skill on only 41% of the tasks that needed it, and the usual cause was the description.
 - `license`: `MIT`.
 - `compatibility`: only what must be on the machine (`Requires git and Python 3.11 or later.`). Leave it out when the skill is instructions only.

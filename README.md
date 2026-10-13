@@ -17,7 +17,7 @@ npx skills add ColinCee/skills --list
 One skill, for every project of yours:
 
 ```bash
-npx skills add ColinCee/skills --skill housekeeping --global
+npx skills add ColinCee/skills --skill tidying --global
 ```
 
 Or copy a folder from `skills/` into your agent's skills folder by hand.
@@ -26,7 +26,21 @@ Or copy a folder from `skills/` into your agent's skills folder by hand.
 
 | Skill | What it does |
 |---|---|
-| [housekeeping](skills/housekeeping/SKILL.md) | Tidies a git repository after a stretch of work: lint, unused code, stale documents, old branches and data. Fixes what is safe, asks before anything that deletes |
+| [tidying](skills/tidying/SKILL.md) | Tidies a git repository after a stretch of work: lint, code nothing references, stale documents, old branches and data. Fixes what is safe, asks before anything that deletes |
+
+Not yet measured, so not recommended yet (`skills/.experimental/`):
+
+| Skill | What it does |
+|---|---|
+| [cleaning](skills/.experimental/cleaning/SKILL.md) | Finds what a project no longer needs by gathering evidence of use, and proposes what to remove |
+
+## Skills of other people's
+
+A skill that exists already is listed here and not rewritten. None of these has been run through the tasks in this repository yet.
+
+| Skill | From | For | Install |
+|---|---|---|---|
+| prune-dead-code | [lukeberrypi/skills](https://skills.sh/lukeberrypi/skills/prune-dead-code) | Code with no references left, reported for approval | `npx skills add lukeberrypi/skills --skill prune-dead-code` |
 
 ## What every skill here keeps to
 

@@ -1,4 +1,4 @@
-"""Survey a git repository for housekeeping. Reports only: it changes and deletes nothing.
+"""Survey a git repository before tidying it. Reports only: it changes and deletes nothing.
 
     python survey.py [repo] [--also DIR ...] [--days N] [--big MB] [--json]
 
@@ -207,7 +207,7 @@ def as_text(out: dict) -> str:
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description="Survey a git repository for housekeeping. Reports only.")
+    ap = argparse.ArgumentParser(description="Survey a git repository before tidying it. Reports only.")
     ap.add_argument("repo", nargs="?", default=".")
     ap.add_argument("--also", action="append", default=[], metavar="DIR")
     ap.add_argument("--days", type=int, default=14)

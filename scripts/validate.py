@@ -314,7 +314,13 @@ def check_evals(skill: Path, report: Report) -> None:
 
 def check(root: Path) -> Report:
     report = Report()
-    skills = sorted(p for p in (root / "skills").iterdir() if p.is_dir()) if (root / "skills").is_dir() else []
+    home = root / "skills"
+    skills = sorted(p for p in home.iterdir() if p.is_dir() and not p.name.startswith(".")) if home.is_dir() else []
+    # Not yet measured: checked like the rest, but not listed in the README.
+    drafts = (
+        sorted(p for p in (home / ".experimental").iterdir() if p.is_dir()) if (home / ".experimental").is_dir() else []
+    )
+    skills += drafts
     if not skills:
         report.error("skills/", "no skill folders found")
     readme = read(root / "README.md") if (root / "README.md").is_file() else ""
@@ -329,7 +335,7 @@ def check(root: Path) -> Report:
         check_text(skill, body, report)
         check_scripts(skill, fields, report)
         check_evals(skill, report)
-        if f"skills/{skill.name}/SKILL.md" not in readme:
+        if skill not in drafts and f"skills/{skill.name}/SKILL.md" not in readme:
             report.error("README.md", f"does not list {skill.name}; add a row to the table of skills")
     return report
 
