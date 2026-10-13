@@ -1,5 +1,7 @@
 target-version = "py311"
 line-length = 120
+# The task fixtures hold faults on purpose.
+extend-exclude = ["tasks"]
 
 [lint]
 select = ["E", "F", "I", "B", "UP", "SIM"]
