@@ -93,11 +93,18 @@ Installing a skill lets its scripts run on someone's machine, with their files.
 
 ## Testing
 
-A skill is tested in three steps, the cheapest first. Results are kept per model and per agent and never averaged across them, because a skill that helps one can hurt another.
+A skill is tested in four steps, the cheapest first. Each step has a time budget, because a check that is slow stops being run. Results are kept per model and per agent and never averaged across them, because a skill that helps one can hurt another.
 
-1. **Checks on the text.** `scripts/validate.py`. Free, run on every commit.
-2. **Triggering.** `evals/triggers.json`: about twenty things a user might type, half that should load the skill and half that are close but should not. Run each a few times and correct the description. Cheap: the agent only has to decide, not do the work.
-3. **Tasks.** `evals/evals.json`: at least three tasks. Each has a fixture that builds a known problem, and checks on the end state that a script can decide. Run five times with the skill and five without. Costly, so run it when the skill changes or a new model comes out, not on every commit.
+| Step | Budget | When |
+|---|---|---|
+| 1. Checks on the text: `scripts/validate.py` | seconds | every change |
+| 2. Triggering: `evals/triggers.json`, about twenty queries, half that should load the skill and half that are close but should not | about a minute | when the description changes |
+| 3. Tasks: `tasks/<name>/`, a fixture with planted faults, checks a script can decide, five runs with the skill and five without, on a small fast model | under five minutes | when the skill's body changes |
+| 4. The same tasks on the larger models | as long as it takes | when the user is away; never a gate on the next edit |
+
+- **A slow check is a fault to fix,** not a cost to accept. Run trials side by side, keep the fixture small, and put what every trial installs into the image.
+- **Every run reports how long it took,** so a check that is getting slower is seen.
+- **A task earns its place by telling two things apart:** with the skill and without it, or one version and the next. One that scores the same either way is shelved.
 
 For step 3:
 
@@ -106,6 +113,7 @@ For step 3:
 - **Check that the skill was used.** A run "with the skill" in which the agent never read `SKILL.md` is a run without it.
 - **Count tokens, time and turns** as well as passes. A skill that passes one more check at twice the cost may not be worth it.
 - **Drop a check that passes without the skill.** It costs a run and says nothing.
+- **Count a fault as handled when it is fixed or named in the report.** An agent told to leave decisions to the user is right to report and not fix.
 - **Deleting a rule needs a run too.** Removing a rule loses most of what adding it gained.
 - **Read what the agent did,** not only its last message, and keep only the instructions that changed the result.
 
