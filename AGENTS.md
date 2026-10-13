@@ -125,6 +125,14 @@ What a script cannot decide (is the report clear, was the change tasteful) is re
 python scripts/validate.py
 ```
 
+When a skill's body or its task changed, and Docker is free:
+
+```bash
+python scripts/bench.py <skill>
+```
+
+It runs the task both ways side by side, says how long it took, and marks each check that does not tell the two apart. With nothing changed it scores the saved runs and starts no agent.
+
 ```bash
 uvx ruff@0.17.0 check .
 ```
