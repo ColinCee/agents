@@ -45,9 +45,9 @@ housekeeping ──► safeguarding   what could be lost
              └─► doc-upkeep     do the documents say what is true (planned)
 ```
 
-Benchmark tasks waiting for their skill, to be run without one first:
+Benchmark tasks without a skill:
 
-- `tasks/strict-types`: strict types at the edges where outside data comes in.
+- `tasks/strict-types`: shelved. Plain Haiku types the schema correctly in 8 of 10 runs ([results](bench/strict-types/)); too little room for a skill.
 - `tasks/experiment-design`: shelved. Plain Haiku audits the unfair comparison correctly in 5 of 5 runs ([results](bench/experiment-design/)); the next version asks the agent to build the comparison.
 
 ## Skills of other people's
