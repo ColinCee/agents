@@ -73,6 +73,8 @@ def main() -> int:
         config = json.loads(config_file.read_text(encoding="utf-8"))
         tasks = config.get("tasks") or [{}]
         path = Path(str(tasks[0].get("path", "unknown")).replace("\\", "/"))
+        if path.parent.name == "task-copies":  # a command's run, from a copy of its test named <skill>-on-<test>
+            path = Path(path.name.split("-on-", 1)[-1]) / "task"
         # A test's folder, or where it was archived since: <skill>/task, or an older tasks/<name>.
         test = (
             ARCHIVED.get(path.parent.name, path.parent.name)
