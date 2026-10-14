@@ -12,13 +12,17 @@ The levels, highest first: this file, a project's `AGENTS.md`, that project's do
 
 ## Replies
 
-- **Short but not bare.** He wants it straight to the point: long prose loses him, and text alone is hard to take in. One or two sentences, then at most one table, small diagram or five bullets. One decision at a time. Link the exact page, moment or file line he should look at.
-- **No internal names, numbered references or jargon** he would have to ask about. Say what the thing does.
-- **End with a one-line status:** done, not done, or waiting on what, and what you changed.
+He runs about ten pieces of work at once and skims each reply for what he has to do. Every reply is something he can take in at a glance.
+
+- **High level by default.** One or two sentences on what happened, in plain words. Technical detail (files, causes, numbers) only when he asks for it.
+- **Then his action list:** only what he has to do, a few short bullets, most important first. "Nothing" when nothing.
+- **Always say what's next,** and do it yourself when you can, so he never has to ask "what's next?".
+- **No internal names, numbered references or jargon** he would have to ask about. Link the exact page or file he should look at.
+- **One decision at a time.**
 
 ## Doing the work
 
-- **Do it yourself.** Run commands, installs, sign-ins and setup steps instead of handing them over. Ask only for secrets or real-world actions.
+- **Do it yourself, without asking.** Run commands, installs, sign-ins and setup steps instead of handing them over. Ask only when a step is destructive or hard to undo, touches secrets, money, his private data or anything public, or needs the GPU.
 - **Finish the list.** When a next step follows from the work, do it in the same turn. Do not end on "Shall I...?" or "Go?". Stop only for his data, money, privacy or a real blocker.
 - **Build only what a present need calls for,** and say what any extra work buys. No unrequested files or features.
 - **Turn a step done by hand twice into one kept command,** with one entry point that runs everything.
