@@ -1,3 +1,5 @@
+> Superseded by [2026-10-14-claude-haiku-5-5-websearch-off.md](2026-10-14-claude-haiku-5-5-websearch-off.md), a later run with web search off. Kept as the record of this run.
+
 # safeguarding on claude-haiku-5-5, 2026-10-14
 
 Task `tasks/safeguarding`, agent Claude Code, batches of 5 each way run side by side. Key `91612afff71a/861f8d263f32`.
