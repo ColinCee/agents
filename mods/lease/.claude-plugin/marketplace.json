@@ -1,0 +1,5 @@
+{
+  "name": "lease-local",
+  "owner": { "name": "ColinCee" },
+  "plugins": [{ "name": "lease", "source": "./" }]
+}

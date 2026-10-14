@@ -1,0 +1,6 @@
+{
+  "name": "lease",
+  "version": "0.1.0",
+  "description": "Shows who holds the GPU and big-RAM lease (the lease command), who waits, and a Free it button",
+  "types": "./types/index.d.ts"
+}
