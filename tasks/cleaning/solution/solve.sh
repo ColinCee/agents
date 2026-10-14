@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 cd /app
-cat > /report.md <<'MD'
+cat > /tmp/report.md <<'MD'
 One feature and its data can go; one test can destroy your pantry and should be fixed first.
 
 **Fix before anything else:** `tests/test_store.py::test_save_roundtrip` saves to the default path, `var/pantry.json`. That file is yours, is not in git and has no backup. Running `pytest` replaces it with one line of test data. I did not run the tests.

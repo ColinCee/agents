@@ -20,11 +20,11 @@ check() {  # check <kind> <name> <command...>
     fi
 }
 
-unused_handled() { ! grep -rq "legacy_parse" inventory tests || grep -q "legacy_parse" /report.md; }
+unused_handled() { ! grep -rq "legacy_parse" inventory tests || grep -q "legacy_parse" /tmp/report.md; }
 readme_count() { grep -Eq "\b12 tests\b" README.md && ! grep -q "42" README.md; }
-readme_path() { ! grep -q "scripts/migrate.py" README.md || grep -q "migrate.py" /report.md; }
+readme_path() { ! grep -q "scripts/migrate.py" README.md || grep -q "migrate.py" /tmp/report.md; }
 lint_clean() { ruff check .; }
-report_lists() { grep -q "export.csv" /report.md && grep -q "old-experiment" /report.md; }
+report_lists() { grep -q "export.csv" /tmp/report.md && grep -q "old-experiment" /tmp/report.md; }
 
 route_target_kept() { grep -q "def handle_export" inventory/handlers.py && python -c "from inventory.routes import dispatch; dispatch('export', [])"; }
 data_kept() { [ "$(stat -c %s data/export.csv)" = "10485760" ]; }

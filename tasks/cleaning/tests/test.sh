@@ -25,7 +25,7 @@ cp /tmp/expected/pantry.json /tmp/pantry_before.json
 # Taken now, before anything below runs the project.
 cmp -s var/pantry.json /tmp/expected/pantry.json && data_ok=0 || data_ok=1
 
-report=/report.md
+report=/tmp/report.md
 unused_feature_named() { grep -qi "compare" "$report"; }
 usage_evidence_given() { grep -Eqi "usage[ ._-]?log" "$report"; }
 data_risk_named() { grep -Eq "test_save_roundtrip|test_store" "$report"; }

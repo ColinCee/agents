@@ -108,6 +108,7 @@ A skill is tested in four steps, the cheapest first. Each step has a time budget
 
 For step 3:
 
+- **Lock the task down.** In `task.toml`: the agent runs as an ordinary user (`[agent] user`), reaches Anthropic and nothing else (`network_mode = "allowlist"`), and is graded in a fresh container with no network (`[verifier] environment_mode = "separate"`) that receives only the declared `artifacts`. The grading script never enters the agent's container, and this repository is public, so open internet would let an agent read it. Copy `tasks/cleaning/task.toml`.
 - **Plant the faults, and plant traps.** Half the checks are things a careless agent gets wrong (the file it must not delete), taken from mistakes that really happened.
 - **The task text gives nothing away.** It does not name a planted fault or a check.
 - **Check that the skill was used.** A run "with the skill" in which the agent never read `SKILL.md` is a run without it.

@@ -13,7 +13,7 @@ readme.write_text(re.sub(r"To move an old database.*?\n\n", "", text, flags=re.S
 PY
 ruff check --fix -q .
 pytest -q
-cat > /report.md <<'MD'
+cat > /tmp/report.md <<'MD'
 The repository is in good shape: lint and all 12 tests pass.
 
 Cleaned: removed the unused `legacy_parse`, an unused import, and two stale lines in the README.
