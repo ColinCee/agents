@@ -32,7 +32,7 @@ This is about the health of what is there. Whether a working feature is still ne
 
 4. **Look for what nothing uses.** Functions, constants, files, dependencies, config keys and test fixtures with no reference left. Check each one by searching before removing it: a name used only by a string, a route table or a plugin loader is still used.
 
-5. **Read the documents against the code.** Numbers (test counts, sizes), file paths, command names, "next steps" that are done, things described that were since removed. Correct them in place. Do not add new documents.
+5. **Read the documents against the code.** Numbers (test counts, sizes), file paths, command names, "next steps" that are done, things described that were since removed. Correct them in place. Do not add new documents. Cut what a level above already says: a project document need not repeat the project's `AGENTS.md`, and that need not repeat the user's own instructions. A rule found in two places belongs in the higher one.
 
 6. **Fix what is safe**, in small commits if the project commits as it goes:
    - lint and format fixes the tool marks as safe

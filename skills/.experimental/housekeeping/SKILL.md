@@ -14,7 +14,7 @@ A pass in four steps, safest first. Each step is a focused skill; when that skil
 
 3. **Is each thing still needed.** Use the `cleaning` skill. Without it: for each command, page, setting and stored file, find evidence of use (a log, a link, a recent change), and propose removing what has none. Remove nothing that works without the user's yes.
 
-4. **Do the documents still say what is true.** Use the `doc-upkeep` skill if installed. Without it: replace out-of-date lines in place, never append below them, and give each fact one home.
+4. **Do the documents still say what is true.** Use the `doc-upkeep` skill if installed. Without it: replace out-of-date lines in place, never append below them, and give each fact one home: the highest level it applies to (the user's own instructions, then the project's `AGENTS.md`, then its documents). Cut the copies below.
 
 ## The report
 
