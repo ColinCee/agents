@@ -1,3 +1,5 @@
+> Superseded by [2026-10-14-claude-haiku-5-5-description.md](2026-10-14-claude-haiku-5-5-description.md), the same run with the description rewritten. Kept as the record of this run.
+
 # safeguarding on claude-haiku-5-5, 2026-10-14
 
 Task `tasks/safeguarding`, agent Claude Code, batches of 5 each way run side by side. Key `b4a2d0263b1c/558a576038da`.

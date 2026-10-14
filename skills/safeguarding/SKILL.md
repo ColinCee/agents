@@ -1,6 +1,6 @@
 ---
 name: safeguarding
-description: Before running anything that changes code or data (tests, mutation testing, migrations, clean-up scripts), finds what could be lost and makes sure it can't be. Use when about to run a project's tests or tools, or someone else's script.
+description: Before running tests, mutation testing, migrations, formatters or someone else's script, finds data that could be lost and makes sure it can't be. Use when asked to check, strengthen or run a project's tests or tools.
 license: MIT
 ---
 
