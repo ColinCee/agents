@@ -1,3 +1,5 @@
+> Superseded by [2026-10-14-claude-haiku-5-5-deciding.md](2026-10-14-claude-haiku-5-5-deciding.md), the deciding run under the fixed grader. Kept as the record of this run.
+
 # doc-upkeep on claude-haiku-5-5, 2026-10-14
 
 Task `tasks/doc-upkeep`, agent Claude Code, batches of 5 each way run side by side. Key `541ec9896fa7/1ce06549b816`.
