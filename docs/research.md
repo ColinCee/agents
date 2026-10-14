@@ -7,6 +7,7 @@ The findings behind `AGENTS.md`, gathered 13 and 14 October 2026. Each line says
 - Do skills help?
 - Writing a skill
 - Measuring a skill
+- Experiments and decisions
 - Keeping a benchmark honest
 - Speed and cost
 - Sources
@@ -45,6 +46,19 @@ These studies have weak spots: SkillsBench's length and count findings are confo
 | Harbor (sandbox harness, Terminal-Bench's authors) and Inspect (UK AI Security Institute) run real agents in containers and grade the end state; tracing tools (Langfuse, Phoenix, Braintrust) do not | GitHub, vendor docs |
 | Saving every model answer under a hash of its full input let Cortex re-score a 27-minute bench in 28 seconds | Cortex, this machine |
 
+## Experiments and decisions
+
+| Finding | Source |
+|---|---|
+| Controlling for something measured after the treatment can bias the result either way and by any amount; this is the mistake behind the 5 October recall-card conclusion | Montgomery, Nyhan and Torres 2018; Cinelli, Forney and Pearl |
+| Checking results as they arrive and stopping at the first win inflates false positives; fix the number of runs, or use an always-valid sequential test | Johari, Pekelis and Walsh |
+| Hosted models are not deterministic even at temperature 0, so one run per arm decides nothing | Thinking Machines, September 2025 |
+| Compare per item, with error bars that allow for items being related | Miller, "Adding Error Bars to Evals", 2024 |
+| Cases that never separate the arms, or flip between repeat runs, can be dropped with little loss | Signal and Noise 2025; tinyBenchmarks 2024 |
+| A model judge favours positions, lengths and its own family; swap positions, hide labels, check against human labels | Zheng et al. 2023 |
+| Research agents preferred low-quality pages until given source-quality rules | Anthropic, June 2025 |
+| No public skill covers controls measured after the outcome, comparing models or prompts, or labelling where a claim came from; the closest are a web A/B-testing skill and Anthropic's statistical-analysis skill | Search of skills.sh, 14 October 2026 |
+
 ## Keeping a benchmark honest
 
 Agents look up answers when they can. Every route below has been seen in published runs.
@@ -78,6 +92,7 @@ Checked on this repository's runs, 14 October 2026: in 40 trajectories no agent 
 - [`npx skills`](https://github.com/vercel-labs/skills) and [skills.sh](https://skills.sh)
 - Studies: [SkillsBench](https://arxiv.org/abs/2602.12670), [downstream utility](https://arxiv.org/abs/2610.08875), [skill-induced failures](https://arxiv.org/abs/2608.11888), [revisions](https://arxiv.org/abs/2610.04832), [138K skill files](https://arxiv.org/abs/2608.08453), [SkillLearnBench](https://arxiv.org/abs/2604.20087), [AGENTS.md (ETH Zurich)](https://arxiv.org/abs/2602.11988), [a critique of SkillsBench](https://dev.to/itay-maman/why-i-wouldnt-act-on-skillsbench-1h61)
 - Practice: [Tessl](https://tessl.io/blog/a-proposed-framework-for-evaluating-skills-research-eng-blog), [Firebase](https://firebase.blog/posts/2026/08/eval-driven-development-agent-skills), [OpenAI](https://developers.openai.com/blog/eval-skills), [Hamel Husain](https://hamel.dev/blog/posts/evals-skills/), [Deephaven](https://deephaven.io/blog/2026/05/29/agent-skills-evals/), [NVIDIA](https://developer.nvidia.com/blog/evaluating-ai-agent-skill-performance-with-nvidia-skillevaluator/)
+- Experiments: [post-treatment bias](https://sites.dartmouth.edu/nyhan/files/2021/03/post-treatment-bias.pdf), [Cinelli, Forney and Pearl](https://ftp.cs.ucla.edu/pub/stat_ser/r493.pdf), [always-valid inference](https://arxiv.org/abs/1512.04922), [error bars for evals](https://arxiv.org/abs/2411.00640), [Signal and Noise](https://arxiv.org/abs/2508.13144), [tinyBenchmarks](https://proceedings.mlr.press/v235/maia-polo24a.html), [LLM as a judge](https://proceedings.neurips.cc/paper_files/paper/2023/hash/91f18a1287b398d378ef22505bf41832-Abstract.html), [nondeterminism](https://thinkingmachines.ai/blog/defeating-nondeterminism-in-llm-inference), [Anthropic research agents](https://www.anthropic.com/engineering/multi-agent-research-system)
 - Tools: [Harbor](https://www.harborframework.com/docs/tasks/task-difference), [Inspect](https://inspect.aisi.org.uk/sandboxing.html), [Arize on Harbor with Phoenix](https://arize.com/?p=32730)
 - Cheating and sandboxes: [Terminal-Bench 3 audit](https://github.com/harbor-framework/terminal-bench/issues/2218), [benchmark hacking (Poolside summary)](https://blog.prompt20.com/posts/benchmark-hacking-agent-reward-hacking/), [Microsoft](https://developer.microsoft.com/blog/your-ai-coding-agent-evaluation-is-only-as-good-as-its-sandbox/), [Google Cloud](https://medium.com/google-cloud/your-agent-is-only-as-good-as-the-sandbox-you-measured-it-in-f391b908418c)
 - Sandboxes and prices: [burst benchmark](https://bex.co/blog/2026/10/04/superagent-sandbox-benchmark-cold-start-concurrency), [MarkTechPost comparison](https://www.marktechpost.com/2026/08/27/best-agent-sandboxes-2026-cold-start-pricing-network-policy/), [Modal pricing](https://www.beam.cloud/blog/modal-pricing-explained), [E2B pricing](https://www.morphllm.com/e2b-pricing)
