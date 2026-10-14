@@ -10,4 +10,4 @@
 | Cross-project lesson to the user's file, one-project lesson to that project, one-offs left out, no file changed | 10/10 | 10/10 |
 | Input tokens per run | 271k | 130k (x0.48) |
 
-The test, with what it plants, and every run are in the private `agents-bench` repository, under `session-review/`: kept out of public view so no model can learn the answers.
+The test, with what it plants, and every run are in the private `agents-bench` repository, under `skills/session-review/`: kept out of public view so no model can learn the answers.

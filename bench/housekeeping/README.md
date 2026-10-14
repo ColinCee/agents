@@ -11,4 +11,4 @@
 
 **Measured as typed:** the run with the skill starts with `/housekeeping`; `tidying` and `cleaning` are folded into it. Latest run, 15 October: the owner's data kept in 10 of 10 runs against 6.
 
-The test, with what it plants, and every run are in the private `agents-bench` repository, under `housekeeping/`: kept out of public view so no model can learn the answers.
+The test, with what it plants, and every run are in the private `agents-bench` repository, under `skills/housekeeping/`: kept out of public view so no model can learn the answers.

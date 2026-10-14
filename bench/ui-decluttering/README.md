@@ -12,4 +12,4 @@
 
 **Compared with `impeccable`** (installed alone, 10 runs): the agent never loaded it, and the result matched plain Haiku.
 
-The test, with what it plants, and every run are in the private `agents-bench` repository, under `ui-decluttering/`: kept out of public view so no model can learn the answers.
+The test, with what it plants, and every run are in the private `agents-bench` repository, under `skills/ui-decluttering/`: kept out of public view so no model can learn the answers.

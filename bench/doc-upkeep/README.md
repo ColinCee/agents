@@ -13,4 +13,4 @@
 | Test count, units, licence, behaviour and tests untouched | 10/10 | 10/10 |
 | Input tokens per run | 183k | 193k (x1.05) |
 
-The test, with what it plants, and every run are in the private `agents-bench` repository, under `doc-upkeep/`: kept out of public view so no model can learn the answers.
+The test, with what it plants, and every run are in the private `agents-bench` repository, under `skills/doc-upkeep/`: kept out of public view so no model can learn the answers.
