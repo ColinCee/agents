@@ -282,10 +282,33 @@ def as_markdown(skill: str, model: str, summary: dict, took: float | None, note:
     return "\n".join(lines) + "\n"
 
 
+def harbor_command() -> list[str]:
+    """How to start Harbor. On Windows a uv-installed `harbor.exe` and its venv's `python.exe` are launchers that
+    each open a new console window; Harbor's base Python, pointed at its packages, opens none."""
+    found = shutil.which("harbor")
+    if sys.platform != "win32" or not found:
+        return ["harbor"]
+    # The venv sits beside the launcher, or in uv's tool folder when uv installed it.
+    tools = Path(os.environ.get("UV_TOOL_DIR") or Path(os.environ.get("APPDATA", "")) / "uv" / "tools")
+    venv = next(
+        (v for v in (Path(found).resolve().parent.parent, tools / "harbor") if (v / "pyvenv.cfg").is_file()), None
+    )
+    if venv is None:
+        return ["harbor"]
+    cfg = venv / "pyvenv.cfg"
+    home = next((line.split("=", 1)[1].strip() for line in cfg.read_text().splitlines() if line.startswith("home")), "")
+    base = Path(home) / "python.exe"
+    site = venv / "Lib" / "site-packages"
+    if not base.is_file() or not site.is_dir():
+        return ["harbor"]
+    boot = f"import site, sys; site.addsitedir({str(site)!r}); from harbor.cli.main import app; sys.argv[0] = 'harbor'; app()"
+    return [str(base), "-c", boot]
+
+
 def harbor_version() -> str:
     try:
         done = subprocess.run(
-            ["harbor", "--version"], capture_output=True, text=True, timeout=30, check=False, **NO_WINDOW
+            [*harbor_command(), "--version"], capture_output=True, text=True, timeout=30, check=False, **NO_WINDOW
         )
         return done.stdout.strip()
     except OSError:
@@ -301,7 +324,20 @@ def without_evals(skill: Path) -> Path:
 
 
 def harbor(task: Path, model: str, runs: int, name: str, skill: Path | None) -> subprocess.Popen:
-    command = ["harbor", "run", "-p", str(task), "-a", "claude-code", "-m", model, "-k", str(runs), "-n", str(runs)]
+    command = [
+        *harbor_command(),
+        "run",
+        "-p",
+        str(task),
+        "-a",
+        "claude-code",
+        "-m",
+        model,
+        "-k",
+        str(runs),
+        "-n",
+        str(runs),
+    ]
     command += ["--max-retries", str(RETRIES), "-o", str(JOBS), "--job-name", name]
     # Web search and fetch run on Anthropic's side, past the task's network allowlist; a public repository
     # holds the grading scripts, so they are switched off.
