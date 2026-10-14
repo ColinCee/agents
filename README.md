@@ -1,23 +1,23 @@
-# skills
+# agents
 
-Skills for coding agents, in the open [Agent Skills](https://agentskills.io) format. They work with any agent that reads `SKILL.md`: Claude Code, Codex, Cursor, Copilot, Gemini CLI and others.
+Skills for coding agents, in the open [Agent Skills](https://agentskills.io) format, with the benchmark tasks that test them and my own instructions for agents. The skills work with any agent that reads `SKILL.md`: Claude Code, Codex, Cursor, Copilot, Gemini CLI and others.
 
 ## Install
 
 ```bash
-npx skills add ColinCee/skills
+npx skills add ColinCee/agents
 ```
 
 It asks which skills and which agents. To see what is here without installing:
 
 ```bash
-npx skills add ColinCee/skills --list
+npx skills add ColinCee/agents --list
 ```
 
 One skill, for every project of yours:
 
 ```bash
-npx skills add ColinCee/skills --skill tidying --global
+npx skills add ColinCee/agents --skill tidying --global
 ```
 
 Or copy a folder from `skills/` into your agent's skills folder by hand.
