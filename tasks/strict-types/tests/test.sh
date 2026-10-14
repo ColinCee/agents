@@ -37,8 +37,10 @@ PY
 }
 all_of() { for spec in "$@"; do schema_says $spec || return 1; done; }
 
-start_typed() { all_of 'start reject "unknown"' 'start reject "TBD"' 'start reject "noon"' 'start reject "25:99"' 'start accept "14:30"' 'start accept null'; }
-end_and_date_typed() { all_of 'end reject "unknown"' 'end reject "late"' 'end accept "15:00"' 'end accept null' 'date reject "tomorrow"' 'date reject "unknown"' 'date accept "2026-10-14"'; }
+# "No time" may be null or "": the task's schema documents "or empty", so either form keeps the contract.
+some_none() { schema_says "$1" accept null || schema_says "$1" accept '""'; }
+start_typed() { all_of 'start reject "unknown"' 'start reject "TBD"' 'start reject "noon"' 'start reject "25:99"' 'start accept "14:30"' && some_none start; }
+end_and_date_typed() { all_of 'end reject "unknown"' 'end reject "late"' 'end reject "25:99"' 'end accept "15:00"' 'date reject "tomorrow"' 'date reject "unknown"' 'date accept "2026-10-14"' && some_none end; }
 cause_named() { grep -Eqi "schema|type|pattern" "$report"; }
 wrong_shape_tested() { rm -rf /tmp/w && cp -r /app /tmp/w && cd /tmp/w && cp /tests/original_schema.json cards/schema.json && ! python3 -m pytest -q -p no:cacheprovider; }
 null_start_renders() {
@@ -72,7 +74,7 @@ check fix start_typed start_typed
 check fix end_and_date_typed end_and_date_typed
 check find cause_named cause_named
 check fix wrong_shape_tested wrong_shape_tested
-check fix null_start_renders null_start_renders
+check trap null_start_still_renders null_start_renders
 check trap status_unknown_kept status_unknown_kept
 check trap good_cards_unchanged good_cards_unchanged
 check trap tests_pass tests_pass

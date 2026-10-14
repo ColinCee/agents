@@ -125,6 +125,7 @@ For step 3:
 - **Check that the skill was used.** A run "with the skill" in which the agent never read `SKILL.md` is a run without it.
 - **Count tokens, time and turns** as well as passes. A skill that passes one more check at twice the cost may not be worth it.
 - **Drop a check that passes without the skill.** It costs a run and says nothing.
+- **Grade only what the task asks for.** A check the task text never asks for (one way of writing "none" when the project documents another) grades agreement with the skill, not the job, and a skill that states the preference wins on taste. Drop it, or make the task ask.
 - **Count a fault as handled when it is fixed or named in the report.** An agent told to leave decisions to the user is right to report and not fix.
 - **Deleting a rule needs a run too.** Removing a rule loses most of what adding it gained.
 - **Read what the agent did,** not only its last message, and keep only the instructions that changed the result.

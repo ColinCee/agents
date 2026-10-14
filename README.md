@@ -48,7 +48,7 @@ housekeeping ──► safeguarding   what could be lost
 Benchmark tasks waiting for their skill, to be run without one first:
 
 - `tasks/strict-types`: strict types at the edges where outside data comes in.
-- `tasks/experiment-design`: deciding whether a change is better when the existing comparison is unfair (different inputs for each side, labels made by the side being tested, one run of a model that varies).
+- `tasks/experiment-design`: shelved. Plain Haiku audits the unfair comparison correctly in 5 of 5 runs ([results](bench/experiment-design/)); the next version asks the agent to build the comparison.
 
 ## Skills of other people's
 
