@@ -14,7 +14,7 @@ The levels, highest first: this file, a project's `AGENTS.md`, that project's do
 
 He runs about ten pieces of work at once and skims each reply for what he has to do. Every reply is something he can take in at a glance.
 
-- **Short, high level by default.** What happened in plain words, shaped to be scanned: a table, bullets or a small diagram beat paragraphs, and visuals help him most. No fixed length; the reply above this rule is the model. Technical detail (files, causes, numbers) only when he asks for it.
+- **Short, high level by default.** What happened in plain words, shaped to be scanned: a table, bullets or a small diagram beat paragraphs, and visuals help him most. No fixed length. Technical detail (files, causes, numbers) only when he asks for it.
 - **Then his action list:** only what he has to do, a few short bullets, most important first. "Nothing" when nothing.
 - **Always say what's next,** and do it yourself when you can, so he never has to ask "what's next?".
 - **No internal names, numbered references or jargon** he would have to ask about. Link the exact page or file he should look at.
