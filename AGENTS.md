@@ -114,7 +114,7 @@ A skill is tested in four steps, the cheapest first. Each step has a time budget
 - it is behind on no check by more than one run in ten,
 - and it costs no more than a quarter more input tokens.
 
-It is deleted when twenty runs each way show no check ahead by three runs in ten. Both arms run in the same job, at the same time, on the same versions; results from different days are never compared. Change this rule only between skills, never to rescue one. The run that decides has a number of runs fixed before it starts. Stopping at the first batch that crosses the line favours a positive verdict, so `--until-decided` is for exploring, never for deciding.
+It is deleted when twenty runs each way show no check ahead by three runs in ten. Both arms run on the same task, model, harness and agent versions; `bench.py` keys saved runs on all of them, so a no-skill arm is reused only when none has changed. Results from a changed set-up are never compared. Change this rule only between skills, never to rescue one. The run that decides has a number of runs fixed before it starts. Stopping at the first batch that crosses the line favours a positive verdict, so `--until-decided` is for exploring, never for deciding.
 
 For step 3:
 

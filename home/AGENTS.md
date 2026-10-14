@@ -8,7 +8,7 @@ The levels, highest first: this file, a project's `AGENTS.md`, that project's do
 
 - **When a project's `AGENTS.md`, documents or skills repeat a rule from this file,** cut the repeat and, if a pointer helps, point here. Do it in the turn you notice it.
 - **When you write or edit an instruction or a document,** check it against the levels above and leave out what they already say.
-- **When the same rule turns up in two or more projects,** move it here (`home/AGENTS.md` in the agents repository, then run `python scripts/install_home.py` there) and cut the copies.
+- **When the same rule turns up in two or more projects,** move it here (`home/AGENTS.md` in the agents repository, then run `python scripts/install_home.py --apply` there) and cut the copies.
 
 ## Replies
 

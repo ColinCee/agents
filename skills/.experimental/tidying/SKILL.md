@@ -3,9 +3,6 @@ name: tidying
 description: Tidies a git repository's code and documents: fixes lint, removes code nothing references, corrects stale docs, and lists old branches and data for the user's yes. Use when asked to tidy code, fix lint, or check the docs still match.
 license: MIT
 compatibility: Requires git and Python 3.11 or later.
-metadata:
-  author: ColinCee
-  version: "0.1.0"
 ---
 
 Leave the repository smaller, current and passing its own checks. Fix what is safe. Ask before anything that deletes.

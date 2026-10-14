@@ -32,6 +32,7 @@ import json
 import math
 import os
 import re
+import shutil
 import statistics
 import subprocess
 import sys
@@ -273,11 +274,30 @@ def as_markdown(skill: str, model: str, summary: dict, took: float | None, note:
     return "\n".join(lines) + "\n"
 
 
+def harbor_version() -> str:
+    try:
+        done = subprocess.run(["harbor", "--version"], capture_output=True, text=True, timeout=30, check=False)
+        return done.stdout.strip()
+    except OSError:
+        return "harbor not found"
+
+
+def without_evals(skill: Path) -> Path:
+    """A copy of the skill without evals/, whose prompts and expected outputs would hint at the task."""
+    copy = JOBS / "skill-copies" / skill.name
+    shutil.rmtree(copy, ignore_errors=True)
+    shutil.copytree(skill, copy, ignore=shutil.ignore_patterns("evals", "__pycache__"))
+    return copy
+
+
 def harbor(task: Path, model: str, runs: int, name: str, skill: Path | None) -> subprocess.Popen:
     command = ["harbor", "run", "-p", str(task), "-a", "claude-code", "-m", model, "-k", str(runs), "-n", str(runs)]
     command += ["--max-retries", str(RETRIES), "-o", str(JOBS), "--job-name", name]
+    # Web search and fetch run on Anthropic's side, past the task's network allowlist; a public repository
+    # holds the grading scripts, so they are switched off.
+    command += ["--ak", "disable_web_search=true"]
     if skill:
-        command += ["--skill", str(skill)]
+        command += ["--skill", str(without_evals(skill))]
     log = (JOBS / f"{name}.log").open("w", encoding="utf-8")
     env = {**os.environ, "PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8"}
     return subprocess.Popen(command, stdout=log, stderr=subprocess.STDOUT, env=env, cwd=ROOT)
@@ -334,7 +354,9 @@ def main() -> int:
         folder, task = find(args.skill)
         checks = load_trajectory_checks(task)
         # The run without the skill depends only on the task, so editing the skill does not repeat it.
-        keys = {"without": key_of([task], args.model), "with": key_of([folder, task], args.model)}
+        # The harness version and the way the agent is run decide the result too.
+        setup = f"{harbor_version()}\nweb search off\n"
+        keys = {"without": key_of([task], args.model + setup), "with": key_of([folder, task], args.model + setup)}
         key = f"{keys['without']}/{keys['with']}"
         sides = {"without": [], "with": []}
         started = time.monotonic()

@@ -17,7 +17,7 @@ npx skills add ColinCee/agents --list
 One skill, for every project of yours:
 
 ```bash
-npx skills add ColinCee/agents --skill tidying --global
+npx skills add ColinCee/agents --skill safeguarding --global
 ```
 
 Or copy a folder from `skills/` into your agent's skills folder by hand.
@@ -26,13 +26,13 @@ Or copy a folder from `skills/` into your agent's skills folder by hand.
 
 | Skill | What it does |
 |---|---|
-| [tidying](skills/tidying/SKILL.md) | Tidies a git repository after a stretch of work: lint, code nothing references, stale documents, old branches and data. Fixes what is safe, asks before anything that deletes |
 | [safeguarding](skills/safeguarding/SKILL.md) | Before running tests, tools or someone else's script, finds data that could be lost (including outside the project) and makes it unreachable. Measured: [results](bench/safeguarding/) |
 
 Not yet measured (`skills/.experimental/`):
 
 | Skill | What it does |
 |---|---|
+| [tidying](skills/.experimental/tidying/SKILL.md) | Tidies a repository after a stretch of work: lint, code nothing references, stale documents, old branches and data. Five runs each way so far, too few to decide; see [results](bench/tidying/) |
 | [cleaning](skills/.experimental/cleaning/SKILL.md) | Finds what a project no longer needs from evidence of use, and proposes what to remove. A fixed-size run was undecided; see [results](bench/cleaning/) |
 | [housekeeping](skills/.experimental/housekeeping/SKILL.md) | A full pass in a safe order: safeguarding, tidying, cleaning, documents. Names each skill, with a fallback when it is not installed |
 
@@ -40,10 +40,12 @@ How they fit together:
 
 ```
 housekeeping ──► safeguarding   what could be lost
-             ├─► tidying        is the code healthy
+             ├─► tidying        is the code healthy (unmeasured)
              ├─► cleaning       is each thing still needed
              └─► doc-upkeep     do the documents say what is true (planned)
 ```
+
+`tasks/strict-types` is a benchmark task waiting for its skill: strict types at the edges where outside data comes in.
 
 ## Skills of other people's
 
@@ -58,7 +60,8 @@ A skill that exists already is listed here and not rewritten. None of these has 
 [home/AGENTS.md](home/AGENTS.md) is how I want every coding agent to work with me, in every project: rules I had to give more than once. It is mine, not a skill; copy what suits you. To install it as Claude Code's and Codex's user-level instructions:
 
 ```bash
-python scripts/install_home.py
+python scripts/install_home.py           # what would change
+python scripts/install_home.py --apply   # install, keeping a backup of anything replaced
 ```
 
 ## What every skill here keeps to

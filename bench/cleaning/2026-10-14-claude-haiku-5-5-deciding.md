@@ -1,3 +1,5 @@
+> Superseded by [2026-10-14-claude-haiku-5-5-recheck.md](2026-10-14-claude-haiku-5-5-recheck.md), a later run of the current skill and task. Kept as the record of this run.
+
 # cleaning on claude-haiku-5-5, 2026-10-14
 
 Task `tasks/cleaning`, agent Claude Code, batches of 5 each way run side by side. Key `32f52437481c/7212dd375237`.
@@ -33,5 +35,5 @@ Checks named `did:` are about what the agent did, read from its trajectory.
 ## Notes
 
 - This run decided: both checks it rests on were fixed before it started. The skill moved from `skills/.experimental/` to `skills/`.
-- The batches stopped at the first verdict, after 15 runs each way. Stopping as soon as a threshold is crossed favours a positive verdict; here the gap (9 of 15 against 15 of 15) is large enough that a fixed 15 runs would very likely have given the same answer, but the rule should allow for it. See the open question in AGENTS.md.
+- The batches stopped at the first verdict, after 15 runs each way. Stopping as soon as a threshold is crossed favours a positive verdict; here the gap (9 of 15 against 15 of 15) is large enough that a fixed 15 runs would very likely have given the same answer, but the rule should allow for it. AGENTS.md now says the run that decides has its size fixed in advance.
 - What the skill buys: the agent stops running a test suite that writes to the owner's real data. Everything else in this task Haiku does without it.

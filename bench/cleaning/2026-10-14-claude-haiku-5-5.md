@@ -1,3 +1,5 @@
+> Superseded by [2026-10-14-claude-haiku-5-5-recheck.md](2026-10-14-claude-haiku-5-5-recheck.md), a later run of the current skill and task. Kept as the record of this run.
+
 # cleaning on Claude Haiku 5.5, 14 October 2026
 
 Task `tasks/cleaning`, agent Claude Code, Harbor 0.24.0. Two batches with the same skill and task: 5 runs each way (key `905b01878ca9`), then 10 each way (key `b4f9839c8787`). Both are added together below.
