@@ -1,9 +1,11 @@
 """Run a skill's task with the skill and without it, and say whether the skill helped.
 
-    python scripts/bench.py SKILL [--model ID] [--runs N] [--batch N] [--until-decided] [--replay] [--force] [--json]
+    python scripts/bench.py SKILL [--task NAME] [--model ID] [--runs N] [--batch N] [--until-decided] [--replay] [--force] [--json]
     python scripts/bench.py SKILL --from JOB_WITHOUT JOB_WITH
 
-SKILL            a folder name under skills/ or skills/.experimental/, with a task of the same name under tasks/
+SKILL            a folder name under skills/ or skills/.experimental/
+--task           the task under tasks/ to run (default: the one named after SKILL); a checklist skill is scored
+                 on its focused skills' tasks, one at a time, never averaged
 --model          the model the agent uses (default claude-haiku-5-5, the small fast one)
 --runs           the most trials each way (default 10)
 --batch          trials each way per batch, all at once (default 5)
@@ -15,12 +17,12 @@ SKILL            a folder name under skills/ or skills/.experimental/, with a ta
 
 Each batch runs both arms at the same time, so they share load and versions. The verdict applies the
 decision rule in AGENTS.md. Checks on what the agent did, not only what it left, are read from the
-trajectories using tasks/<SKILL>/trajectory_checks.json when it exists.
+trajectories using tasks/<TASK>/trajectory_checks.json when it exists.
 
 A run starts agents, which costs tokens, and needs Harbor, Docker and a sign-in for the agent in the
 environment. Saved batches are kept under a hash of what decides their result, so a second call with
 nothing changed asks no model anything, and the run without the skill is not repeated when only the
-skill changes.
+skill changes, nor for another skill scored on the same task.
 
 Exit codes: 0 done, 1 a run failed or --replay found nothing saved, 2 bad arguments.
 Needs Python 3.11 or later. Uses only the standard library.
@@ -77,15 +79,18 @@ def free_memory_gb() -> float | None:
     return None
 
 
-def find(skill: str) -> tuple[Path, Path]:
+def find(skill: str, task_name: str) -> tuple[Path, Path]:
     homes = [ROOT / "skills" / skill, ROOT / "skills" / ".experimental" / skill]
     folder = next((h for h in homes if (h / "SKILL.md").is_file()), None)
-    task = ROOT / "tasks" / skill
+    task = ROOT / "tasks" / task_name
     if folder is None:
         print(f"Error: no skill named {skill!r} under skills/ or skills/.experimental/.", file=sys.stderr)
         sys.exit(2)
     if not (task / "task.toml").is_file():
-        print(f"Error: {skill} has no task. Expected {task.relative_to(ROOT).as_posix()}/task.toml.", file=sys.stderr)
+        print(
+            f"Error: no task at {task.relative_to(ROOT).as_posix()}/task.toml. Pass --task with a folder name under tasks/.",
+            file=sys.stderr,
+        )
         sys.exit(2)
     return folder, task
 
@@ -309,6 +314,7 @@ def main() -> int:
         epilog="A run starts agents and costs tokens. Exit codes: 0 done, 1 a run failed or --replay found nothing saved, 2 bad arguments.",
     )
     parser.add_argument("skill", help="a folder name under skills/ or skills/.experimental/")
+    parser.add_argument("--task", help="the task under tasks/ to run (default: the one named after the skill)")
     parser.add_argument("--model", default=DEFAULT_MODEL, help=f"the model the agent uses (default {DEFAULT_MODEL})")
     parser.add_argument(
         "--runs", type=int, default=DEFAULT_RUNS, help=f"the most trials each way (default {DEFAULT_RUNS})"
@@ -335,6 +341,7 @@ def main() -> int:
         help=f"refuse to start a batch with less free memory than this (default {MIN_FREE_GB})",
     )
     args = parser.parse_args()
+    task_name = args.task or args.skill
     if args.runs < 1 or args.batch < 1:
         parser.error("--runs and --batch must be 1 or more")
 
@@ -343,7 +350,7 @@ def main() -> int:
         for job in args.existing:
             if not job.is_dir():
                 parser.error(f"{job} is not a folder")
-        task = ROOT / "tasks" / args.skill
+        task = ROOT / "tasks" / task_name
         checks = load_trajectory_checks(task if task.is_dir() else None)
         sides = {
             "without": read_job(args.existing[0], checks)["trials"],
@@ -351,7 +358,7 @@ def main() -> int:
         }
         note = f"Scored from saved runs: `{args.existing[0].name}` and `{args.existing[1].name}`."
     else:
-        folder, task = find(args.skill)
+        folder, task = find(args.skill, task_name)
         checks = load_trajectory_checks(task)
         # The run without the skill depends only on the task, so editing the skill does not repeat it.
         # The harness version and the way the agent is run decide the result too.
@@ -363,7 +370,12 @@ def main() -> int:
         ran = False
         for batch in range(math.ceil(args.runs / args.batch)):
             size = min(args.batch, args.runs - batch * args.batch)
-            jobs = {side: JOBS / f"{args.skill}-{args.model}-{keys[side]}-{side}-b{batch}" for side in sides}
+            # The run without a skill is named after the task alone, so every skill scored on it shares it.
+            owner = {
+                "without": task_name,
+                "with": args.skill if task_name == args.skill else f"{args.skill}-on-{task_name}",
+            }
+            jobs = {side: JOBS / f"{owner[side]}-{args.model}-{keys[side]}-{side}-b{batch}" for side in sides}
             missing = [side for side, job in jobs.items() if args.force or not complete(job, size)]
             if missing and args.replay:
                 if batch == 0:
@@ -406,7 +418,7 @@ def main() -> int:
         took = time.monotonic() - started if ran else None
         if not ran:
             print(f"Nothing has changed since key {key}: scoring the saved runs, no agent started.", file=sys.stderr)
-        note = f"Task `tasks/{args.skill}`, agent Claude Code, batches of {args.batch} each way run side by side. Key `{key}`."
+        note = f"Task `tasks/{task_name}`, agent Claude Code, batches of {args.batch} each way run side by side. Key `{key}`."
 
     summary = summarise(sides["without"], sides["with"])
     summary["took_seconds"] = took
