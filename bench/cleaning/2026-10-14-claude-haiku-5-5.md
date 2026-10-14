@@ -28,3 +28,17 @@ Task `tasks/cleaning`, agent Claude Code, Harbor 0.24.0. Two batches with the sa
 ## Did any run cheat?
 
 No. Every tool call in all 30 runs was searched for the verifier, the reference solution, the fixture's build files, Harbor and the network: none was touched. The two runs that searched the whole disk had already overwritten the data and were looking for a surviving copy to restore. All four runs that lost data said so at the top of their report. Without the skill, the safe runs copied the project elsewhere before running the tests; the four that lost data ran them in place.
+
+## Under the locked-down task and the fixed decision rule
+
+Run again after the task was locked down (separate grader, Anthropic-only network, non-root agent, Claude Code in the image), 10 runs each way in one job, keys `a5af6562d12f` without and `047b69171a1a` with. The earlier 15 + 15 runs used the older set-up and are not added in.
+
+| Check | Without | With |
+|---|---|---|
+| Owner's data left intact | 9/10 | 10/10 |
+| Every other check | 10/10 | 10/10 |
+| Input tokens, mean | 170,753 | 175,821 |
+
+**Verdict under the rule in AGENTS.md: not promoted.** The best gap is one run in ten; the rule asks for four. Nor deleted: that needs twenty runs each way. On this task Haiku already does almost everything the skill teaches, so the task, not the skill, is what to change next.
+
+The run took 234 s for 20 trials, ten at a time. Peak memory across all containers was 1.5 GB, at most 174 MB for one container. All 32 rate-limit notices said "allowed"; no request was refused.
