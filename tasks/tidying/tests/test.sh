@@ -1,5 +1,7 @@
 #!/bin/bash
 cd /app
+# Files copied out through the host can come back marked executable; that is not the agent's doing.
+find /app -path /app/.git -prune -o -type f -exec chmod 644 {} +
 mkdir -p /logs/verifier
 out=/logs/verifier/checks.txt
 : > "$out"
