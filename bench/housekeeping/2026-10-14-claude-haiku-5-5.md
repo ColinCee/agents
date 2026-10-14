@@ -1,3 +1,5 @@
+> Superseded by [2026-10-14-claude-haiku-5-5-fallback.md](2026-10-14-claude-haiku-5-5-fallback.md), after the code-health fallback was widened. Kept as the record of this run.
+
 # housekeeping on claude-haiku-5-5, 2026-10-14
 
 Task `tasks/housekeeping`, agent Claude Code, batches of 5 each way run side by side. Key `82c5f873e372/07342fe5cb04`.

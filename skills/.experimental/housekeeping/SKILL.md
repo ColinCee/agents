@@ -8,7 +8,7 @@ A pass in four steps, safest first. Each step is a focused skill; when that skil
 
 ## Steps
 
-1. **What could be lost.** Use the `safeguarding` skill. Without it: list data that git does not hold, inside the project and in the home folder, and what can write to it. Make it unreachable before running any test or tool.
+1. **What could be lost.** Use the `safeguarding` skill. Without it: list data that git does not hold, inside the project and in the home folder, and what can write to it. Run every test and tool on a copy of the project, with its home folder pointed somewhere empty, never in place: one copy is cheaper than backing up and checking each file.
 
 2. **Is the code healthy.** Use the `tidying` skill. Without it: run the project's own lint, type and test commands and fix what they mark as safe. Then search for what no command reports: code nothing calls, tests that cannot fail, documents that no longer match the code. Name each in the report, and list old branches and data for the user's yes.
 
