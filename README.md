@@ -27,12 +27,7 @@ Or copy a folder from `skills/` into your agent's skills folder by hand.
 | Skill | What it does |
 |---|---|
 | [tidying](skills/tidying/SKILL.md) | Tidies a git repository after a stretch of work: lint, code nothing references, stale documents, old branches and data. Fixes what is safe, asks before anything that deletes |
-
-Not yet measured, so not recommended yet (`skills/.experimental/`):
-
-| Skill | What it does |
-|---|---|
-| [cleaning](skills/.experimental/cleaning/SKILL.md) | Finds what a project no longer needs by gathering evidence of use, and proposes what to remove |
+| [cleaning](skills/cleaning/SKILL.md) | Finds what a project no longer needs from evidence of use, and proposes what to remove. Checks what could be lost before running anything. Measured: [results](bench/cleaning/) |
 
 ## Skills of other people's
 

@@ -112,7 +112,7 @@ A skill is tested in four steps, the cheapest first. Each step has a time budget
 - it is behind on no check by more than one run in ten,
 - and it costs no more than a quarter more input tokens.
 
-It is deleted when twenty runs each way show no check ahead by three runs in ten. Both arms run in the same job, at the same time, on the same versions; results from different days are never compared. Change this rule only between skills, never to rescue one.
+It is deleted when twenty runs each way show no check ahead by three runs in ten. Both arms run in the same job, at the same time, on the same versions; results from different days are never compared. Change this rule only between skills, never to rescue one. Open question: a run that stops at the first batch to cross the line favours a positive verdict; a stricter line when stopping early may be needed.
 
 For step 3:
 
