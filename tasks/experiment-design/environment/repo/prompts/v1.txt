@@ -1,1 +1,0 @@
-You sort customer support tickets. Read the ticket and answer with one word: billing, bug, account or other.

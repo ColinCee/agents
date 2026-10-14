@@ -1,4 +1,0 @@
-[extract]
-# The model used for every incoming message.
-default_model = "small"
-batch_size = 20

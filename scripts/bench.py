@@ -44,6 +44,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 JOBS = ROOT / "jobs"  # Harbor's raw output; not kept in git
+# The tasks hold graders and answers, so they live in a private repository: beside this one, or at AGENTS_BENCH.
+BENCH = Path(os.environ.get("AGENTS_BENCH") or ROOT.parent / "agents-bench")
+TASKS = BENCH / "tasks"
 DEFAULT_MODEL = "claude-haiku-5-5"
 DEFAULT_RUNS = 10  # AGENTS.md: the fewest runs each way at which a skill can be promoted
 DEFAULT_BATCH = 5  # ten containers at once used 1.5 GB in all and met no refusal (14 October 2026)
@@ -85,13 +88,13 @@ def free_memory_gb() -> float | None:
 def find(skill: str, task_name: str, plain: bool = False) -> tuple[Path | None, Path]:
     homes = [ROOT / "skills" / skill, ROOT / "skills" / ".experimental" / skill]
     folder = None if plain else next((h for h in homes if (h / "SKILL.md").is_file()), None)
-    task = ROOT / "tasks" / task_name
+    task = TASKS / task_name
     if folder is None and not plain:
         print(f"Error: no skill named {skill!r} under skills/ or skills/.experimental/.", file=sys.stderr)
         sys.exit(2)
     if not (task / "task.toml").is_file():
         print(
-            f"Error: no task at {task.relative_to(ROOT).as_posix()}/task.toml. Pass --task with a folder name under tasks/.",
+            f"Error: no task at {task}/task.toml. Clone the private agents-bench repository beside this one, or set AGENTS_BENCH, and pass --task with a folder name under its tasks/.",
             file=sys.stderr,
         )
         sys.exit(2)
@@ -102,11 +105,17 @@ def key_of(folders: list[Path], model: str) -> str:
     """A hash of everything that decides the result. Line endings are ignored so every platform agrees."""
     digest = hashlib.sha256(f"{model}\n".encode())
     for base in folders:
-        for path in sorted(p for p in base.rglob("*") if p.is_file() and "__pycache__" not in p.parts):
+        for path in sorted(
+            p
+            for p in base.rglob("*")
+            if p.is_file() and not {"__pycache__", ".ruff_cache", ".pytest_cache"} & set(p.parts)
+        ):
             if "evals" in path.relative_to(base).parts:
                 continue
             digest.update(path.relative_to(base).as_posix().encode())
-            digest.update(path.read_bytes().replace(b"\r\n", b"\n"))
+            data = path.read_bytes().replace(b"\r\n", b"\n")
+            # The canary line marks the private benchmark; it changes nothing an agent or grader does.
+            digest.update(re.sub(rb"(?m)^# AGENTS-BENCH CANARY [^\n]*\n", b"", data))
     return digest.hexdigest()[:12]
 
 
@@ -396,7 +405,7 @@ def main() -> int:
         for job in args.existing:
             if not job.is_dir():
                 parser.error(f"{job} is not a folder")
-        task = ROOT / "tasks" / task_name
+        task = TASKS / task_name
         checks = load_trajectory_checks(task if task.is_dir() else None)
         sides = {
             "without": read_job(args.existing[0], checks)["trials"],

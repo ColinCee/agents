@@ -1,6 +1,0 @@
-You are a senior support agent. Decide which team must act first on this ticket.
-- billing: charges, refunds, invoices, payment failures
-- bug: the product behaves wrongly
-- account: sign-in, settings, teammates, security codes
-- other: anything else
-If a ticket mentions several things, pick the one the customer is most upset about. Answer with the label only.

@@ -1,6 +1,6 @@
 # agents
 
-Skills for coding agents, in the open [Agent Skills](https://agentskills.io) format, with the benchmark tasks that test them and my own instructions for agents. The skills work with any agent that reads `SKILL.md`: Claude Code, Codex, Cursor, Copilot, Gemini CLI and others.
+Skills for coding agents, in the open [Agent Skills](https://agentskills.io) format, with the results of the benchmarks that test them and my own instructions for agents. The skills work with any agent that reads `SKILL.md`: Claude Code, Codex, Cursor, Copilot, Gemini CLI and others.
 
 ## Install
 
@@ -51,16 +51,11 @@ housekeeping ──► safeguarding   what could be lost
              └─► doc-upkeep     do the documents say what is true
 ```
 
-Benchmark tasks without a skill:
-
-- `tasks/strict-types`: shelved. Plain Haiku types the schema correctly in 8 of 10 runs ([results](bench/strict-types/)); too little room for a skill.
-- `tasks/sidebar`: the test for `ui-decluttering`.
-- `tasks/ui-flow`: shelved. A new choice on a card page must leave the card somewhere (History, with undo); plain Haiku does it in 10 of 10 runs, even with History in its own module ([results](bench/ui-flow/)).
-- `tasks/experiment-design`: shelved. Plain Haiku audits the unfair comparison correctly in 5 of 5 runs ([results](bench/experiment-design/)); the next version asks the agent to build the comparison.
+The benchmark tasks are in a private repository, `agents-bench`: each holds its grader and answers, and a model that has seen them could pass from memory, which would make every result here worthless. What each task asks and which real incident it comes from is in that skill's results page. Tasks with no skill, because plain Haiku already does the job: strict types for one reported field ([results](bench/strict-types/)), keeping a decided card reachable after a UI change ([results](bench/ui-flow/)), auditing an unfair comparison ([results](bench/experiment-design/)).
 
 ## Skills of other people's
 
-A skill that exists already is listed here and not rewritten. None of these has been run through the tasks in this repository yet.
+A skill that exists already is listed here and not rewritten. None of these has been run through the benchmark yet.
 
 | Skill | From | For | Install |
 |---|---|---|---|
@@ -81,7 +76,7 @@ python scripts/install_home.py --apply   # install, keeping a backup of anything
 - **No paths, names or accounts of the author's.** Scripts take arguments.
 - **Python 3.11 or later, standard library only**, unless the skill's `compatibility` line says otherwise.
 - **No agent's own tools are named.** Instructions say what to do, not which tool does it.
-- **Tested before it is added.** Each skill carries the tasks it was tried on, in its `evals/` folder.
+- **Tested before it is added.** Each skill's results page says what the test asks, the real incident behind it, and how it scored with and without the skill.
 
 Installing a skill lets its scripts run on your machine. Read them first: they are short.
 

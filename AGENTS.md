@@ -103,7 +103,7 @@ A skill is tested in four steps, the cheapest first. Each step has a time budget
 |---|---|---|
 | 1. Checks on the text: `scripts/validate.py` | seconds | every change |
 | 2. Triggering: `evals/triggers.json`, about twenty queries, half that should load the skill and half that are close but should not | about a minute | when the description changes |
-| 3. Tasks: `tasks/<name>/`, a fixture with planted faults, checks a script can decide, five runs with the skill and five without, on a small fast model | under five minutes | when the skill's body changes |
+| 3. Tasks: `tasks/<name>/` in the private `agents-bench` repository, a fixture with planted faults, checks a script can decide, five runs with the skill and five without, on a small fast model | under five minutes | when the skill's body changes |
 | 4. The same tasks on the larger models | as long as it takes | when the user is away; never a gate on the next edit |
 
 - **A slow check is a fault to fix,** not a cost to accept. Run trials side by side, keep the fixture small, and put what every trial installs into the image.
@@ -121,7 +121,9 @@ It is deleted when twenty runs each way show no check ahead by three runs in ten
 
 For step 3:
 
-- **Lock the task down.** In `task.toml`: the agent runs as an ordinary user (`[agent] user`), reaches Anthropic and nothing else (`network_mode = "allowlist"`), and is graded in a fresh container with no network (`[verifier] environment_mode = "separate"`) that receives only the declared `artifacts`. The grading script never enters the agent's container, and this repository is public, so open internet would let an agent read it. The fixture's git history holds the faults, never a later commit that fixes them, and the build leaves nothing else on the disk. Copy `tasks/cleaning/task.toml`.
+- **The tasks are private, and must stay so.** They live in the private `agents-bench` repository (beside this one, or at `AGENTS_BENCH`), because each holds its grader and answers. A model or agent that has seen them can pass from memory: if they leak, every result measured with them is void, and the tasks are rebuilt from the same incidents with new fixtures. Never copy a task, grader or solution into this public repository, an issue or a chat. Each `task.toml` carries the `AGENTS-BENCH CANARY` line; keep it.
+
+- **Lock the task down.** In `task.toml`: the agent runs as an ordinary user (`[agent] user`), reaches Anthropic and nothing else (`network_mode = "allowlist"`), and is graded in a fresh container with no network (`[verifier] environment_mode = "separate"`) that receives only the declared `artifacts`. The grading script never enters the agent's container, and open internet would let an agent look the task up. The fixture's git history holds the faults, never a later commit that fixes them, and the build leaves nothing else on the disk. Copy `tasks/cleaning/task.toml`.
 - **Plant the faults, and plant traps.** Half the checks are things a careless agent gets wrong (the file it must not delete), taken from mistakes that really happened.
 - **The task text gives nothing away.** It does not name a planted fault or a check.
 - **Check what the agent did, not only what it left.** An agent that wipes data and rewrites it from memory leaves the same end state as one that never touched it; it was seen in 4 of 10 runs. Put checks on the commands in `tasks/<name>/trajectory_checks.json`, and fix them before the run that decides anything.
