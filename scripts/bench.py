@@ -88,7 +88,7 @@ def free_memory_gb() -> float | None:
 def find(skill: str, task_name: str, plain: bool = False) -> tuple[Path | None, Path]:
     homes = [ROOT / "skills" / skill, ROOT / "skills" / ".experimental" / skill]
     folder = None if plain else next((h for h in homes if (h / "SKILL.md").is_file()), None)
-    task = BENCH / "skills" / task_name / "task"
+    task = test_folder(task_name)
     if folder is None and not plain:
         print(f"Error: no skill named {skill!r} under skills/ or skills/.experimental/.", file=sys.stderr)
         sys.exit(2)
@@ -324,6 +324,29 @@ def harbor_version() -> str:
         return "harbor not found"
 
 
+def test_folder(name: str) -> Path:
+    """A skill's test, or one archived when its skill was removed or folded into another."""
+    live = BENCH / "skills" / name / "task"
+    archived = BENCH / "archive" / name / "task"
+    return live if live.is_dir() or not archived.is_dir() else archived
+
+
+def is_command(skill: Path) -> bool:
+    """A command loads only when the user names it, so it is measured that way."""
+    head = (skill / "SKILL.md").read_text(encoding="utf-8").split("---")[1]
+    return any(line.strip() == "disable-model-invocation: true" for line in head.splitlines())
+
+
+def as_typed(task: Path, skill: Path) -> Path:
+    """A copy of the task whose prompt starts with /<skill>, as the user types a command."""
+    copy = JOBS / "task-copies" / f"{skill.name}-on-{task.parent.name}"
+    shutil.rmtree(copy, ignore_errors=True)
+    shutil.copytree(task, copy, ignore=shutil.ignore_patterns("__pycache__", ".ruff_cache", ".pytest_cache"))
+    prompt = copy / "instruction.md"
+    prompt.write_text(f"/{skill.name} " + prompt.read_text(encoding="utf-8"), encoding="utf-8")
+    return copy
+
+
 def without_evals(skill: Path) -> Path:
     """A copy of the skill without evals/, whose prompts and expected outputs would hint at the task."""
     copy = JOBS / "skill-copies" / skill.name
@@ -405,7 +428,7 @@ def main() -> int:
         for job in args.existing:
             if not job.is_dir():
                 parser.error(f"{job} is not a folder")
-        task = BENCH / "skills" / task_name / "task"
+        task = test_folder(task_name)
         checks = load_trajectory_checks(task if task.is_dir() else None)
         sides = {
             "without": read_job(args.existing[0], checks)["trials"],
@@ -420,7 +443,8 @@ def main() -> int:
         setup = f"{harbor_version()}\nweb search off\n"
         keys = {"without": key_of([task], args.model + setup)}
         if folder:
-            keys["with"] = key_of([folder, task], args.model + setup)
+            typed = "typed by name\n" if is_command(folder) else ""
+            keys["with"] = key_of([folder, task], args.model + setup + typed)
         key = "/".join(keys.values())
         sides = {"without": [], "with": []} if folder else {"without": []}
         started = time.monotonic()
@@ -462,7 +486,13 @@ def main() -> int:
                     file=sys.stderr,
                 )
                 running = [
-                    harbor(task, args.model, size, jobs[side].name, folder if side == "with" else None)
+                    harbor(
+                        as_typed(task, folder) if side == "with" and is_command(folder) else task,
+                        args.model,
+                        size,
+                        jobs[side].name,
+                        folder if side == "with" else None,
+                    )
                     for side in missing
                 ]
                 codes = [process.wait() for process in running]

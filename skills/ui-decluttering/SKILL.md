@@ -2,6 +2,7 @@
 name: ui-decluttering
 description: Redesigns a cluttered screen so the user decides quickly: one primary action, few choices in view, nothing unrelated, controls that look like what they do. Use when a page, sidebar or panel is messy, has too many buttons, or causes decision fatigue.
 license: MIT
+disable-model-invocation: true
 ---
 
 A screen exists for one decision. Every button, number and link on it either helps that decision or is in the way.

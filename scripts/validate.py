@@ -26,6 +26,9 @@ DESCRIPTION_AIM = 250  # longer ones were found to be picked less reliably (arXi
 COMPATIBILITY_MAX = 500
 BODY_LINES_MAX = 500
 FIELDS = {"name", "description", "license", "compatibility", "metadata", "allowed-tools"}
+# Not in the specification, but the one way to make a skill load only when the user names it: Claude Code reads it,
+# and an agent that does not know it is expected to skip it. Used for commands, so their descriptions cost nothing.
+FIELDS |= {"disable-model-invocation"}
 
 PYTHON_FLOOR = 11  # 3.11: the oldest CPython that still gets security fixes
 MIN_EVALS = 3  # the fewest tasks that show a pattern and not one lucky run

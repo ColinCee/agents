@@ -17,7 +17,7 @@ npx skills add ColinCee/agents --list
 One skill, for every project of yours:
 
 ```bash
-npx skills add ColinCee/agents --skill safeguarding --global
+npx skills add ColinCee/agents --skill doc-upkeep --global
 ```
 
 Or copy a folder from `skills/` into your agent's skills folder by hand.
@@ -26,32 +26,19 @@ Or copy a folder from `skills/` into your agent's skills folder by hand.
 
 Every result so far is on Claude Haiku 5.5 in Claude Code; a skill that helps one model can hurt another, so read each result as that model's.
 
-| Skill | What it does |
-|---|---|
-| [safeguarding](skills/safeguarding/SKILL.md) | Before running tests, tools or someone else's script, finds data that could be lost (including outside the project) and makes it unreachable. Measured: [results](bench/safeguarding/README.md) |
-| [cleaning](skills/cleaning/SKILL.md) | Finds what a project no longer needs from evidence of use, and proposes what to remove, without running anything that could destroy the owner's data. Measured: [results](bench/cleaning/README.md) |
-| [housekeeping](skills/housekeeping/SKILL.md) | A command: "do some housekeeping" runs a full pass in a safe order (safeguarding, tidying, cleaning, documents), naming each skill, with a fallback when it is not installed. Measured alone, on its fallbacks, without the focused skills installed: [results](bench/housekeeping/README.md) |
-| [tidying](skills/tidying/SKILL.md) | Tidies a repository after a stretch of work: lint, code and pages nothing reaches, stale documents, uncommitted work, old branches and data. Measured: [results](bench/tidying/README.md) |
-| [doc-upkeep](skills/doc-upkeep/SKILL.md) | Brings documents back in line with the code and leaves them shorter: stale lines replaced in place, one home per fact, no log of what was removed. Measured: [results](bench/doc-upkeep/README.md) |
-| [ui-decluttering](skills/ui-decluttering/SKILL.md) | Redesigns a cluttered screen so the user decides quickly: one primary action, at most four choices in view, nothing unrelated, controls that look like what they do. Measured: [results](bench/ui-decluttering/README.md) |
-| [session-review](skills/session-review/SKILL.md) | A command: reviews past agent sessions for corrections the user keeps repeating, and says where each fix belongs (their own instructions, a project, a skill) so it stops coming back. Measured: [results](bench/session-review/README.md) |
+Most are **commands**: they load only when you type their name (`/housekeeping`), so their descriptions cost the agent nothing the rest of the time. One loads by itself, because the moment it matters is inside other work.
 
-Not yet measured (`skills/.experimental/`):
+| Skill | Loads | What it does |
+|---|---|---|
+| [doc-upkeep](skills/doc-upkeep/SKILL.md) | by itself | Keeps documents and comments true and few: stale lines fixed in place, one home per fact, comments that say why. [Results](bench/doc-upkeep/README.md) |
+| [housekeeping](skills/housekeeping/SKILL.md) | `/housekeeping` | A full pass in a safe order: what could be lost, code health, what is no longer used, documents. [Results](bench/housekeeping/README.md) |
+| [ui-decluttering](skills/ui-decluttering/SKILL.md) | `/ui-decluttering` | Redesigns a busy screen: one primary action, at most four choices in view, nothing unrelated. [Results](bench/ui-decluttering/README.md) |
+| [session-review](skills/session-review/SKILL.md) | `/session-review` | Reviews past agent sessions for corrections you keep repeating, and says where each fix belongs. [Results](bench/session-review/README.md) |
+| [deciding](skills/.experimental/deciding/SKILL.md) | `/deciding` | Decides from evidence: the question in one line, the ground truth, a fair repeated comparison, how sure. Experimental |
 
-| Skill | What it does |
-|---|---|
-| [deciding](skills/.experimental/deciding/SKILL.md) | A command: decides from evidence (the question in one line, what is known, a fair comparison, how sure). Being measured |
+Commands are measured as you use them: the run with the skill starts with `/<name>`, the run without it gets the same request in plain words. `disable-model-invocation` is read by Claude Code; other agents load these like any skill.
 
-How they fit together:
-
-```
-housekeeping ──► safeguarding   what could be lost
-             ├─► tidying        is the code healthy (unmeasured)
-             ├─► cleaning       is each thing still needed
-             └─► doc-upkeep     do the documents say what is true
-```
-
-The benchmark tests and every run are in a private repository, `agents-bench`, laid out like this one (`skills/<skill>/task`, `skills/<skill>/runs`): each test holds its grader and answers, and a model that has seen them could pass from memory, which would make every result here worthless. Tests with no skill, because plain Haiku already does the job, are archived there: strict types for one reported field, keeping a decided card reachable after a UI change, auditing an unfair comparison.
+The benchmark tests and every run are in a private repository, `agents-bench`, laid out like this one (`skills/<skill>/task`, `skills/<skill>/runs`): each test holds its grader and answers, and a model that has seen them could pass from memory, which would make every result here worthless. Archived there: tests for skills folded into `housekeeping` (tidying, cleaning), removed (safeguarding), or never needed because plain Haiku already did the job (strict types, keeping a card reachable after a UI change, auditing an unfair comparison).
 
 ## Skills of other people's
 

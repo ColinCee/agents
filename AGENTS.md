@@ -12,7 +12,7 @@ A skill can make an agent worse. In published tests the same skill helped on one
 1. **It came from real work.** The same steps or the same corrections turned up in at least three sessions. A skill written from general knowledge says what the agent already knows.
 2. **The agent does worse without it.** Run the task with no skill first. If the result is already good, there is nothing to add. What "worse" means depends on the kind of skill:
    - A **fix** is loaded by the agent when its description matches, and stops a mistake (`safeguarding`). Worse: the agent makes the mistake.
-   - A **command** is asked for by name (`housekeeping`), and stands for a whole process the user would otherwise type out. Worse: the same words without the skill leave out steps the process promises, or do them differently from run to run.
+   - A **command** is asked for by name (`housekeeping`), and stands for a whole process the user would otherwise type out. It carries `disable-model-invocation: true`, so it loads only when named and its description costs nothing otherwise; most skills here are commands. Worse: the same words without the skill leave out steps the process promises, or do them differently from run to run.
 3. **It is one job.** Like a function: narrow enough that its description says exactly when to use it, wide enough that one task does not need three skills.
 4. **It is generic.** Nothing in it depends on the author's projects, machine, accounts or one agent's tools. What differs per project is read from that project (its `AGENTS.md`, `README.md`, config), not written into the skill.
 5. **It was measured.** Run with the skill and without it, it passes more checks with it, and the cost in tokens and time is known. See Testing.
@@ -30,7 +30,7 @@ skills/<name>/
 
 - Flat: one folder per skill directly under `skills/`. The folder name is the skill's `name`.
 - A skill that has not been measured yet lives in `skills/.experimental/`. It moves up when a run shows it helps, and is deleted when a run shows it does not.
-- **Two levels.** A checklist skill (such as `housekeeping`) names the focused skills to use at each step, with one line saying what to do when that skill is not installed. A focused skill does one job and never needs another; it may mention one ("if the evidence is thin, see `experiment-design`") but must make sense alone. No deeper levels, and a checklist never calls another checklist.
+- **Two levels.** A checklist skill (such as `housekeeping`) may name a focused skill for a step (`doc-upkeep`), with one line saying what to do when that skill is not installed. A focused skill does one job and never needs another. No deeper levels, and a checklist never calls another checklist. Prefer folding a step into the checklist over a separate skill the user would rarely call.
 - Every file in `scripts/`, `references/` and `assets/` is named in `SKILL.md` with its path and when to use it. No file is reached only through another reference.
 - Paths are relative to the skill folder and use forward slashes.
 - Each skill is listed in the table in `README.md`.
@@ -38,7 +38,7 @@ skills/<name>/
 
 ## SKILL.md
 
-**Frontmatter.** Only the fields of the specification: `name`, `description`, `license`, `compatibility`, `metadata`, `allowed-tools`. Each value on one line, because some agents read frontmatter with a simple parser.
+**Frontmatter.** Only the fields of the specification: `name`, `description`, `license`, `compatibility`, `metadata`, `allowed-tools`, plus `disable-model-invocation: true` on a command (read by Claude Code; other agents skip it). Each value on one line, because some agents read frontmatter with a simple parser.
 
 - `name`: lowercase letters, digits and single hyphens, 64 characters at most. Says the activity (`tidying`), not `helper` or `utils`.
 - `description`: what the skill does, then `Use when ...` with the words a user would really say. Third person. Aim for 250 characters or fewer; 1024 is the limit. This is the only text the agent sees when deciding to load the skill. In one large test agents loaded an installed skill on only 41% of the tasks that needed it, and the usual cause was the description.
@@ -131,7 +131,7 @@ For step 3:
 - **Check that the skill was used.** A run "with the skill" in which the agent never read `SKILL.md` is a run without it.
 - **Count tokens, time and turns** as well as passes. A skill that passes one more check at twice the cost may not be worth it.
 - **Drop a check that passes without the skill.** It costs a run and says nothing.
-- **Grade only what the task asks for.** A check the task text never asks for (one way of writing "none" when the project documents another) grades agreement with the skill, not the job, and a skill that states the preference wins on taste. Drop it, or make the task ask. For a command, the task text is the command's name, and what it asks for is every step the command promises: grade each step, and give the run without the skill the same words.
+- **Grade only what the task asks for.** A check the task text never asks for (one way of writing "none" when the project documents another) grades agreement with the skill, not the job, and a skill that states the preference wins on taste. Drop it, or make the task ask. For a command, the run with the skill starts with `/<name>`, as the user types it, and the run without it gets the same request in plain words; what the task asks for is every step the command promises, so grade each step. `bench.py` does this for any skill marked `disable-model-invocation: true`.
 - **Count a fault as handled when it is fixed or named in the report.** An agent told to leave decisions to the user is right to report and not fix.
 - **Deleting a rule needs a run too.** Removing a rule loses most of what adding it gained.
 - **Read what the agent did,** not only its last message, and keep only the instructions that changed the result.

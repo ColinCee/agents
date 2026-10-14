@@ -2,6 +2,7 @@
 name: deciding
 description: Decides between options from evidence, not first impressions: one-line question, ground truth, a fair repeated comparison, how sure. Use when asked which option is better, which to make the default or to switch to, or whether a change helps.
 license: MIT
+disable-model-invocation: true
 ---
 
 A decision is only as good as the comparison behind it. Follow the steps in order; write each one's answer in the report.

@@ -2,6 +2,7 @@
 name: session-review
 description: Reviews past coding-agent sessions for corrections the user keeps repeating, and says where each fix belongs so it stops coming back. Use when asked what the user keeps correcting, or to learn from past sessions or find new skills.
 license: MIT
+disable-model-invocation: true
 compatibility: Requires Python 3.11 or later.
 ---
 
