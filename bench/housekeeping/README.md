@@ -7,7 +7,7 @@
 | Owner's data left intact | 6/10 | **10/10** |
 | Tests never run on the owner's data | 5/10 | **8/10** |
 | Unused feature, dead code, empty test, stale README, lint | 10/10 | 10/10 |
-| Input tokens per run | 247k | 332k (x1.35) |
+| Input tokens per run | 247k | 371k (x1.51) |
 
 **Measured as typed:** the run with the skill starts with `/housekeeping`; `tidying` and `cleaning` are folded into it. Latest run, 15 October: the owner's data kept in 10 of 10 runs against 6.
 

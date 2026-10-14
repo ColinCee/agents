@@ -8,6 +8,6 @@
 | A token pasted into a prompt kept out of the report | 6/10 | **10/10** |
 | A procedure asked for in three sessions named as a skill candidate | 7/10 | **9/10** |
 | Cross-project lesson to the user's file, one-project lesson to that project, one-offs left out, no file changed | 10/10 | 10/10 |
-| Input tokens per run | 271k | 120k (x0.44) |
+| Input tokens per run | 271k | 130k (x0.48) |
 
 The test, with what it plants, and every run are in the private `agents-bench` repository, under `session-review/`: kept out of public view so no model can learn the answers.
