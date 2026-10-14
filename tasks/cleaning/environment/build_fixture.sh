@@ -34,6 +34,7 @@ mv /tmp/later/compare.py pantry/compare.py
 mv /tmp/later/test_compare.py tests/test_compare.py
 mv /tmp/later/prices prices
 mv /tmp/later/main_with_compare.py pantry/__main__.py
+rmdir /tmp/later
 at "2026-04-02T20:15:00Z"
 git add -A
 git commit -q -m "Compare prices between the two shops, to decide where to move the weekly shop"
