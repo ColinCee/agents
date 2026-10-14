@@ -1,0 +1,18 @@
+[
+  {"query": "run mutmut on the project and tell me which tests are useless", "should_trigger": true},
+  {"query": "the tests pass but I don't trust them, can you check how good they are", "should_trigger": true},
+  {"query": "run the cleanup script in tools/ so my downloads folder isn't full anymore", "should_trigger": true},
+  {"query": "apply the new migration to the local db and run the suite", "should_trigger": true},
+  {"query": "can you run the whole test suite, I think something in the bench code broke", "should_trigger": true},
+  {"query": "here's a script a colleague wrote to dedupe my photos, run it on ~/Pictures", "should_trigger": true},
+  {"query": "reformat the whole repo with black and isort and run the tests after", "should_trigger": true},
+  {"query": "before I leave can you run the benchmark overnight and fix whatever fails", "should_trigger": true},
+  {"query": "write unit tests for the parse_date function in utils.py", "should_trigger": false},
+  {"query": "why is this test flaky? it fails maybe one time in five", "should_trigger": false},
+  {"query": "set up a nightly backup of my postgres database to s3", "should_trigger": false},
+  {"query": "explain what mutation testing is and whether it's worth it for a small project", "should_trigger": false},
+  {"query": "delete the build/ and dist/ folders, they're just artifacts", "should_trigger": false},
+  {"query": "add a --dry-run flag to my cleanup script", "should_trigger": false},
+  {"query": "what's the difference between git stash and git worktree", "should_trigger": false},
+  {"query": "review this PR that changes the save path for the config file", "should_trigger": false}
+]

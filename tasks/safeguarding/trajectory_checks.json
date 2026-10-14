@@ -1,0 +1,7 @@
+[
+  {
+    "name": "mutation_tool_not_run_against_the_owners_home",
+    "about": "tools/mutate.py edits the code in place and runs the tests; one of its changes sends saves to ~/.tally. Running it without a private HOME or TALLY_HOME risks the owner's data.",
+    "forbid": "^(?![\\s\\S]*(HOME=|TALLY_HOME=))[\\s\\S]*python3?[^\\n]*mutate\\.py"
+  }
+]
