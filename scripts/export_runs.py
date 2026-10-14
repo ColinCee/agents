@@ -29,7 +29,12 @@ RENAMED = {
     "ui-flow": "archive/ui-flow",
 }
 # Tests archived after agents-bench came to mirror skills/: their runs follow them.
-ARCHIVED = {"strict-types": "archive/strict-types-whole-project"}
+ARCHIVED = {
+    "strict-types": "archive/strict-types-whole-project",
+    "safeguarding": "archive/safeguarding",
+    "cleaning": "archive/cleaning",
+    "tidying": "archive/tidying",
+}
 JOBS = ROOT / "jobs"
 KEEP = {  # what a trial says, under the name it is filed as
     "verifier/checks.txt": "checks.txt",
@@ -79,7 +84,7 @@ def main() -> int:
         test = (
             ARCHIVED.get(path.parent.name, path.parent.name)
             if path.name == "task"
-            else RENAMED.get(path.name, path.name)
+            else RENAMED.get(path.name, ARCHIVED.get(path.name, path.name))
         )
         if not test.startswith("archive/"):
             test = f"skills/{test}"
