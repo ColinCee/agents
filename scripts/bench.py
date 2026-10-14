@@ -50,6 +50,9 @@ DEFAULT_BATCH = 5  # ten containers at once used 1.5 GB in all and met no refusa
 RETRIES = 2  # Harbor retries only errors it treats as passing (not sign-in or usage-limit errors)
 BUDGET_SECONDS = 300  # AGENTS.md: the task step is to finish in under five minutes
 MIN_FREE_GB = 8.0  # a batch of ten used 1.5 GB at the peak; the rest is room for whatever else is running
+# On Windows a program started from a background process opens its own console window, and Harbor's
+# Docker calls each flash one up. Starting Harbor with no window gives them a hidden console to share.
+NO_WINDOW = {"creationflags": subprocess.CREATE_NO_WINDOW} if sys.platform == "win32" else {}
 
 # The decision rule in AGENTS.md, as shares of the runs each way.
 PROMOTE_RUNS, PROMOTE_GAP, WORST_DROP, TOKEN_RATIO = 10, 0.4, 0.1, 3.0
@@ -281,7 +284,9 @@ def as_markdown(skill: str, model: str, summary: dict, took: float | None, note:
 
 def harbor_version() -> str:
     try:
-        done = subprocess.run(["harbor", "--version"], capture_output=True, text=True, timeout=30, check=False)
+        done = subprocess.run(
+            ["harbor", "--version"], capture_output=True, text=True, timeout=30, check=False, **NO_WINDOW
+        )
         return done.stdout.strip()
     except OSError:
         return "harbor not found"
@@ -305,7 +310,7 @@ def harbor(task: Path, model: str, runs: int, name: str, skill: Path | None) -> 
         command += ["--skill", str(without_evals(skill))]
     log = (JOBS / f"{name}.log").open("w", encoding="utf-8")
     env = {**os.environ, "PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8"}
-    return subprocess.Popen(command, stdout=log, stderr=subprocess.STDOUT, env=env, cwd=ROOT)
+    return subprocess.Popen(command, stdout=log, stderr=subprocess.STDOUT, env=env, cwd=ROOT, **NO_WINDOW)
 
 
 def main() -> int:
