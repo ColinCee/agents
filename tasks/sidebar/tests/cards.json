@@ -1,0 +1,30 @@
+[
+  {
+    "id": 1,
+    "title": "Call with Fabio",
+    "when": "Wed 14 Oct, 15:00",
+    "quote": "Fabio: shall we speak Wednesday at 3?",
+    "status": "open"
+  },
+  {
+    "id": 2,
+    "title": "Dinner with Jennifer",
+    "when": "Fri 16 Oct, 19:30",
+    "quote": "Jennifer: Friday 7:30 at the usual place?",
+    "status": "open"
+  },
+  {
+    "id": 3,
+    "title": "Dentist",
+    "when": "Mon 19 Oct, 09:00",
+    "quote": "Your appointment is confirmed for Monday 9:00.",
+    "status": "open"
+  },
+  {
+    "id": 4,
+    "title": "Flat viewing",
+    "when": "Sat 10 Oct, 11:00",
+    "quote": "Viewing booked for Saturday 11am.",
+    "status": "booked"
+  }
+]
