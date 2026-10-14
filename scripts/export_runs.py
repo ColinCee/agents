@@ -23,11 +23,13 @@ ROOT = Path(__file__).resolve().parent.parent
 RENAMED = {
     "sidebar": "ui-decluttering",
     "choosing": "deciding",
-    "typing": "strict-types",
+    "typing": "archive/strict-types-whole-project",
     "strict-types": "archive/strict-types-one-field",
     "experiment-design": "archive/experiment-design",
     "ui-flow": "archive/ui-flow",
 }
+# Tests archived after agents-bench came to mirror skills/: their runs follow them.
+ARCHIVED = {"strict-types": "archive/strict-types-whole-project"}
 JOBS = ROOT / "jobs"
 KEEP = {  # what a trial says, under the name it is filed as
     "verifier/checks.txt": "checks.txt",
@@ -71,7 +73,12 @@ def main() -> int:
         config = json.loads(config_file.read_text(encoding="utf-8"))
         tasks = config.get("tasks") or [{}]
         path = Path(str(tasks[0].get("path", "unknown")).replace("\\", "/"))
-        test = path.parent.name if path.name == "task" else RENAMED.get(path.name, path.name)
+        # A test's folder, or where it was archived since: <skill>/task, or an older tasks/<name>.
+        test = (
+            ARCHIVED.get(path.parent.name, path.parent.name)
+            if path.name == "task"
+            else RENAMED.get(path.name, path.name)
+        )
         if not (args.to / test / "task").is_dir():
             continue  # smoke tests and probes that were never benchmark tasks
         for trial in sorted(
