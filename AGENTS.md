@@ -10,7 +10,9 @@ A skill can make an agent worse. In published tests the same skill helped on one
 
 0. **No good one exists already.** Search [skills.sh](https://skills.sh) first. A skill of someone else's that does the job goes in the list in `README.md`, with its install command, and is not copied here.
 1. **It came from real work.** The same steps or the same corrections turned up in at least three sessions. A skill written from general knowledge says what the agent already knows.
-2. **The agent does worse without it.** Run the task with no skill first. If the result is already good, there is nothing to add.
+2. **The agent does worse without it.** Run the task with no skill first. If the result is already good, there is nothing to add. What "worse" means depends on the kind of skill:
+   - A **fix** is loaded by the agent when its description matches, and stops a mistake (`safeguarding`). Worse: the agent makes the mistake.
+   - A **command** is asked for by name (`housekeeping`), and stands for a whole process the user would otherwise type out. Worse: the same words without the skill leave out steps the process promises, or do them differently from run to run.
 3. **It is one job.** Like a function: narrow enough that its description says exactly when to use it, wide enough that one task does not need three skills.
 4. **It is generic.** Nothing in it depends on the author's projects, machine, accounts or one agent's tools. What differs per project is read from that project (its `AGENTS.md`, `README.md`, config), not written into the skill.
 5. **It was measured.** Run with the skill and without it, it passes more checks with it, and the cost in tokens and time is known. See Testing.
@@ -125,7 +127,7 @@ For step 3:
 - **Check that the skill was used.** A run "with the skill" in which the agent never read `SKILL.md` is a run without it.
 - **Count tokens, time and turns** as well as passes. A skill that passes one more check at twice the cost may not be worth it.
 - **Drop a check that passes without the skill.** It costs a run and says nothing.
-- **Grade only what the task asks for.** A check the task text never asks for (one way of writing "none" when the project documents another) grades agreement with the skill, not the job, and a skill that states the preference wins on taste. Drop it, or make the task ask.
+- **Grade only what the task asks for.** A check the task text never asks for (one way of writing "none" when the project documents another) grades agreement with the skill, not the job, and a skill that states the preference wins on taste. Drop it, or make the task ask. For a command, the task text is the command's name, and what it asks for is every step the command promises: grade each step, and give the run without the skill the same words.
 - **Count a fault as handled when it is fixed or named in the report.** An agent told to leave decisions to the user is right to report and not fix.
 - **Deleting a rule needs a run too.** Removing a rule loses most of what adding it gained.
 - **Read what the agent did,** not only its last message, and keep only the instructions that changed the result.
