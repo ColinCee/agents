@@ -150,7 +150,7 @@ When a skill's body or its task changed, and Docker is free:
 python scripts/bench.py <skill>
 ```
 
-It runs the task both ways side by side, says how long it took, and marks each check that does not tell the two apart. A checklist skill has no task of its own: score it on each focused skill's task with `--task <name>`, and report each task separately. With nothing changed it scores the saved runs and starts no agent.
+It runs the task both ways side by side, says how long it took, and marks each check that does not tell the two apart. Then file the runs in the private repository and commit it there: `python scripts/export_runs.py --apply`. A checklist skill has no task of its own: score it on each focused skill's task with `--task <name>`, and report each task separately. With nothing changed it scores the saved runs and starts no agent.
 
 ```bash
 uvx ruff@0.17.0 check .
