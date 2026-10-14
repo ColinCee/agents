@@ -37,6 +37,7 @@ Not yet measured (`skills/.experimental/`):
 | Skill | What it does |
 |---|---|
 | [tidying](skills/.experimental/tidying/SKILL.md) | Tidies a repository after a stretch of work: lint, code and pages nothing reaches, stale documents, uncommitted work, old branches and data. Passes every check every time, but at x1.59 the tokens, over the x1.5 limit; see [results](bench/tidying/README.md) |
+| [doc-upkeep](skills/.experimental/doc-upkeep/SKILL.md) | Brings documents back in line with the code and leaves them shorter: stale lines replaced in place, one home per fact, no log of removals. Being measured |
 
 How they fit together:
 
@@ -44,13 +45,12 @@ How they fit together:
 housekeeping ──► safeguarding   what could be lost
              ├─► tidying        is the code healthy (unmeasured)
              ├─► cleaning       is each thing still needed
-             └─► doc-upkeep     do the documents say what is true (planned)
+             └─► doc-upkeep     do the documents say what is true
 ```
 
 Benchmark tasks without a skill:
 
 - `tasks/strict-types`: shelved. Plain Haiku types the schema correctly in 8 of 10 runs ([results](bench/strict-types/)); too little room for a skill.
-- `tasks/doc-upkeep`: documents behind a week of code changes (a count with an update appended, a rule copied into three files, a log of removals). Waiting for a plain run.
 - `tasks/experiment-design`: shelved. Plain Haiku audits the unfair comparison correctly in 5 of 5 runs ([results](bench/experiment-design/)); the next version asks the agent to build the comparison.
 
 ## Skills of other people's

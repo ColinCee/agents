@@ -1,0 +1,18 @@
+[
+  {"query": "the docs are out of date after last week's changes, can you update them", "should_trigger": true},
+  {"query": "is the README still accurate? check it against the code", "should_trigger": true},
+  {"query": "update AGENTS.md and the docs folder to match what the code does now", "should_trigger": true},
+  {"query": "we're duplicating docs between the README and CLAUDE.md, clean that up", "should_trigger": true},
+  {"query": "documentation should always be current, measure and update the numbers in the docs", "should_trigger": true},
+  {"query": "the setup guide says python 3.9 but we need 3.11 now, fix the docs", "should_trigger": true},
+  {"query": "we removed the export route, make sure nothing in the docs still mentions it", "should_trigger": true},
+  {"query": "the test count in the README is wrong again", "should_trigger": true},
+  {"query": "write a README for this new project", "should_trigger": false},
+  {"query": "add docstrings to every function in utils.py", "should_trigger": false},
+  {"query": "generate API reference docs with sphinx", "should_trigger": false},
+  {"query": "write release notes for v2.0", "should_trigger": false},
+  {"query": "translate the README into French", "should_trigger": false},
+  {"query": "explain what this module does", "should_trigger": false},
+  {"query": "add a CHANGELOG entry for this release", "should_trigger": false},
+  {"query": "proofread this blog post for typos", "should_trigger": false}
+]
