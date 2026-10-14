@@ -28,6 +28,7 @@ skills/<name>/
 
 - Flat: one folder per skill directly under `skills/`. The folder name is the skill's `name`.
 - A skill that has not been measured yet lives in `skills/.experimental/`. It moves up when a run shows it helps, and is deleted when a run shows it does not.
+- **Two levels.** A checklist skill (such as `housekeeping`) names the focused skills to use at each step, with one line saying what to do when that skill is not installed. A focused skill does one job and never needs another; it may mention one ("if the evidence is thin, see `experiment-design`") but must make sense alone. No deeper levels, and a checklist never calls another checklist.
 - Every file in `scripts/`, `references/` and `assets/` is named in `SKILL.md` with its path and when to use it. No file is reached only through another reference.
 - Paths are relative to the skill folder and use forward slashes.
 - Each skill is listed in the table in `README.md`.

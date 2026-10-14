@@ -50,3 +50,5 @@ The rows above show the shape; the names are examples. Put anything from step 2 
 - A usage record only proves use inside its own period. A yearly job looks unused in a three-month log.
 - Trying a command yourself adds it to the usage log. Read the log first.
 - "Might be useful later" is not evidence. Git keeps what is removed.
+- List every route, page and command the app serves, and check that something still links to or uses each one; an unused page survives a pass that looks at files.
+- A check, guard, retry or log line that has never caught anything is a candidate too. Ask what it has caught, not what it might.

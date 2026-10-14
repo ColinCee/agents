@@ -28,6 +28,22 @@ Or copy a folder from `skills/` into your agent's skills folder by hand.
 |---|---|
 | [tidying](skills/tidying/SKILL.md) | Tidies a git repository after a stretch of work: lint, code nothing references, stale documents, old branches and data. Fixes what is safe, asks before anything that deletes |
 | [cleaning](skills/cleaning/SKILL.md) | Finds what a project no longer needs from evidence of use, and proposes what to remove. Checks what could be lost before running anything. Measured: [results](bench/cleaning/) |
+| [safeguarding](skills/safeguarding/SKILL.md) | Before running tests, tools or someone else's script, finds data that could be lost (including outside the project) and makes it unreachable. Measured: [results](bench/safeguarding/) |
+
+Not yet measured (`skills/.experimental/`):
+
+| Skill | What it does |
+|---|---|
+| [housekeeping](skills/.experimental/housekeeping/SKILL.md) | A full pass in a safe order: safeguarding, tidying, cleaning, documents. Names each skill, with a fallback when it is not installed |
+
+How they fit together:
+
+```
+housekeeping ──► safeguarding   what could be lost
+             ├─► tidying        is the code healthy
+             ├─► cleaning       is each thing still needed
+             └─► doc-upkeep     do the documents say what is true (planned)
+```
 
 ## Skills of other people's
 

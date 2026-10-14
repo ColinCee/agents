@@ -1,6 +1,6 @@
 ---
 name: safeguarding
-description: Before running anything that changes code or data (tests, mutation testing, migrations, clean-up scripts, formatters), finds what could be lost and makes sure it can't be. Use when about to run a project's tests or tools, or a script someone else wrote.
+description: Before running anything that changes code or data (tests, mutation testing, migrations, clean-up scripts), finds what could be lost and makes sure it can't be. Use when about to run a project's tests or tools, or someone else's script.
 license: MIT
 ---
 
@@ -34,3 +34,6 @@ Before running anything, find what it could destroy, and make that impossible. D
 - A test that passes a temporary path is safe only while the code honours it. The fixture has to make the real location unreachable, not just unused.
 - Restoring a file from memory after overwriting it is not the same as never touching it. Say it happened.
 - An empty variable is not an unset one: `NAME=` can turn a data path into a relative one.
+- Before rebuilding or overwriting a data set, confirm a copy exists outside the working folder, and say where.
+- Delete originals only after the copy has been opened and read.
+- In a folder that is not under git, run `git init` and commit before the first change, so a bad run can be undone.

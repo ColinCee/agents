@@ -1,6 +1,6 @@
 ---
 name: tidying
-description: Tidies a git repository's code and documents after a stretch of work. Fixes lint, removes code nothing references, corrects stale docs, and lists old branches and data for the user's yes. Use when asked to tidy or get a repository ready to hand over.
+description: Tidies a git repository's code and documents: fixes lint, removes code nothing references, corrects stale docs, and lists old branches and data for the user's yes. Use when asked to tidy code, fix lint, or check the docs still match.
 license: MIT
 compatibility: Requires git and Python 3.11 or later.
 metadata:
@@ -69,3 +69,11 @@ Short, and in this order:
 - Change behaviour. Housekeeping that makes a test fail is undone, not patched.
 - Delete something because it looks old. Old and unused are different things.
 - Touch secrets, sign-in files or anything the project's rules mark as off limits.
+
+## Gotchas
+
+From real corrections:
+
+- Start by listing the uncommitted changes and saying what each one is; someone's unfinished work looks like mess.
+- A test that still passes when the behaviour it names is broken protects nothing. List it to fix.
+- A page, command or setting that is linted, typed and tested can still be unused. Whether it is needed is the `cleaning` skill's question; here, only note it.
