@@ -1,3 +1,5 @@
+> Superseded by [2026-10-14-claude-haiku-5-5-deciding20.md](2026-10-14-claude-haiku-5-5-deciding20.md), the fixed run of 20 each way. Kept as the record of this run.
+
 # cleaning on claude-haiku-5-5, 2026-10-14
 
 Task `tasks/cleaning`, agent Claude Code, batches of 5 each way run side by side. Key `32f52437481c/23eed61557bf`.
