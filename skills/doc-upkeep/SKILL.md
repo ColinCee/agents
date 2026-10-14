@@ -1,12 +1,12 @@
 ---
 name: doc-upkeep
-description: Brings a project's documents back in line with its code and leaves them shorter: stale lines replaced in place, one home per fact, no log of what was removed. Use when asked to update the docs, check the README is current, or after code changes.
+description: Keeps documents and code comments true and few: stale lines fixed in place, one home per fact, comments that say why, not what. Use when code changes that a document or comment describes, when writing either, or to update the docs.
 license: MIT
 ---
 
-Make every document true, and the set of them shorter than before. The result is judged by what a reader finds, not by how much was written.
+Every document and comment is a promise that has to be kept true. Make each one true, and the set of them smaller than before. Add one only when there is no way around it.
 
-## Steps
+## Documents
 
 1. **Find what changed.** `git log` since each document was last touched, and read those commits. Each one is a candidate stale line.
 2. **Check each claim against the code**, not against the document's own wording: numbers (count tests by collecting them, for example `pytest --collect-only -q`), paths, commands, names, lists of options, routes. A claim about something removed is stale.
@@ -15,14 +15,23 @@ Make every document true, and the set of them shorter than before. The result is
 5. **Give each fact one home.** When the same text is in more than one file, keep it in the one it belongs to and turn the others into a pointer ("Checks: see `AGENTS.md`"). Rules for working on the project belong in `AGENTS.md`; how to use it, in `README.md`; anything the user's own instructions already say needs no copy in the project.
 6. **Compare sizes.** The documents together should be no longer than before, unless a new feature needed a new section. Check with `git diff --stat`.
 
+## Comments
+
+- **Make the code say it first.** A clearer name, a smaller function or a named constant beats a comment. Delete a comment that repeats what the code says.
+- **A comment says why**: the reason for a choice, a constraint from outside the code, the case that broke before. Never what the next line does.
+- **Point, do not repeat.** A quirk explained in one place gets a one-line reference from everywhere it matters ("see `parse.py`, `legacy_dates`"), not a second explanation.
+- **Code kept unused on purpose** carries a one-line note at both ends saying why and pointing to the other end; without it, the next tidy-up deletes it.
+- **When code changes, its comments change in the same edit.** A comment that no longer matches the code is worse than none.
+
 ## Do not
 
 - Add "Update:", "Note:", "As of …" or a dated line below an old one. Fix the old one.
 - Add an entry to a "Removed", "Changes" or history section, unless the project's rules say it keeps a changelog.
-- Change code. If a document is right and the code is wrong, say so in the report.
-- Remove a note that explains code kept unused on purpose. It is the other end of a cross-reference.
+- Change what code does while updating its documents or comments. If a document is right and the code is wrong, say so.
 
 ## The report
+
+When asked to update documents, end with:
 
 | Where | Was | Now |
 |---|---|---|

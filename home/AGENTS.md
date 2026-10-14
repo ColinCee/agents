@@ -10,6 +10,13 @@ The levels, highest first: this file, a project's `AGENTS.md`, that project's do
 - **When you write or edit an instruction or a document,** check it against the levels above and leave out what they already say.
 - **When the same rule turns up in two or more projects,** move it here (`home/AGENTS.md` in the agents repository, then run `python scripts/install_home.py --apply` there) and cut the copies.
 
+## Documents and comments
+
+Fewer is better: add a document or a comment only when there is no way around it. When code or a document changes, use the `doc-upkeep` skill; without it:
+
+- **Fix a stale line where it is.** Never add a correction below it ("Update: …") or a log of what was removed; git keeps that.
+- **Code explains itself:** a clearer name or a smaller function beats a comment. A comment says *why*, never *what*, and points to where a quirk is explained rather than repeating it.
+
 ## Replies
 
 He runs about ten pieces of work at once and skims each reply for what he has to do. Every reply is something he can take in at a glance.
