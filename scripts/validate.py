@@ -337,6 +337,15 @@ def check(root: Path) -> Report:
         check_evals(skill, report)
         if skill not in drafts and f"skills/{skill.name}/SKILL.md" not in readme:
             report.error("README.md", f"does not list {skill.name}; add a row to the table of skills")
+    # Harbor copies a task from the working folder, not from git, so a file saved with Windows line
+    # endings reaches the container as is: `import os\r` matches no sed pattern and a shell script fails.
+    tasks = root / "tasks"
+    for path in sorted(tasks.rglob("*")) if tasks.is_dir() else []:
+        if path.is_file() and "__pycache__" not in path.parts and b"\r\n" in path.read_bytes():
+            report.error(
+                path.relative_to(root).as_posix(),
+                "has Windows line endings (CRLF); save it with LF, as a container reads it",
+            )
     return report
 
 
