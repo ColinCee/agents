@@ -115,7 +115,7 @@ A skill is tested in four steps, the cheapest first. Each step has a time budget
 
 - it is ahead on some check by at least four runs in ten (6 of 10 without, 10 of 10 with, or better),
 - it is behind on no check by more than one run in ten,
-- and it costs no more than half again the input tokens. (Raised from a quarter on 14 October, by the owner, before the next deciding run: on small tasks a skill that does the job fully takes a few more steps, and each step resends the conversation.)
+- and it costs no more than three times the input tokens. Cost is reported on every run, but it is a cap for runaway skills, not a trade-off: the run without the skill did not do the job, so its lower cost buys nothing. (Set by the owner on 14 October, after a quarter and then a half held back skills that did the job fully.)
 
 It is deleted when twenty runs each way show no check ahead by three runs in ten. Both arms run on the same task, model, harness and agent versions; `bench.py` keys saved runs on all of them, so a no-skill arm is reused only when none has changed. Results from a changed set-up are never compared. Change this rule only between skills, never to rescue one. The run that decides has a number of runs fixed before it starts. Stopping at the first batch that crosses the line favours a positive verdict, so `--until-decided` is for exploring, never for deciding.
 

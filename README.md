@@ -31,6 +31,7 @@ Every result so far is on Claude Haiku 5.5 in Claude Code; a skill that helps on
 | [safeguarding](skills/safeguarding/SKILL.md) | Before running tests, tools or someone else's script, finds data that could be lost (including outside the project) and makes it unreachable. Measured: [results](bench/safeguarding/README.md) |
 | [cleaning](skills/cleaning/SKILL.md) | Finds what a project no longer needs from evidence of use, and proposes what to remove, without running anything that could destroy the owner's data. Measured: [results](bench/cleaning/README.md) |
 | [housekeeping](skills/housekeeping/SKILL.md) | A command: "do some housekeeping" runs a full pass in a safe order (safeguarding, tidying, cleaning, documents), naming each skill, with a fallback when it is not installed. Measured alone, on its fallbacks, without the focused skills installed: [results](bench/housekeeping/README.md) |
+| [tidying](skills/tidying/SKILL.md) | Tidies a repository after a stretch of work: lint, code and pages nothing reaches, stale documents, uncommitted work, old branches and data. Measured: [results](bench/tidying/README.md) |
 | [doc-upkeep](skills/doc-upkeep/SKILL.md) | Brings documents back in line with the code and leaves them shorter: stale lines replaced in place, one home per fact, no log of what was removed. Measured: [results](bench/doc-upkeep/README.md) |
 | [ui-decluttering](skills/ui-decluttering/SKILL.md) | Redesigns a cluttered screen so the user decides quickly: one primary action, at most four choices in view, nothing unrelated, controls that look like what they do. Measured: [results](bench/ui-decluttering/README.md) |
 | [session-review](skills/session-review/SKILL.md) | A command: reviews past agent sessions for corrections the user keeps repeating, and says where each fix belongs (their own instructions, a project, a skill) so it stops coming back. Measured: [results](bench/session-review/README.md) |
@@ -39,7 +40,6 @@ Not yet measured (`skills/.experimental/`):
 
 | Skill | What it does |
 |---|---|
-| [tidying](skills/.experimental/tidying/SKILL.md) | Tidies a repository after a stretch of work: lint, code and pages nothing reaches, stale documents, uncommitted work, old branches and data. Passes every check every time, but at x1.59 the tokens, over the x1.5 limit; see [results](bench/tidying/README.md) |
 
 How they fit together:
 

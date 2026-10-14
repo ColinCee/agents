@@ -52,7 +52,7 @@ BUDGET_SECONDS = 300  # AGENTS.md: the task step is to finish in under five minu
 MIN_FREE_GB = 8.0  # a batch of ten used 1.5 GB at the peak; the rest is room for whatever else is running
 
 # The decision rule in AGENTS.md, as shares of the runs each way.
-PROMOTE_RUNS, PROMOTE_GAP, WORST_DROP, TOKEN_RATIO = 10, 0.4, 0.1, 1.5
+PROMOTE_RUNS, PROMOTE_GAP, WORST_DROP, TOKEN_RATIO = 10, 0.4, 0.1, 3.0
 DELETE_RUNS, DELETE_GAP = 20, 0.3
 
 

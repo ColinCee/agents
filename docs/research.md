@@ -47,6 +47,7 @@ These studies have weak spots: SkillsBench's length and count findings are confo
 | Saving every model answer under a hash of its full input let Cortex re-score a 27-minute bench in 28 seconds | Cortex, this machine |
 | An agent that overwrote a 1.7 KB fixture file by running the tests typed it back byte for byte from output it had printed, and passed the data check; at 122 KB, the no-skill runs that lost it showed, and `cleaning` went from undecided (18 of 20 kept) to promoted (13 of 20) | This repository, 14 October 2026 |
 | The same tidying skill on the same task measured x1.42 and then x1.59 the input tokens of the run without it, an hour apart: cost moves by about a sixth between runs of ten, so one run's ratio against a fixed limit can flip | This repository, 14 October 2026 |
+| A token limit relative to the run without the skill held back two skills that passed every check the plain run failed; that run's lower cost bought an unfinished job. The limit is now a cap against runaway cost (x3), and cost is reported | This repository, 14 October 2026 |
 
 ## Experiments and decisions
 
