@@ -34,7 +34,7 @@ Most are **commands**: they load only when you type their name (`/housekeeping`)
 | [housekeeping](skills/housekeeping/SKILL.md) | `/housekeeping` | A full pass in a safe order: what could be lost, code health, what is no longer used, documents. [Results](bench/housekeeping/README.md) |
 | [ui-decluttering](skills/ui-decluttering/SKILL.md) | `/ui-decluttering` | Redesigns a busy screen: one primary action, at most four choices in view, nothing unrelated. [Results](bench/ui-decluttering/README.md) |
 | [session-review](skills/session-review/SKILL.md) | `/session-review` | Reviews past agent sessions for corrections you keep repeating, and says where each fix belongs. [Results](bench/session-review/README.md) |
-| [deciding](skills/.experimental/deciding/SKILL.md) | `/deciding` | Decides from evidence: the question in one line, the ground truth, a fair repeated comparison, how sure. Experimental |
+| [deciding](skills/deciding/SKILL.md) | `/deciding` | Decides from evidence: the question in one line, the ground truth, a fair repeated comparison, how sure. [Results](bench/deciding/README.md) |
 
 Commands are measured as you use them: the run with the skill starts with `/<name>`, the run without it gets the same request in plain words. `disable-model-invocation` is read by Claude Code; other agents load these like any skill.
 
