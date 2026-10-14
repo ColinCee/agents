@@ -1,0 +1,18 @@
+[
+  {"query": "this sidebar is a mess, redesign it", "should_trigger": true},
+  {"query": "too many buttons on this page, I can't decide what to click", "should_trigger": true},
+  {"query": "the settings panel has decision fatigue, simplify it", "should_trigger": true},
+  {"query": "there are two main buttons competing on the checkout page, fix it", "should_trigger": true},
+  {"query": "declutter the dashboard header", "should_trigger": true},
+  {"query": "the card view shows stuff that has nothing to do with the card, clean it up", "should_trigger": true},
+  {"query": "I clicked the toggle thinking it was a link, the controls are confusing", "should_trigger": true},
+  {"query": "make the history page less overwhelming", "should_trigger": true},
+  {"query": "add a dark mode to the app", "should_trigger": false},
+  {"query": "the save button doesn't do anything, fix the bug", "should_trigger": false},
+  {"query": "make the landing page bolder and more exciting", "should_trigger": false},
+  {"query": "change the font to Inter across the site", "should_trigger": false},
+  {"query": "add a new export button to the reports page", "should_trigger": false},
+  {"query": "the page is slow to load, speed it up", "should_trigger": false},
+  {"query": "write tests for the sidebar component", "should_trigger": false},
+  {"query": "translate the UI into Spanish", "should_trigger": false}
+]

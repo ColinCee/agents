@@ -38,6 +38,7 @@ Not yet measured (`skills/.experimental/`):
 | Skill | What it does |
 |---|---|
 | [tidying](skills/.experimental/tidying/SKILL.md) | Tidies a repository after a stretch of work: lint, code and pages nothing reaches, stale documents, uncommitted work, old branches and data. Passes every check every time, but at x1.59 the tokens, over the x1.5 limit; see [results](bench/tidying/README.md) |
+| [ui-decluttering](skills/.experimental/ui-decluttering/SKILL.md) | Redesigns a cluttered screen so the user decides quickly: one primary action, few choices in view, nothing unrelated. Being measured |
 
 How they fit together:
 
