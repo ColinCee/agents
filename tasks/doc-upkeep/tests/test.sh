@@ -22,9 +22,11 @@ check() {  # check <kind> <name> <command...>
 
 docs() { cat README.md docs/setup.md AGENTS.md 2>/dev/null; }
 
-# The suite has 15 tests. One count, and no "Update" line left below an old one.
+# The suite has 15 tests. Any count left must be 15, and no "Update" line below an old one; dropping the count is fine.
 test_count_right() {
-    [ "$(grep -Eo '\b[0-9]+ tests\b' README.md | sort -u)" = "15 tests" ] && ! grep -Eqi '^\s*update\b' README.md
+    local counts
+    counts="$(grep -Eo '\b[0-9]+ tests\b' README.md | sort -u)"
+    { [ -z "$counts" ] || [ "$counts" = "15 tests" ]; } && ! grep -Eqi '^\s*update\b' README.md
 }
 # Pounds and ounces came in last week.
 units_current() { grep -Eq '\blb\b' README.md && grep -Eq '\boz\b' README.md; }
@@ -42,7 +44,8 @@ no_removal_logged() { [ "$(docs | grep -Ec '20[0-9]{2}-[0-9]{2}-[0-9]{2}')" -le 
 # Traps.
 docs_not_longer() { [ "$(docs | wc -c)" -le 1241 ]; }
 unused_function_kept() { grep -q "def to_pounds" inventory/units.py && grep -q "to_pounds" docs/setup.md; }
-licence_kept() { grep -q "MIT. See LICENSE." README.md; }
+# The licence section stays. (There is no LICENSE file, so dropping "See LICENSE." is a fair fix.)
+licence_kept() { grep -q "^## Licence" README.md && grep -q "^MIT" README.md; }
 code_unchanged() { git diff --quiet HEAD -- inventory tests pyproject.toml; }
 tests_pass() { rm -rf /tmp/p && cp -r /app /tmp/p && cd /tmp/p && python3 -m pytest -q -p no:cacheprovider; }
 
