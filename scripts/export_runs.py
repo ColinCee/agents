@@ -2,9 +2,9 @@
 
     python scripts/export_runs.py [--to DIR] [--apply]
 
-Reads Harbor's job folders in jobs/ and files each trial as
+Reads Harbor's job folders in jobs/ and files each trial, by test then side, as
 
-    runs/<test>/<date>/<side>/<time>-<trial>/
+    runs/<test>/<side>/<date>/<time>-<trial>/
 
 where <side> is no-skill, the skill's name, reference-solution or do-nothing. Only what a run says is kept
 (checks.txt, reward.txt, result.json, trajectory.json, agent.txt, exception.txt), not the copies of the test
@@ -43,7 +43,7 @@ def side_of(trial: Path) -> str:
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="File benchmark runs into the private agents-bench repository by test, date and side."
+        description="File benchmark runs into the private agents-bench repository by test, side and date."
     )
     parser.add_argument(
         "--to",
@@ -72,7 +72,7 @@ def main() -> int:
                 json.loads((trial / "result.json").read_text(encoding="utf-8")).get("started_at") or "0000-00-00T00:00"
             )
             day, clock = started[:10], started[11:16].replace(":", "")
-            target = args.to / test / day / side / f"{clock}-{trial.name.split('__')[-1]}"
+            target = args.to / test / side / day / f"{clock}-{trial.name.split('__')[-1]}"
             if target.exists():
                 skipped += 1
                 continue
