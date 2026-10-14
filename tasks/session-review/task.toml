@@ -1,0 +1,47 @@
+schema_version = "1.1"
+# Only these leave the agent's container. Grading happens in a fresh one, so nothing the agent
+# changed outside them (a replaced tool, a process left running) can touch the score.
+artifacts = [
+  "/tmp/report.md",
+  { source = "/home/agent/code" },
+  "/home/agent/.claude/AGENTS.md",
+]
+
+[task]
+name = "colincee/session-review"
+description = "Review two weeks of invented agent sessions for corrections the user keeps repeating, and say where each fix belongs: the user-level file, one project, or a skill."
+authors = []
+keywords = ["skills", "session-review"]
+
+[metadata]
+difficulty = "medium"
+category = "software-engineering"
+tags = ["skills"]
+
+[verifier]
+timeout_sec = 300.0
+environment_mode = "separate"
+network_mode = "no-network"
+
+[agent]
+timeout_sec = 1200.0
+# Not root: an escape from the container starts with fewer rights.
+user = "agent"
+# While the agent works it can reach Anthropic and nothing else: not this repository's
+# grading scripts on GitHub, and not anywhere a leaked sign-in could be sent.
+network_mode = "allowlist"
+allowed_hosts = ["api.anthropic.com", "*.anthropic.com", "claude.ai", "*.claude.ai"]
+
+[environment]
+build_timeout_sec = 900.0
+cpus = 1
+memory_mb = 2048
+storage_mb = 10240
+gpus = 0
+mcp_servers = []
+
+[verifier.env]
+
+[environment.env]
+
+[solution.env]
