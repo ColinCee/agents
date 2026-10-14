@@ -1,0 +1,11 @@
+[project]
+name = "cards"
+version = "0.2.0"
+requires-python = ">=3.11"
+
+[tool.ruff]
+line-length = 120
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
