@@ -124,6 +124,7 @@ For step 3:
 - **Plant the faults, and plant traps.** Half the checks are things a careless agent gets wrong (the file it must not delete), taken from mistakes that really happened.
 - **The task text gives nothing away.** It does not name a planted fault or a check.
 - **Check what the agent did, not only what it left.** An agent that wipes data and rewrites it from memory leaves the same end state as one that never touched it; it was seen in 4 of 10 runs. Put checks on the commands in `tasks/<name>/trajectory_checks.json`, and fix them before the run that decides anything.
+- **Make the owner's data too large to retype.** Fixture data that fits in one tool output can be typed back after a wipe, and the end-state check passes it; seen on the cleaning and housekeeping tasks. Give it more than one output shows (about 100 KB).
 - **Check that the skill was used.** A run "with the skill" in which the agent never read `SKILL.md` is a run without it.
 - **Count tokens, time and turns** as well as passes. A skill that passes one more check at twice the cost may not be worth it.
 - **Drop a check that passes without the skill.** It costs a run and says nothing.

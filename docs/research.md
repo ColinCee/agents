@@ -45,6 +45,7 @@ These studies have weak spots: SkillsBench's length and count findings are confo
 | Three runs per task is too few; results must be kept per model and agent | Downstream utility study |
 | Harbor (sandbox harness, Terminal-Bench's authors) and Inspect (UK AI Security Institute) run real agents in containers and grade the end state; tracing tools (Langfuse, Phoenix, Braintrust) do not | GitHub, vendor docs |
 | Saving every model answer under a hash of its full input let Cortex re-score a 27-minute bench in 28 seconds | Cortex, this machine |
+| An agent that overwrote a 1.7 KB fixture file by running the tests typed it back byte for byte from output it had printed, and passed the data check; at 122 KB, the no-skill runs that lost it showed, and `cleaning` went from undecided (18 of 20 kept) to promoted (13 of 20) | This repository, 14 October 2026 |
 
 ## Experiments and decisions
 
