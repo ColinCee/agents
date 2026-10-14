@@ -2,7 +2,7 @@
 name: housekeeping
 description: Runs a full housekeeping pass on a repository in a safe order: what could be lost, code health, what is no longer used, documents. Use when asked for housekeeping, to tidy or clean up a project, or to get it ready to hand over.
 license: MIT
-compatibility: Requires git and Python 3.11 or later.
+compatibility: Requires git and Node 22 or later.
 disable-model-invocation: true
 ---
 
@@ -14,7 +14,7 @@ Leave the repository smaller, current and passing its own checks, without losing
 
 2. **What could be lost.** List what git does not hold (`git status --short --ignored`), inside the project and in the home folder, and search the tests, scripts and tools for the paths they write to. Run every test and tool on a copy of the project, with its home folder pointed somewhere empty, never in place. Anything that can write to the owner's data goes at the top of the report.
 
-3. **What is in flight.** Uncommitted changes, stashes, branches and worktrees: say what each is before touching anything; someone's unfinished work looks like mess. For a large repository, `python scripts/survey.py <repo>` from this skill's folder lists them, with sizes (`--also <folder>` for data kept outside it, `--json` for JSON). It only reports.
+3. **What is in flight.** Uncommitted changes, stashes, branches and worktrees: say what each is before touching anything; someone's unfinished work looks like mess. For a large repository, `node scripts/survey.mjs <repo>` from this skill's folder lists them, with sizes (`--also <folder>` for data kept outside it, `--json` for JSON). It only reports.
 
 4. **Is the code healthy.** Run the project's own lint, format, type and test commands; do not install a tool it does not use. Fix what they mark as safe. Then search for what no command reports: code nothing calls (a name used only by a string, a route table or a plugin loader is still used), tests that cannot fail, keys or secrets committed to the code.
 

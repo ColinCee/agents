@@ -3,7 +3,7 @@ name: session-review
 description: Reviews past coding-agent sessions for corrections the user keeps repeating, and says where each fix belongs so it stops coming back. Use when asked what the user keeps correcting, or to learn from past sessions or find new skills.
 license: MIT
 disable-model-invocation: true
-compatibility: Requires Python 3.11 or later.
+compatibility: Requires Node 22 or later.
 ---
 
 Every correction the user typed twice is an instruction that lives in the wrong place, or nowhere. Find them, count them, and say where each belongs.
@@ -13,7 +13,7 @@ Every correction the user typed twice is an instruction that lives in the wrong 
 1. **List the prompts.** From this skill's folder:
 
    ```
-   python scripts/prompts.py --since <date>
+   node scripts/prompts.mjs --since <date>
    ```
 
    It reads Claude Code's and Codex's session folders by default; pass another agent's folder as an argument. Default period: the last two weeks. Secrets are already masked; never copy one back from anywhere else.

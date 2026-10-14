@@ -53,8 +53,8 @@ A skill that exists already is listed here and not rewritten. None of these has 
 [home/AGENTS.md](home/AGENTS.md) is how I want every coding agent to work with me, in every project: rules I had to give more than once. It is mine, not a skill; copy what suits you. To install it as Claude Code's and Codex's user-level instructions:
 
 ```bash
-python scripts/install_home.py           # what would change
-python scripts/install_home.py --apply   # install, keeping a backup of anything replaced
+npm run install-home              # what would change
+npm run install-home -- --apply   # install, keeping a backup of anything replaced
 ```
 
 ## lease: one machine, one heavy job at a time
@@ -74,7 +74,7 @@ lease take --name batch --gb 10 --pid 1234 --wait 600 --json   # from a program:
 
 - **Scripts report by default.** Nothing is deleted or written unless you pass a flag that says so, and the skill tells the agent to ask you first.
 - **No paths, names or accounts of the author's.** Scripts take arguments.
-- **Python 3.11 or later, standard library only**, unless the skill's `compatibility` line says otherwise.
+- **Node 22 or later, built-in modules only.** Scripts are TypeScript in `src/`, compiled to readable `.mjs` with plain `tsc`; `npx skills add` already needs Node, so nothing else is installed.
 - **No agent's own tools are named.** Instructions say what to do, not which tool does it.
 - **Tested before it is added.** Each skill's results page says what the test asks, the real incident behind it, and how it scored with and without the skill.
 
@@ -85,7 +85,7 @@ Installing a skill lets its scripts run on your machine. Read them first: they a
 The rules are in [AGENTS.md](AGENTS.md): what earns a place, how `SKILL.md` and scripts are written, and how a skill is tested. Check a skill against them with:
 
 ```bash
-python scripts/validate.py
+npm run check
 ```
 
 ## Licence

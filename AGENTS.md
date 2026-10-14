@@ -2,7 +2,7 @@
 
 Skills here are in the open [Agent Skills](https://agentskills.io/specification) format and are installed with `npx skills add`. Any agent may load them, on any operating system, on a machine that is not the author's. Every rule below follows from that.
 
-`scripts/validate.py` checks the rules that a program can check. Run it before every commit; CI runs it too.
+`npm run validate` checks the rules that a program can check; `npm run check` runs it with the type-check, lint, tests and build. Run it before every commit; CI runs it too.
 
 ## What earns a place
 
@@ -34,7 +34,8 @@ skills/<name>/
 - Every file in `scripts/`, `references/` and `assets/` is named in `SKILL.md` with its path and when to use it. No file is reached only through another reference.
 - Paths are relative to the skill folder and use forward slashes.
 - Each skill is listed in the table in `README.md`.
-- `home/AGENTS.md` is the author's own user-level instructions, not a skill. The rules for skills do not apply to it; `scripts/install_home.py` installs it.
+- `home/AGENTS.md` is the author's own user-level instructions, not a skill. The rules for skills do not apply to it; `npm run install-home -- --apply` installs it.
+- `src/` holds the TypeScript source of what ships; `tools/` the repository's own tools; `tests/` their tests.
 
 ## SKILL.md
 
@@ -43,7 +44,7 @@ skills/<name>/
 - `name`: lowercase letters, digits and single hyphens, 64 characters at most. Says the activity (`tidying`), not `helper` or `utils`.
 - `description`: what the skill does, then `Use when ...` with the words a user would really say. Third person. Aim for 250 characters or fewer; 1024 is the limit. This is the only text the agent sees when deciding to load the skill. In one large test agents loaded an installed skill on only 41% of the tasks that needed it, and the usual cause was the description.
 - `license`: `MIT`.
-- `compatibility`: only what must be on the machine (`Requires git and Python 3.11 or later.`). Leave it out when the skill is instructions only.
+- `compatibility`: only what must be on the machine (`Requires git and Node 22 or later.`). Leave it out when the skill is instructions only.
 
 **Body.** 500 lines at most, and shorter is better: it is all loaded whenever the skill is used.
 
@@ -68,12 +69,13 @@ skills/<name>/
 
 Write a script only for work that is the same every time: counting, parsing, checking, surveying. Judgement stays in `SKILL.md`. A script costs no context until its output is read, and it gives the same answer on every run.
 
-**Language: Python, standard library only.** One language keeps the repository checkable with one set of tools. Python is already on most machines an agent works on, and its standard library covers files, JSON, subprocesses and HTTP without an install step. Node is not used for scripts: `npx skills` needs it to install a skill, but that says nothing about the machine the skill later runs on.
+**Language: TypeScript, one stack for the whole repository.** `npx skills add` needs Node to install a skill, so Node is on every machine a skill reaches; the same toolchain as the author's other repositories (npm, strict `tsc`, Biome, Vitest) checks all of it.
 
-- **Python 3.11 or later**, the oldest version that still gets security fixes. Raise it when that version changes.
-- When a package is truly needed, declare it in the script with [inline metadata](https://packaging.python.org/en/latest/specifications/inline-script-metadata/) and exact versions, run it with `uv run`, and say `uv` in `compatibility`. No `requirements.txt`, no install step.
-- When an existing tool does the job, call it with an exact version (`uvx ruff@0.17.0`, `npx eslint@9.0.0`) in place of writing a script.
-- Runs the same on Windows, macOS and Linux: `pathlib`, `encoding="utf-8"` on every file and subprocess, no shell commands.
+- **Source in `src/`, never in `skills/`.** `npx skills add` copies the whole skill folder, so a source file there would ship. A script that ships is `src/skills/<skill>/scripts/<name>.mts`; `npm run build` compiles it with plain `tsc` (no bundler, so the output stays readable before anyone trusts it) to `skills/<skill>/scripts/<name>.mjs`. Commit the `.mjs`: installing runs no build. CI fails when it no longer matches its source.
+- **Node 22 or later, built-in modules only** (`node:fs`, `node:child_process` ...). A shipped script has no `node_modules`; say `Requires Node 22 or later.` in `compatibility`.
+- **Repository tools** (validate, bench, export, install) are `tools/*.ts`, run with `tsx` through `npm run`. They may use the dev dependencies.
+- When an existing tool does the job, call it with an exact version (`npx eslint@9.0.0`) in place of writing a script.
+- Runs the same on Windows, macOS and Linux: `node:path`, UTF-8 everywhere, no shell commands, and `windowsHide: true` on every child process.
 
 **Made for an agent to run.**
 
@@ -101,7 +103,7 @@ A skill is tested in four steps, the cheapest first. Each step has a time budget
 
 | Step | Budget | When |
 |---|---|---|
-| 1. Checks on the text: `scripts/validate.py` | seconds | every change |
+| 1. Checks on the text: `npm run validate` | seconds | every change |
 | 2. Triggering: `evals/triggers.json`, about twenty queries, half that should load the skill and half that are close but should not | about a minute | when the description changes |
 | 3. Tasks: `skills/<skill>/task/` in the private `agents-bench` repository, a fixture with planted faults, checks a script can decide, five runs with the skill and five without, on a small fast model | under five minutes | when the skill's body changes |
 | 4. The same tasks on the larger models | as long as it takes | when the user is away; never a gate on the next edit |
@@ -141,7 +143,7 @@ What a script cannot decide (is the report clear, was the change tasteful) is re
 ## Before committing
 
 ```bash
-python scripts/validate.py
+npm run check
 ```
 
 When a skill's body or its task changed, and Docker is free:
@@ -150,15 +152,7 @@ When a skill's body or its task changed, and Docker is free:
 python scripts/bench.py <skill>
 ```
 
-It runs the task both ways side by side, says how long it took, and marks each check that does not tell the two apart. Then file the runs in the private repository and commit it there: `python scripts/export_runs.py --apply`. A checklist skill has no task of its own: score it on each focused skill's test with `--task <skill>`, and report each task separately. With nothing changed it scores the saved runs and starts no agent.
-
-```bash
-uvx ruff@0.17.0 check .
-```
-
-```bash
-uvx ruff@0.17.0 format --check .
-```
+It runs the task both ways side by side, says how long it took, and marks each check that does not tell the two apart. Then file the runs in the private repository and commit it there: `python scripts/export_runs.py --apply`. A checklist skill has no task of its own: score it on each focused skill's test with `--task <skill>`, and report each task separately. With nothing changed it scores the saved runs and starts no agent. (`bench` and `export_runs` are being ported to `tools/`.)
 
 Commit messages say what changed and why, in a plain sentence.
 

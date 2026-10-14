@@ -14,11 +14,22 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        python: ["3.11", "3.14"]
+        node: ["22", "24"]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.0.0
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
+      - run: npm run validate
+      # The scripts that ship inside skills are compiled from src/; the committed output must match the source.
+      - run: npm run build && git diff --exit-code -- skills
+      # Repo tools not yet ported from Python.
       - uses: astral-sh/setup-uv@v10.3.0
-      - run: uv run --no-project --python ${{ matrix.python }} scripts/validate.py
-      - run: uvx ruff@0.17.0 check .
-      - run: uvx ruff@0.17.0 format --check .
+      - run: uvx ruff@0.17.0 check scripts
+      - run: uvx ruff@0.17.0 format --check scripts
