@@ -36,7 +36,7 @@ Not yet measured (`skills/.experimental/`):
 
 | Skill | What it does |
 |---|---|
-| [tidying](skills/.experimental/tidying/SKILL.md) | Tidies a repository after a stretch of work: lint, code and pages nothing reaches, stale documents, uncommitted work, old branches and data. Ahead on every check that differs and behind on none, but at x1.42 the input tokens, over the rule's x1.25; see [results](bench/tidying/) |
+| [tidying](skills/.experimental/tidying/SKILL.md) | Tidies a repository after a stretch of work: lint, code and pages nothing reaches, stale documents, uncommitted work, old branches and data. Passes every check every time, but at x1.59 the tokens, over the x1.5 limit; see [results](bench/tidying/README.md) |
 
 How they fit together:
 

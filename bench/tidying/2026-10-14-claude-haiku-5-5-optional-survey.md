@@ -1,3 +1,5 @@
+> Superseded by [2026-10-14-claude-haiku-5-5-deciding.md](2026-10-14-claude-haiku-5-5-deciding.md), the fresh deciding run. Kept as the record of this run.
+
 # tidying on claude-haiku-5-5, 2026-10-14
 
 Task `tasks/tidying`, agent Claude Code, batches of 5 each way run side by side. Key `d9f0e7879e55/eca30bb00f0d`.
