@@ -13,4 +13,8 @@ def test_unknown_route():
 
 
 def test_routes_are_named():
-    assert set(ROUTES) == {"import", "export"}
+    assert set(ROUTES) == {"import", "export", "report"}
+
+
+def test_report_route():
+    assert dispatch("report", [{"name": "nail", "grams": 500}]) == "1 lines, 0.5 kg in all"

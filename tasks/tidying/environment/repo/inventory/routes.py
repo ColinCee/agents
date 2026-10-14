@@ -3,6 +3,7 @@ from importlib import import_module
 ROUTES = {
     "import": "inventory.handlers:handle_import",
     "export": "inventory.handlers:handle_export",
+    "report": "inventory.handlers:handle_report",
 }
 
 

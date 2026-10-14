@@ -10,7 +10,7 @@ RUN apt-get update && apt-get install -y curl git python3 python3-pip nodejs npm
 RUN npm install -g @anthropic-ai/claude-code@2.1.296
 
 COPY repo/ /app/
-COPY build_fixture.sh /tmp/build_fixture.sh
+COPY build_fixture.sh reorder.py /tmp/
 RUN bash /tmp/build_fixture.sh && rm /tmp/build_fixture.sh
 
 # The agent works as an ordinary user who owns the project and nothing else.
