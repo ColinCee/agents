@@ -27,7 +27,7 @@ This is about the health of what is there. Whether a working feature is still ne
 
 3. **Run the project's own checks.** Lint, format check, type check, tests: the ones the project declares (`pyproject.toml`, `package.json`, a `Makefile`, CI config). Do not install a tool the project does not already use. If a check cannot run, say so in the report instead of skipping it quietly.
 
-4. **Look for what nothing uses.** Functions, constants, files, dependencies, config keys and test fixtures with no reference left. Check each one by searching before removing it: a name used only by a string, a route table or a plugin loader is still used.
+4. **Look for what nothing uses.** Functions, constants, files, dependencies, config keys and test fixtures with no reference left. Check each one by searching before removing it: a name used only by a string, a route table or a plugin loader is still used, so its code stays. Then list every route, page and command the app serves and check that something reaches each one (a link, the README, a client, a log of use). One that is routed and tested but that nothing reaches is a finding: name it for the user's yes.
 
 5. **Read the documents against the code.** Numbers (test counts, sizes), file paths, command names, "next steps" that are done, things described that were since removed. Correct them in place. Do not add new documents. Cut what a level above already says: a project document need not repeat the project's `AGENTS.md`, and that need not repeat the user's own instructions. A rule found in two places belongs in the higher one.
 
@@ -73,4 +73,4 @@ From real corrections:
 
 - Start by listing the uncommitted changes and saying what each one is; someone's unfinished work looks like mess.
 - A test that still passes when the behaviour it names is broken protects nothing. List it to fix.
-- A page, command or setting that is linted, typed and tested can still be unused. Whether it is needed is the `cleaning` skill's question; here, only note it.
+- A page, command or setting that is linted, typed and tested can still be unused: an unused page survived a pass that checked only files. Name it; whether to remove it is the user's call (the `cleaning` skill weighs evidence of use).

@@ -1,3 +1,5 @@
+> Superseded by [2026-10-14-claude-haiku-5-5-real-faults.md](2026-10-14-claude-haiku-5-5-real-faults.md): the task was rebuilt from real corrections. Kept as the record of this run.
+
 # tidying on Claude Haiku 5.5, 13 October 2026
 
 The skill was named `housekeeping` when this was run.
