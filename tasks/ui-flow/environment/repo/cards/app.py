@@ -4,7 +4,7 @@ import re
 from urllib.parse import parse_qs
 from wsgiref.simple_server import make_server
 
-from cards import store, views
+from cards import history, store, views
 
 
 def app(environ, start_response):
@@ -18,7 +18,7 @@ def app(environ, start_response):
     if route == "/":
         html = views.open_cards()
     elif route == "/history":
-        html = views.history()
+        html = history.history()
     elif m := re.fullmatch(r"/card/(\d+)", route):
         html = views.card(int(m[1]))
     else:

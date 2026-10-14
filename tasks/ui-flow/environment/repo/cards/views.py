@@ -14,10 +14,6 @@ button { display: block; width: 100%; margin: .4rem 0; padding: .5rem; }
 .quiet { background: none; border: 1px solid #ccc; }
 </style>"""
 
-SHOWN_IN_HISTORY = ("added", "booked", "not_real")
-LABEL = {"added": "Added to your calendar", "booked": "Already booked", "not_real": "Not real"}
-
-
 def page(title: str, body: str) -> str:
     nav = '<nav><a href="/">Open cards</a><br><a href="/history">History</a></nav>'
     return f"<!doctype html><title>{escape(title)}</title>{STYLE}{nav}<main>{body}</main>"
@@ -44,14 +40,3 @@ def card(card_id: int) -> str:
     body = f'<h1>{escape(c["title"])}</h1><p>{escape(c["when"])}</p><blockquote>{escape(c["quote"])}</blockquote>'
     return page(c["title"], body).replace("</main>", "</main>" + aside)
 
-
-def history() -> str:
-    rows = "".join(
-        f"""<li>{escape(c["title"])}: {LABEL[c["status"]]}
-<form method="post" action="/card/{c["id"]}/status" style="display:inline">
-  <button class="quiet" name="status" value="open" style="display:inline;width:auto">Undo</button>
-</form></li>"""
-        for c in store.load()
-        if c["status"] in SHOWN_IN_HISTORY
-    )
-    return page("History", f"<h1>History</h1><ul>{rows or '<li>Nothing yet.</li>'}</ul>")
