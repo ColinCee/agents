@@ -82,11 +82,11 @@ def free_memory_gb() -> float | None:
     return None
 
 
-def find(skill: str, task_name: str) -> tuple[Path, Path]:
+def find(skill: str, task_name: str, plain: bool = False) -> tuple[Path | None, Path]:
     homes = [ROOT / "skills" / skill, ROOT / "skills" / ".experimental" / skill]
-    folder = next((h for h in homes if (h / "SKILL.md").is_file()), None)
+    folder = None if plain else next((h for h in homes if (h / "SKILL.md").is_file()), None)
     task = ROOT / "tasks" / task_name
-    if folder is None:
+    if folder is None and not plain:
         print(f"Error: no skill named {skill!r} under skills/ or skills/.experimental/.", file=sys.stderr)
         sys.exit(2)
     if not (task / "task.toml").is_file():
@@ -340,6 +340,11 @@ def main() -> int:
     )
     parser.add_argument("--json", action="store_true", help="print JSON instead of text")
     parser.add_argument(
+        "--plain",
+        action="store_true",
+        help="run only the side without a skill; SKILL is then a task name (a baseline before any skill exists)",
+    )
+    parser.add_argument(
         "--min-free-gb",
         type=float,
         default=MIN_FREE_GB,
@@ -363,14 +368,16 @@ def main() -> int:
         }
         note = f"Scored from saved runs: `{args.existing[0].name}` and `{args.existing[1].name}`."
     else:
-        folder, task = find(args.skill, task_name)
+        folder, task = find(args.skill, task_name, args.plain)
         checks = load_trajectory_checks(task)
         # The run without the skill depends only on the task, so editing the skill does not repeat it.
         # The harness version and the way the agent is run decide the result too.
         setup = f"{harbor_version()}\nweb search off\n"
-        keys = {"without": key_of([task], args.model + setup), "with": key_of([folder, task], args.model + setup)}
-        key = f"{keys['without']}/{keys['with']}"
-        sides = {"without": [], "with": []}
+        keys = {"without": key_of([task], args.model + setup)}
+        if folder:
+            keys["with"] = key_of([folder, task], args.model + setup)
+        key = "/".join(keys.values())
+        sides = {"without": [], "with": []} if folder else {"without": []}
         started = time.monotonic()
         ran = False
         for batch in range(math.ceil(args.runs / args.batch)):
@@ -424,13 +431,24 @@ def main() -> int:
                     return 1
             for side, job in jobs.items():
                 sides[side] += read_job(job, checks)["trials"]
-            if args.until_decided and not summarise(sides["without"], sides["with"])["verdict"].startswith("undecided"):
+            if (
+                folder
+                and args.until_decided
+                and not summarise(sides["without"], sides["with"])["verdict"].startswith("undecided")
+            ):
                 break
         took = time.monotonic() - started if ran else None
         if not ran:
             print(f"Nothing has changed since key {key}: scoring the saved runs, no agent started.", file=sys.stderr)
         note = f"Task `tasks/{task_name}`, agent Claude Code, batches of {args.batch} each way run side by side. Key `{key}`."
 
+    if args.plain:
+        trials = sides["without"]
+        names = sorted({name for t in trials for name in t["checks"]})
+        print(f"# {task_name}, no skill, on {args.model}: {len(trials)} runs\n\n| Check | Passed |\n|---|---|")
+        for name in names:
+            print(f"| {name} | {sum(t['checks'].get(name, False) for t in trials)}/{len(trials)} |")
+        return 0
     summary = summarise(sides["without"], sides["with"])
     summary["took_seconds"] = took
     if args.json:
