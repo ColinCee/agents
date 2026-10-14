@@ -1,0 +1,51 @@
+[
+  {
+    "title": "Dentist",
+    "date": "2026-10-13",
+    "start": "09:30",
+    "end": "10:00",
+    "status": "confirmed"
+  },
+  {
+    "title": "Team standup",
+    "date": "2026-10-13",
+    "start": "10:15",
+    "end": "10:30",
+    "status": "confirmed"
+  },
+  {
+    "title": "Lunch with Priya",
+    "date": "2026-10-13",
+    "start": "12:30",
+    "end": "13:30",
+    "status": "tentative"
+  },
+  {
+    "title": "Gym",
+    "date": "2026-10-14",
+    "start": "07:00",
+    "end": "08:00",
+    "status": "confirmed"
+  },
+  {
+    "title": "Parcel collection",
+    "date": "2026-10-15",
+    "start": "",
+    "end": "",
+    "status": "tentative"
+  },
+  {
+    "title": "Interview, second round",
+    "date": "2026-10-16",
+    "start": "14:00",
+    "end": "15:00",
+    "status": "confirmed"
+  },
+  {
+    "title": "Flat viewing",
+    "date": "2026-10-17",
+    "start": "11:00",
+    "end": "11:30",
+    "status": "tentative"
+  }
+]

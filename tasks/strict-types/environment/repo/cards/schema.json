@@ -1,0 +1,35 @@
+{
+  "type": "object",
+  "required": [
+    "title",
+    "date",
+    "start",
+    "end",
+    "status"
+  ],
+  "properties": {
+    "title": {
+      "type": "string"
+    },
+    "date": {
+      "type": "string",
+      "description": "YYYY-MM-DD, or empty"
+    },
+    "start": {
+      "type": "string",
+      "description": "HH:MM, or empty"
+    },
+    "end": {
+      "type": "string",
+      "description": "HH:MM, or empty"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "confirmed",
+        "tentative",
+        "unknown"
+      ]
+    }
+  }
+}
