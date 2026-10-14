@@ -12,7 +12,9 @@
     "fix": "biome check --write .",
     "test": "vitest run",
     "validate": "tsx tools/validate.ts",
-    "check": "npm run typecheck && npm run lint && npm test && npm run validate && npm run build && git diff --exit-code -- skills"
+    "build:lease": "tsc -p tsconfig.lease.json",
+    "install-lease": "npm run build:lease && tsx tools/install-lease.ts",
+    "check":"npm run typecheck && npm run lint && npm test && npm run validate && npm run build && git diff --exit-code -- skills"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.15",
