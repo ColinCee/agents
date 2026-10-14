@@ -52,10 +52,10 @@ def find(skill: str) -> tuple[Path, Path]:
     return folder, task
 
 
-def key_of(folder: Path, task: Path, model: str, runs: int) -> str:
+def key_of(folders: list[Path], model: str, runs: int) -> str:
     """A hash of everything that decides the result. Line endings are ignored so every platform agrees."""
     digest = hashlib.sha256(f"{model}\n{runs}\n".encode())
-    for base in (folder, task):
+    for base in folders:
         for path in sorted(p for p in base.rglob("*") if p.is_file() and "__pycache__" not in p.parts):
             if "evals" in path.relative_to(base).parts:
                 continue
@@ -75,6 +75,7 @@ def read_job(job: Path) -> dict:
     for trial in sorted(p for p in job.iterdir() if p.is_dir() and (p / "result.json").is_file()):
         result = json.loads((trial / "result.json").read_text(encoding="utf-8"))
         usage = result.get("agent_result") or {}
+        served = sorted((usage.get("model_usage") or {}).keys())
         checks_file = trial / "verifier" / "checks.txt"
         lines = (
             [line.split() for line in checks_file.read_text(encoding="utf-8").splitlines()]
@@ -87,6 +88,7 @@ def read_job(job: Path) -> dict:
         trials.append(
             {
                 "trial": trial.name,
+                "served_models": served,
                 "checks": checks,
                 "passed": sum(checks.values()),
                 "input_tokens": usage.get("n_input_tokens"),
@@ -136,6 +138,7 @@ def summarise(without: dict, with_skill: dict) -> dict:
             "setup_seconds_mean": mean([t["setup_seconds"] for t in trials]),
             "skill_read": sum(t["skill_read"] for t in trials),
             "wall_seconds": side["wall_seconds"],
+            "served_models": sorted({m for t in trials for m in t["served_models"]}),
         }
     return {"checks_total": len(names), "sides": sides, "checks": table}
 
@@ -161,6 +164,7 @@ def as_markdown(skill: str, model: str, summary: dict, took: float | None, note:
         f"| Agent time, mean | {num(a['agent_seconds_mean'])} s | {num(b['agent_seconds_mean'])} s |",
         f"| Set-up time per run, mean | {num(a['setup_seconds_mean'])} s | {num(b['setup_seconds_mean'])} s |",
         f"| Skill read | | {b['skill_read']} of {b['trials']} |",
+        f"| Model actually served | {', '.join(a['served_models']) or 'n/a'} | {', '.join(b['served_models']) or 'n/a'} |",
         "",
         "| Check | Without | With | Tells them apart |",
         "|---|---|---|---|",
@@ -225,8 +229,10 @@ def main() -> int:
         note = f"Scored from saved runs: `{jobs['without'].name}` and `{jobs['with'].name}`."
     else:
         folder, task = find(args.skill)
-        key = key_of(folder, task, args.model, args.runs)
-        jobs = {side: JOBS / f"{args.skill}-{args.model}-{key}-{side}" for side in ("without", "with")}
+        # The run without the skill depends only on the task, so editing the skill does not repeat it.
+        keys = {"without": key_of([task], args.model, args.runs), "with": key_of([folder, task], args.model, args.runs)}
+        jobs = {side: JOBS / f"{args.skill}-{args.model}-{keys[side]}-{side}" for side in ("without", "with")}
+        key = f"{keys['without']}/{keys['with']}"
         missing = [side for side, job in jobs.items() if args.force or not complete(job, args.runs)]
         note = f"Task `tasks/{args.skill}`, agent Claude Code, {args.runs} runs each way. Key `{key}`."
         if missing and args.replay:

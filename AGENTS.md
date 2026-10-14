@@ -106,6 +106,14 @@ A skill is tested in four steps, the cheapest first. Each step has a time budget
 - **Every run reports how long it took,** so a check that is getting slower is seen.
 - **A task earns its place by telling two things apart:** with the skill and without it, or one version and the next. One that scores the same either way is shelved.
 
+**The decision rule, fixed before any run.** A skill moves out of `skills/.experimental/` when, on at least one model, with at least ten runs each way:
+
+- it is ahead on some check by at least four runs in ten (6 of 10 without, 10 of 10 with, or better),
+- it is behind on no check by more than one run in ten,
+- and it costs no more than a quarter more input tokens.
+
+It is deleted when twenty runs each way show no check ahead by three runs in ten. Both arms run in the same job, at the same time, on the same versions; results from different days are never compared. Change this rule only between skills, never to rescue one.
+
 For step 3:
 
 - **Lock the task down.** In `task.toml`: the agent runs as an ordinary user (`[agent] user`), reaches Anthropic and nothing else (`network_mode = "allowlist"`), and is graded in a fresh container with no network (`[verifier] environment_mode = "separate"`) that receives only the declared `artifacts`. The grading script never enters the agent's container, and this repository is public, so open internet would let an agent read it. The fixture's git history holds the faults, never a later commit that fixes them, and the build leaves nothing else on the disk. Copy `tasks/cleaning/task.toml`.
