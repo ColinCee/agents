@@ -51,6 +51,7 @@ housekeeping ──► safeguarding   what could be lost
 Benchmark tasks without a skill:
 
 - `tasks/strict-types`: shelved. Plain Haiku types the schema correctly in 8 of 10 runs ([results](bench/strict-types/)); too little room for a skill.
+- `tasks/ui-flow`: shelved. A new choice on a card page must leave the card somewhere (History, with undo); plain Haiku does it in 10 of 10 runs, even with History in its own module ([results](bench/ui-flow/)).
 - `tasks/experiment-design`: shelved. Plain Haiku audits the unfair comparison correctly in 5 of 5 runs ([results](bench/experiment-design/)); the next version asks the agent to build the comparison.
 
 ## Skills of other people's
