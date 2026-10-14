@@ -1,6 +1,6 @@
 ---
 name: deciding
-description: Makes a decision from evidence: states the question, checks what is already known, runs a fair comparison when that is not enough, and says how sure the answer is. Use when asked which option is better, to pick a default, or to research then decide.
+description: Decides between options from evidence, not first impressions: one-line question, ground truth, a fair repeated comparison, how sure. Use when asked which option is better, which to make the default or to switch to, or whether a change helps.
 license: MIT
 ---
 
