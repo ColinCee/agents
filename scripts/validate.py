@@ -12,6 +12,7 @@ Needs Python 3.11 or later. Uses only the standard library.
 import argparse
 import ast
 import json
+import os
 import re
 import subprocess
 import sys
@@ -339,11 +340,14 @@ def check(root: Path) -> Report:
             report.error("README.md", f"does not list {skill.name}; add a row to the table of skills")
     # Harbor copies a task from the working folder, not from git, so a file saved with Windows line
     # endings reaches the container as is: `import os\r` matches no sed pattern and a shell script fails.
-    tasks = root / "tasks"
-    for path in sorted(tasks.rglob("*")) if tasks.is_dir() else []:
-        if path.is_file() and "__pycache__" not in path.parts and b"\r\n" in path.read_bytes():
+    # The tests are in the private agents-bench repository, when it is checked out beside this one.
+    bench = Path(os.environ.get("AGENTS_BENCH") or root.parent / "agents-bench")
+    tests = sorted(bench.glob("*/task")) + sorted(bench.glob("archive/*/task")) if bench.is_dir() else []
+    for path in (p for test in tests for p in sorted(test.rglob("*"))):
+        caches = {"__pycache__", ".ruff_cache", ".pytest_cache"}
+        if path.is_file() and not caches & set(path.parts) and b"\r\n" in path.read_bytes():
             report.error(
-                path.relative_to(root).as_posix(),
+                f"agents-bench/{path.relative_to(bench).as_posix()}",
                 "has Windows line endings (CRLF); save it with LF, as a container reads it",
             )
     return report

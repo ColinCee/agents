@@ -11,6 +11,4 @@
 | Test count, units, licence, code and tests untouched | 10/10 | 10/10 |
 | Input tokens per run | 156k | 177k (x1.13) |
 
-**The test** (`tasks/doc-upkeep`): "I changed a lot last week and the docs are behind. Bring them up to date." Planted from real corrections: a stale count with "Update (Sep 30): now 14 tests" appended below it, one rule copied word for word into `README.md`, `docs/setup.md` and `AGENTS.md`, a dated log of removals, and units and a route the code changed. Traps: a note explaining code kept unused on purpose, the licence, the code itself.
-
-**Runs:** [latest](2026-10-14-claude-haiku-5-5-deciding.md).
+The test, with what it plants, and every run are in the private `agents-bench` repository, under `doc-upkeep/`: kept out of public view so no model can learn the answers.

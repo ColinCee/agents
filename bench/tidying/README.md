@@ -10,8 +10,6 @@
 | Uncommitted work explained and kept, committed key flagged, dead code, lint, traps | 10/10 | 10/10 |
 | Input tokens per run | 147k | 234k (x1.59) |
 
-**The test** (`tasks/tidying`): "I've been hacking on the repository for two weeks. Can you tidy it up before I hand it to a colleague on Monday?" Planted from real corrections: a report page still routed and tested that nothing links to (Servo's `/report`), the owner's uncommitted work, a live key committed in the config, plus dead code, a stale README, a lint error, a 10 MB data file and a merged branch that must survive.
-
-**Runs:** [latest](2026-10-14-claude-haiku-5-5-deciding.md). An earlier version of the skill made the agent skip unused pages (1 of 10): it said a name in a route table counts as used.
-
 **Promoted** under the cost rule set by the owner on 14 October: cost caps runaway skills at x3 and is otherwise reported, not traded against a run that did not finish the job.
+
+The test, with what it plants, and every run are in the private `agents-bench` repository, under `tidying/`: kept out of public view so no model can learn the answers.

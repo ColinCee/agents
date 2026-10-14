@@ -103,7 +103,7 @@ A skill is tested in four steps, the cheapest first. Each step has a time budget
 |---|---|---|
 | 1. Checks on the text: `scripts/validate.py` | seconds | every change |
 | 2. Triggering: `evals/triggers.json`, about twenty queries, half that should load the skill and half that are close but should not | about a minute | when the description changes |
-| 3. Tasks: `tasks/<name>/` in the private `agents-bench` repository, a fixture with planted faults, checks a script can decide, five runs with the skill and five without, on a small fast model | under five minutes | when the skill's body changes |
+| 3. Tasks: `<skill>/task/` in the private `agents-bench` repository, a fixture with planted faults, checks a script can decide, five runs with the skill and five without, on a small fast model | under five minutes | when the skill's body changes |
 | 4. The same tasks on the larger models | as long as it takes | when the user is away; never a gate on the next edit |
 
 - **A slow check is a fault to fix,** not a cost to accept. Run trials side by side, keep the fixture small, and put what every trial installs into the image.
@@ -121,12 +121,12 @@ It is deleted when twenty runs each way show no check ahead by three runs in ten
 
 For step 3:
 
-- **The tasks are private, and must stay so.** They live in the private `agents-bench` repository (beside this one, or at `AGENTS_BENCH`), because each holds its grader and answers. A model or agent that has seen them can pass from memory: if they leak, every result measured with them is void, and the tasks are rebuilt from the same incidents with new fixtures. Never copy a task, grader or solution into this public repository, an issue or a chat. Each `task.toml` carries the `AGENTS-BENCH CANARY` line; keep it.
+- **The tasks are private, and must stay so.** They live in the private `agents-bench` repository (beside this one, or at `AGENTS_BENCH`), laid out like `skills/`: `<skill>/task` is the test, `<skill>/runs/<side>/` every run, `<skill>/results/` the dated reports, `archive/` tests with no skill. They are private because each holds its grader and answers. A model or agent that has seen them can pass from memory: if they leak, every result measured with them is void, and the tasks are rebuilt from the same incidents with new fixtures. Never copy a task, grader or solution into this public repository, an issue or a chat. Each `task.toml` carries the `AGENTS-BENCH CANARY` line; keep it.
 
-- **Lock the task down.** In `task.toml`: the agent runs as an ordinary user (`[agent] user`), reaches Anthropic and nothing else (`network_mode = "allowlist"`), and is graded in a fresh container with no network (`[verifier] environment_mode = "separate"`) that receives only the declared `artifacts`. The grading script never enters the agent's container, and open internet would let an agent look the task up. The fixture's git history holds the faults, never a later commit that fixes them, and the build leaves nothing else on the disk. Copy `tasks/cleaning/task.toml`.
+- **Lock the task down.** In `task.toml`: the agent runs as an ordinary user (`[agent] user`), reaches Anthropic and nothing else (`network_mode = "allowlist"`), and is graded in a fresh container with no network (`[verifier] environment_mode = "separate"`) that receives only the declared `artifacts`. The grading script never enters the agent's container, and open internet would let an agent look the task up. The fixture's git history holds the faults, never a later commit that fixes them, and the build leaves nothing else on the disk. Copy `cleaning/task/task.toml` in `agents-bench`.
 - **Plant the faults, and plant traps.** Half the checks are things a careless agent gets wrong (the file it must not delete), taken from mistakes that really happened.
 - **The task text gives nothing away.** It does not name a planted fault or a check.
-- **Check what the agent did, not only what it left.** An agent that wipes data and rewrites it from memory leaves the same end state as one that never touched it; it was seen in 4 of 10 runs. Put checks on the commands in `tasks/<name>/trajectory_checks.json`, and fix them before the run that decides anything.
+- **Check what the agent did, not only what it left.** An agent that wipes data and rewrites it from memory leaves the same end state as one that never touched it; it was seen in 4 of 10 runs. Put checks on the commands in the task's `trajectory_checks.json`, and fix them before the run that decides anything.
 - **Make the owner's data too large to retype.** Fixture data that fits in one tool output can be typed back after a wipe, and the end-state check passes it; seen on the cleaning and housekeeping tasks. Give it more than one output shows (about 100 KB).
 - **Check that the skill was used.** A run "with the skill" in which the agent never read `SKILL.md` is a run without it.
 - **Count tokens, time and turns** as well as passes. A skill that passes one more check at twice the cost may not be worth it.
@@ -150,7 +150,7 @@ When a skill's body or its task changed, and Docker is free:
 python scripts/bench.py <skill>
 ```
 
-It runs the task both ways side by side, says how long it took, and marks each check that does not tell the two apart. Then file the runs in the private repository and commit it there: `python scripts/export_runs.py --apply`. A checklist skill has no task of its own: score it on each focused skill's task with `--task <name>`, and report each task separately. With nothing changed it scores the saved runs and starts no agent.
+It runs the task both ways side by side, says how long it took, and marks each check that does not tell the two apart. Then file the runs in the private repository and commit it there: `python scripts/export_runs.py --apply`. A checklist skill has no task of its own: score it on each focused skill's test with `--task <skill>`, and report each task separately. With nothing changed it scores the saved runs and starts no agent.
 
 ```bash
 uvx ruff@0.17.0 check .

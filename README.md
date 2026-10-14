@@ -51,7 +51,7 @@ housekeeping ──► safeguarding   what could be lost
              └─► doc-upkeep     do the documents say what is true
 ```
 
-The benchmark tasks are in a private repository, `agents-bench`: each holds its grader and answers, and a model that has seen them could pass from memory, which would make every result here worthless. What each task asks and which real incident it comes from is in that skill's results page. Tasks with no skill, because plain Haiku already does the job: strict types for one reported field ([results](bench/strict-types/)), keeping a decided card reachable after a UI change ([results](bench/ui-flow/)), auditing an unfair comparison ([results](bench/experiment-design/)).
+The benchmark tests and every run are in a private repository, `agents-bench`, laid out like `skills/` (`<skill>/task`, `<skill>/runs`): each test holds its grader and answers, and a model that has seen them could pass from memory, which would make every result here worthless. Tests with no skill, because plain Haiku already does the job, are archived there: strict types for one reported field, keeping a decided card reachable after a UI change, auditing an unfair comparison.
 
 ## Skills of other people's
 

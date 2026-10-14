@@ -4,9 +4,9 @@
 
 Reads Harbor's job folders in jobs/ and files each trial, by test then side, as
 
-    runs/<test>/<side>/<date>/<time>-<trial>/
+    <skill>/runs/<side>/<date>-<time>-<trial>/
 
-where <side> is no-skill, the skill's name, reference-solution or do-nothing. Only what a run says is kept
+mirroring skills/, where <skill> is the one whose test it ran and <side> is no-skill, the skill's name, reference-solution or do-nothing. Only what a run says is kept
 (checks.txt, reward.txt, result.json, trajectory.json, agent.txt, exception.txt), not the copies of the test
 project it left. Without --apply it prints what it would copy. Safe to run twice: a trial already filed is skipped.
 Exit codes: 0 done, 2 bad arguments.
@@ -19,6 +19,15 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+# Tests renamed when agents-bench came to mirror skills/: where runs made under the old names belong.
+RENAMED = {
+    "sidebar": "ui-decluttering",
+    "choosing": "deciding",
+    "typing": "strict-types",
+    "strict-types": "archive/strict-types-one-field",
+    "experiment-design": "archive/experiment-design",
+    "ui-flow": "archive/ui-flow",
+}
 JOBS = ROOT / "jobs"
 KEEP = {  # what a trial says, under the name it is filed as
     "verifier/checks.txt": "checks.txt",
@@ -48,8 +57,8 @@ def main() -> int:
     parser.add_argument(
         "--to",
         type=Path,
-        default=ROOT.parent / "agents-bench" / "runs",
-        help="where runs go (default ../agents-bench/runs)",
+        default=ROOT.parent / "agents-bench",
+        help="the agents-bench repository (default ../agents-bench)",
     )
     parser.add_argument("--apply", action="store_true", help="copy; without it, only say what would be copied")
     args = parser.parse_args()
@@ -61,8 +70,9 @@ def main() -> int:
         job = config_file.parent
         config = json.loads(config_file.read_text(encoding="utf-8"))
         tasks = config.get("tasks") or [{}]
-        test = Path(str(tasks[0].get("path", "unknown")).replace("\\", "/")).name
-        if not (args.to.parent / "tasks" / test).is_dir():
+        path = Path(str(tasks[0].get("path", "unknown")).replace("\\", "/"))
+        test = path.parent.name if path.name == "task" else RENAMED.get(path.name, path.name)
+        if not (args.to / test / "task").is_dir():
             continue  # smoke tests and probes that were never benchmark tasks
         for trial in sorted(
             p for p in job.iterdir() if (p / "result.json").is_file() and (p / "config.json").is_file()
@@ -72,7 +82,7 @@ def main() -> int:
                 json.loads((trial / "result.json").read_text(encoding="utf-8")).get("started_at") or "0000-00-00T00:00"
             )
             day, clock = started[:10], started[11:16].replace(":", "")
-            target = args.to / test / side / day / f"{clock}-{trial.name.split('__')[-1]}"
+            target = args.to / test / "runs" / side / f"{day}-{clock}-{trial.name.split('__')[-1]}"
             if target.exists():
                 skipped += 1
                 continue

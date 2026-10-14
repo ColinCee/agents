@@ -4,7 +4,7 @@
     python scripts/bench.py SKILL --from JOB_WITHOUT JOB_WITH
 
 SKILL            a folder name under skills/ or skills/.experimental/
---task           the task under tasks/ to run (default: the one named after SKILL); a checklist skill is scored
+--task           whose test to run: a folder in agents-bench (default: SKILL's own); a checklist skill is scored
                  on its focused skills' tasks, one at a time, never averaged
 --model          the model the agent uses (default claude-haiku-5-5, the small fast one)
 --runs           the most trials each way (default 10)
@@ -17,7 +17,7 @@ SKILL            a folder name under skills/ or skills/.experimental/
 
 Each batch runs both arms at the same time, so they share load and versions. The verdict applies the
 decision rule in AGENTS.md. Checks on what the agent did, not only what it left, are read from the
-trajectories using tasks/<TASK>/trajectory_checks.json when it exists.
+trajectories using the test's trajectory_checks.json when it exists.
 
 A run starts agents, which costs tokens, and needs Harbor, Docker and a sign-in for the agent in the
 environment. Saved batches are kept under a hash of what decides their result, so a second call with
@@ -45,8 +45,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 JOBS = ROOT / "jobs"  # Harbor's raw output; not kept in git
 # The tasks hold graders and answers, so they live in a private repository: beside this one, or at AGENTS_BENCH.
+# It mirrors skills/: <skill>/task is the test for that skill.
 BENCH = Path(os.environ.get("AGENTS_BENCH") or ROOT.parent / "agents-bench")
-TASKS = BENCH / "tasks"
 DEFAULT_MODEL = "claude-haiku-5-5"
 DEFAULT_RUNS = 10  # AGENTS.md: the fewest runs each way at which a skill can be promoted
 DEFAULT_BATCH = 5  # ten containers at once used 1.5 GB in all and met no refusal (14 October 2026)
@@ -88,13 +88,13 @@ def free_memory_gb() -> float | None:
 def find(skill: str, task_name: str, plain: bool = False) -> tuple[Path | None, Path]:
     homes = [ROOT / "skills" / skill, ROOT / "skills" / ".experimental" / skill]
     folder = None if plain else next((h for h in homes if (h / "SKILL.md").is_file()), None)
-    task = TASKS / task_name
+    task = BENCH / task_name / "task"
     if folder is None and not plain:
         print(f"Error: no skill named {skill!r} under skills/ or skills/.experimental/.", file=sys.stderr)
         sys.exit(2)
     if not (task / "task.toml").is_file():
         print(
-            f"Error: no task at {task}/task.toml. Clone the private agents-bench repository beside this one, or set AGENTS_BENCH, and pass --task with a folder name under its tasks/.",
+            f"Error: no task at {task}/task.toml. Clone the private agents-bench repository beside this one, or set AGENTS_BENCH; --task names a skill folder there.",
             file=sys.stderr,
         )
         sys.exit(2)
@@ -364,7 +364,7 @@ def main() -> int:
         epilog="A run starts agents and costs tokens. Exit codes: 0 done, 1 a run failed or --replay found nothing saved, 2 bad arguments.",
     )
     parser.add_argument("skill", help="a folder name under skills/ or skills/.experimental/")
-    parser.add_argument("--task", help="the task under tasks/ to run (default: the one named after the skill)")
+    parser.add_argument("--task", help="whose test to run: a folder in agents-bench (default: the skill's own)")
     parser.add_argument("--model", default=DEFAULT_MODEL, help=f"the model the agent uses (default {DEFAULT_MODEL})")
     parser.add_argument(
         "--runs", type=int, default=DEFAULT_RUNS, help=f"the most trials each way (default {DEFAULT_RUNS})"
@@ -405,7 +405,7 @@ def main() -> int:
         for job in args.existing:
             if not job.is_dir():
                 parser.error(f"{job} is not a folder")
-        task = TASKS / task_name
+        task = BENCH / task_name / "task"
         checks = load_trajectory_checks(task if task.is_dir() else None)
         sides = {
             "without": read_job(args.existing[0], checks)["trials"],
@@ -485,7 +485,7 @@ def main() -> int:
         took = time.monotonic() - started if ran else None
         if not ran:
             print(f"Nothing has changed since key {key}: scoring the saved runs, no agent started.", file=sys.stderr)
-        note = f"Task `tasks/{task_name}`, agent Claude Code, batches of {args.batch} each way run side by side. Key `{key}`."
+        note = f"Test `{task_name}`, agent Claude Code, batches of {args.batch} each way run side by side. Key `{key}`."
 
     if args.plain:
         trials = sides["without"]
