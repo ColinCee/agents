@@ -1,20 +1,26 @@
 """Run a skill's task with the skill and without it, and say whether the skill helped.
 
-    python scripts/bench.py SKILL [--model ID] [--runs N] [--parallel N] [--replay] [--force] [--json]
+    python scripts/bench.py SKILL [--model ID] [--runs N] [--batch N] [--until-decided] [--replay] [--force] [--json]
     python scripts/bench.py SKILL --from JOB_WITHOUT JOB_WITH
 
-SKILL       a folder name under skills/ or skills/.experimental/, with a task of the same name under tasks/
---model     the model the agent uses (default claude-haiku-5-5, the small fast one)
---runs      trials each way (default 5)
---parallel  trials at once in each of the two jobs (default 2)
---replay    never start an agent: score saved runs, or say what would have to be run
---force     run again even when nothing has changed
---from      score two Harbor job folders that already exist
---json      print JSON instead of text
+SKILL            a folder name under skills/ or skills/.experimental/, with a task of the same name under tasks/
+--model          the model the agent uses (default claude-haiku-5-5, the small fast one)
+--runs           the most trials each way (default 10)
+--batch          trials each way per batch, all at once (default 5)
+--until-decided  stop after the first batch at which the decision rule gives a verdict
+--replay         never start an agent: score saved batches, or say what would have to be run
+--force          run every batch again even when nothing has changed
+--from           score two Harbor job folders that already exist
+--json           print JSON instead of text
+
+Each batch runs both arms at the same time, so they share load and versions. The verdict applies the
+decision rule in AGENTS.md. Checks on what the agent did, not only what it left, are read from the
+trajectories using tasks/<SKILL>/trajectory_checks.json when it exists.
 
 A run starts agents, which costs tokens, and needs Harbor, Docker and a sign-in for the agent in the
-environment. Saved runs are kept under a hash of the skill, the task, the model and the number of runs, so
-a second call with nothing changed asks no model anything.
+environment. Saved batches are kept under a hash of what decides their result, so a second call with
+nothing changed asks no model anything, and the run without the skill is not repeated when only the
+skill changes.
 
 Exit codes: 0 done, 1 a run failed or --replay found nothing saved, 2 bad arguments.
 Needs Python 3.11 or later. Uses only the standard library.
@@ -23,7 +29,9 @@ Needs Python 3.11 or later. Uses only the standard library.
 import argparse
 import hashlib
 import json
+import math
 import os
+import re
 import statistics
 import subprocess
 import sys
@@ -34,9 +42,14 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 JOBS = ROOT / "jobs"  # Harbor's raw output; not kept in git
 DEFAULT_MODEL = "claude-haiku-5-5"
-DEFAULT_RUNS = 5  # the fewest that show a spread; three was called too few in published studies
-DEFAULT_PARALLEL = 2  # two jobs of two trials is four 2 GB containers at most
+DEFAULT_RUNS = 10  # AGENTS.md: the fewest runs each way at which a skill can be promoted
+DEFAULT_BATCH = 5  # ten containers at once used 1.5 GB in all and met no refusal (14 October 2026)
+RETRIES = 2  # Harbor retries only errors it treats as passing (not sign-in or usage-limit errors)
 BUDGET_SECONDS = 300  # AGENTS.md: the task step is to finish in under five minutes
+
+# The decision rule in AGENTS.md, as shares of the runs each way.
+PROMOTE_RUNS, PROMOTE_GAP, WORST_DROP, TOKEN_RATIO = 10, 0.4, 0.1, 1.25
+DELETE_RUNS, DELETE_GAP = 20, 0.3
 
 
 def find(skill: str) -> tuple[Path, Path]:
@@ -52,9 +65,9 @@ def find(skill: str) -> tuple[Path, Path]:
     return folder, task
 
 
-def key_of(folders: list[Path], model: str, runs: int) -> str:
+def key_of(folders: list[Path], model: str) -> str:
     """A hash of everything that decides the result. Line endings are ignored so every platform agrees."""
-    digest = hashlib.sha256(f"{model}\n{runs}\n".encode())
+    digest = hashlib.sha256(f"{model}\n".encode())
     for base in folders:
         for path in sorted(p for p in base.rglob("*") if p.is_file() and "__pycache__" not in p.parts):
             if "evals" in path.relative_to(base).parts:
@@ -70,12 +83,33 @@ def seconds(span: dict | None) -> float | None:
     return (datetime.fromisoformat(span["finished_at"]) - datetime.fromisoformat(span["started_at"])).total_seconds()
 
 
-def read_job(job: Path) -> dict:
+def load_trajectory_checks(task: Path | None) -> list[dict]:
+    path = task / "trajectory_checks.json" if task else None
+    if not path or not path.is_file():
+        return []
+    checks = json.loads(path.read_text(encoding="utf-8"))
+    for check in checks:
+        check["pattern"] = re.compile(check["forbid"])
+    return checks
+
+
+def commands_run(trajectory: str) -> list[str]:
+    if not trajectory:
+        return []
+    steps = json.loads(trajectory).get("steps", [])
+    return [
+        str((call.get("arguments") or {}).get("command", ""))
+        for step in steps
+        for call in step.get("tool_calls") or []
+        if (call.get("arguments") or {}).get("command")
+    ]
+
+
+def read_job(job: Path, trajectory_checks: list[dict]) -> dict:
     trials = []
     for trial in sorted(p for p in job.iterdir() if p.is_dir() and (p / "result.json").is_file()):
         result = json.loads((trial / "result.json").read_text(encoding="utf-8"))
         usage = result.get("agent_result") or {}
-        served = sorted((usage.get("model_usage") or {}).keys())
         checks_file = trial / "verifier" / "checks.txt"
         lines = (
             [line.split() for line in checks_file.read_text(encoding="utf-8").splitlines()]
@@ -85,10 +119,14 @@ def read_job(job: Path) -> dict:
         checks = {parts[2]: parts[0] == "PASS" for parts in lines if len(parts) == 3}
         path = trial / "agent" / "trajectory.json"
         trajectory = path.read_text(encoding="utf-8") if path.is_file() else ""
+        if checks:
+            commands = commands_run(trajectory)
+            for check in trajectory_checks:
+                checks[f"did:{check['name']}"] = not any(check["pattern"].search(c) for c in commands)
         trials.append(
             {
                 "trial": trial.name,
-                "served_models": served,
+                "served_models": sorted((usage.get("model_usage") or {}).keys()),
                 "checks": checks,
                 "passed": sum(checks.values()),
                 "input_tokens": usage.get("n_input_tokens"),
@@ -96,19 +134,19 @@ def read_job(job: Path) -> dict:
                 "agent_seconds": seconds(result.get("agent_execution")),
                 "setup_seconds": (seconds(result.get("environment_setup")) or 0)
                 + (seconds(result.get("agent_setup")) or 0),
+                "grading_seconds": seconds(result.get("verifier")),
                 # Loaded through the agent's skill tool, or read as a file.
                 "skill_read": '"Skill"' in trajectory or "SKILL.md" in trajectory,
                 "failed_to_run": (trial / "exception.txt").is_file() or not checks,
             }
         )
-    whole = json.loads((job / "result.json").read_text(encoding="utf-8")) if (job / "result.json").is_file() else {}
-    return {"job": job.name, "trials": trials, "wall_seconds": seconds(whole)}
+    return {"job": job.name, "trials": trials}
 
 
 def complete(job: Path, runs: int) -> bool:
     if not (job / "result.json").is_file():
         return False
-    trials = read_job(job)["trials"]
+    trials = read_job(job, [])["trials"]
     return len(trials) >= runs and not any(t["failed_to_run"] for t in trials)
 
 
@@ -117,30 +155,58 @@ def mean(values: list) -> float | None:
     return statistics.mean(values) if values else None
 
 
-def summarise(without: dict, with_skill: dict) -> dict:
-    names = list(dict.fromkeys(name for side in (without, with_skill) for t in side["trials"] for name in t["checks"]))
+def summarise(without: list[dict], with_skill: list[dict]) -> dict:
+    names = list(dict.fromkeys(name for side in (without, with_skill) for t in side for name in t["checks"]))
     table = []
     for name in names:
-        a = [t["checks"].get(name, False) for t in without["trials"]]
-        b = [t["checks"].get(name, False) for t in with_skill["trials"]]
-        table.append({"check": name, "without": sum(a), "with": sum(b), "tells_apart": sum(a) != sum(b)})
+        a = sum(t["checks"].get(name, False) for t in without)
+        b = sum(t["checks"].get(name, False) for t in with_skill)
+        table.append({"check": name, "without": a, "with": b, "tells_apart": a != b})
     sides = {}
-    for label, side in (("without", without), ("with", with_skill)):
-        trials = side["trials"]
+    for label, trials in (("without", without), ("with", with_skill)):
         passed = [t["passed"] for t in trials]
         sides[label] = {
             "trials": len(trials),
             "checks_passed_mean": mean(passed),
-            "checks_passed_range": [min(passed), max(passed)] if passed else None,
             "input_tokens_mean": mean([t["input_tokens"] for t in trials]),
             "output_tokens_mean": mean([t["output_tokens"] for t in trials]),
             "agent_seconds_mean": mean([t["agent_seconds"] for t in trials]),
             "setup_seconds_mean": mean([t["setup_seconds"] for t in trials]),
+            "grading_seconds_mean": mean([t["grading_seconds"] for t in trials]),
             "skill_read": sum(t["skill_read"] for t in trials),
-            "wall_seconds": side["wall_seconds"],
             "served_models": sorted({m for t in trials for m in t["served_models"]}),
         }
-    return {"checks_total": len(names), "sides": sides, "checks": table}
+    summary = {"checks_total": len(names), "sides": sides, "checks": table}
+    summary["verdict"] = verdict(summary)
+    return summary
+
+
+def verdict(summary: dict) -> str:
+    """The decision rule in AGENTS.md."""
+    a, b = summary["sides"]["without"], summary["sides"]["with"]
+    runs = min(a["trials"], b["trials"])
+    if not runs or not summary["checks"]:
+        return "no runs"
+    gaps = [(c["with"] / b["trials"] - c["without"] / a["trials"], c["check"]) for c in summary["checks"]]
+    best, best_check = max(gaps)
+    worst, worst_check = min(gaps)
+    ratio = (b["input_tokens_mean"] or 0) / (a["input_tokens_mean"] or 1)
+    if runs >= PROMOTE_RUNS and best >= PROMOTE_GAP and worst >= -WORST_DROP and ratio <= TOKEN_RATIO:
+        return f"promote: {best_check} ahead by {best:.0%} of runs, nothing behind by more than {WORST_DROP:.0%}, tokens x{ratio:.2f}"
+    if runs >= DELETE_RUNS and best < DELETE_GAP:
+        return (
+            f"delete: after {runs} runs each way no check is ahead by {DELETE_GAP:.0%} (best {best_check}, {best:.0%})"
+        )
+    reasons = []
+    if runs < PROMOTE_RUNS:
+        reasons.append(f"{runs} runs each way, the rule needs {PROMOTE_RUNS}")
+    if best < PROMOTE_GAP:
+        reasons.append(f"best gap {best:.0%} ({best_check}), the rule needs {PROMOTE_GAP:.0%}")
+    if worst < -WORST_DROP:
+        reasons.append(f"{worst_check} is behind by {-worst:.0%}")
+    if ratio > TOKEN_RATIO:
+        reasons.append(f"tokens x{ratio:.2f}, the rule allows x{TOKEN_RATIO}")
+    return "undecided: " + "; ".join(reasons)
 
 
 def num(value: float | None, digits: int = 0) -> str:
@@ -155,6 +221,8 @@ def as_markdown(skill: str, model: str, summary: dict, took: float | None, note:
         "",
         note,
         "",
+        f"**Verdict:** {summary['verdict']}",
+        "",
         "| | Without the skill | With the skill |",
         "|---|---|---|",
         f"| Runs | {a['trials']} | {b['trials']} |",
@@ -162,9 +230,11 @@ def as_markdown(skill: str, model: str, summary: dict, took: float | None, note:
         f"| Input tokens, mean | {num(a['input_tokens_mean'])} | {num(b['input_tokens_mean'])} |",
         f"| Output tokens, mean | {num(a['output_tokens_mean'])} | {num(b['output_tokens_mean'])} |",
         f"| Agent time, mean | {num(a['agent_seconds_mean'])} s | {num(b['agent_seconds_mean'])} s |",
-        f"| Set-up time per run, mean | {num(a['setup_seconds_mean'])} s | {num(b['setup_seconds_mean'])} s |",
+        f"| Set-up and grading per run, mean | {num(a['setup_seconds_mean'])} s and {num(a['grading_seconds_mean'])} s | {num(b['setup_seconds_mean'])} s and {num(b['grading_seconds_mean'])} s |",
         f"| Skill read | | {b['skill_read']} of {b['trials']} |",
         f"| Model actually served | {', '.join(a['served_models']) or 'n/a'} | {', '.join(b['served_models']) or 'n/a'} |",
+        "",
+        "Checks named `did:` are about what the agent did, read from its trajectory.",
         "",
         "| Check | Without | With | Tells them apart |",
         "|---|---|---|---|",
@@ -175,13 +245,13 @@ def as_markdown(skill: str, model: str, summary: dict, took: float | None, note:
     ]
     if took is not None:
         over = f" That is over the budget of {BUDGET_SECONDS} s." if took > BUDGET_SECONDS else ""
-        lines += ["", f"The whole run took {took:.0f} s.{over}"]
+        lines += ["", f"The runs took {took:.0f} s.{over}"]
     return "\n".join(lines) + "\n"
 
 
-def harbor(task: Path, model: str, runs: int, parallel: int, name: str, skill: Path | None) -> subprocess.Popen:
-    command = ["harbor", "run", "-p", str(task), "-a", "claude-code", "-m", model, "-k", str(runs), "-n", str(parallel)]
-    command += ["-o", str(JOBS), "--job-name", name]
+def harbor(task: Path, model: str, runs: int, name: str, skill: Path | None) -> subprocess.Popen:
+    command = ["harbor", "run", "-p", str(task), "-a", "claude-code", "-m", model, "-k", str(runs), "-n", str(runs)]
+    command += ["--max-retries", str(RETRIES), "-o", str(JOBS), "--job-name", name]
     if skill:
         command += ["--skill", str(skill)]
     log = (JOBS / f"{name}.log").open("w", encoding="utf-8")
@@ -196,17 +266,15 @@ def main() -> int:
     )
     parser.add_argument("skill", help="a folder name under skills/ or skills/.experimental/")
     parser.add_argument("--model", default=DEFAULT_MODEL, help=f"the model the agent uses (default {DEFAULT_MODEL})")
-    parser.add_argument("--runs", type=int, default=DEFAULT_RUNS, help=f"trials each way (default {DEFAULT_RUNS})")
     parser.add_argument(
-        "--parallel",
-        type=int,
-        default=DEFAULT_PARALLEL,
-        help=f"trials at once in each job (default {DEFAULT_PARALLEL})",
+        "--runs", type=int, default=DEFAULT_RUNS, help=f"the most trials each way (default {DEFAULT_RUNS})"
     )
     parser.add_argument(
-        "--replay", action="store_true", help="never start an agent: score saved runs or say what is missing"
+        "--batch", type=int, default=DEFAULT_BATCH, help=f"trials each way per batch (default {DEFAULT_BATCH})"
     )
-    parser.add_argument("--force", action="store_true", help="run again even when nothing has changed")
+    parser.add_argument("--until-decided", action="store_true", help="stop at the first batch that gives a verdict")
+    parser.add_argument("--replay", action="store_true", help="never start an agent: score saved batches")
+    parser.add_argument("--force", action="store_true", help="run every batch again even when nothing has changed")
     parser.add_argument(
         "--from",
         dest="existing",
@@ -217,51 +285,71 @@ def main() -> int:
     )
     parser.add_argument("--json", action="store_true", help="print JSON instead of text")
     args = parser.parse_args()
-    if args.runs < 1 or args.parallel < 1:
-        parser.error("--runs and --parallel must be 1 or more")
+    if args.runs < 1 or args.batch < 1:
+        parser.error("--runs and --batch must be 1 or more")
 
     took = None
     if args.existing:
         for job in args.existing:
             if not job.is_dir():
                 parser.error(f"{job} is not a folder")
-        jobs = {"without": args.existing[0], "with": args.existing[1]}
-        note = f"Scored from saved runs: `{jobs['without'].name}` and `{jobs['with'].name}`."
+        task = ROOT / "tasks" / args.skill
+        checks = load_trajectory_checks(task if task.is_dir() else None)
+        sides = {
+            "without": read_job(args.existing[0], checks)["trials"],
+            "with": read_job(args.existing[1], checks)["trials"],
+        }
+        note = f"Scored from saved runs: `{args.existing[0].name}` and `{args.existing[1].name}`."
     else:
         folder, task = find(args.skill)
+        checks = load_trajectory_checks(task)
         # The run without the skill depends only on the task, so editing the skill does not repeat it.
-        keys = {"without": key_of([task], args.model, args.runs), "with": key_of([folder, task], args.model, args.runs)}
-        jobs = {side: JOBS / f"{args.skill}-{args.model}-{keys[side]}-{side}" for side in ("without", "with")}
+        keys = {"without": key_of([task], args.model), "with": key_of([folder, task], args.model)}
         key = f"{keys['without']}/{keys['with']}"
-        missing = [side for side, job in jobs.items() if args.force or not complete(job, args.runs)]
-        note = f"Task `tasks/{args.skill}`, agent Claude Code, {args.runs} runs each way. Key `{key}`."
-        if missing and args.replay:
-            print(
-                f"Nothing saved for key {key}: would run {args.runs} trials {' and '.join(missing)} the skill on {args.model}.",
-                file=sys.stderr,
-            )
-            return 1
-        if missing:
-            JOBS.mkdir(exist_ok=True)
-            print(f"Running {args.runs} trials {' and '.join(missing)} the skill on {args.model} ...", file=sys.stderr)
-            started = time.monotonic()
-            running = [
-                harbor(task, args.model, args.runs, args.parallel, jobs[side].name, folder if side == "with" else None)
-                for side in missing
-            ]
-            codes = [process.wait() for process in running]
-            took = time.monotonic() - started
-            bad = [side for side in missing if not complete(jobs[side], args.runs)]
-            if any(codes) or bad:
+        sides = {"without": [], "with": []}
+        started = time.monotonic()
+        ran = False
+        for batch in range(math.ceil(args.runs / args.batch)):
+            size = min(args.batch, args.runs - batch * args.batch)
+            jobs = {side: JOBS / f"{args.skill}-{args.model}-{keys[side]}-{side}-b{batch}" for side in sides}
+            missing = [side for side, job in jobs.items() if args.force or not complete(job, size)]
+            if missing and args.replay:
+                if batch == 0:
+                    print(
+                        f"Nothing saved for key {key}: would run {size} trials {' and '.join(missing)} the skill.",
+                        file=sys.stderr,
+                    )
+                    return 1
+                break
+            if missing:
+                JOBS.mkdir(exist_ok=True)
                 print(
-                    f"Error: the run {' and '.join(bad or missing)} the skill did not finish cleanly. See {JOBS.name}/*.log and each trial's exception.txt.",
+                    f"Batch {batch + 1}: running {size} trials {' and '.join(missing)} the skill on {args.model} ...",
                     file=sys.stderr,
                 )
-                return 1
-        else:
+                running = [
+                    harbor(task, args.model, size, jobs[side].name, folder if side == "with" else None)
+                    for side in missing
+                ]
+                codes = [process.wait() for process in running]
+                ran = True
+                bad = [side for side in missing if not complete(jobs[side], size)]
+                if any(codes) or bad:
+                    print(
+                        f"Error: batch {batch + 1} {' and '.join(bad or missing)} the skill did not finish cleanly. See {JOBS.name}/*.log and each trial's exception.txt.",
+                        file=sys.stderr,
+                    )
+                    return 1
+            for side, job in jobs.items():
+                sides[side] += read_job(job, checks)["trials"]
+            if args.until_decided and not summarise(sides["without"], sides["with"])["verdict"].startswith("undecided"):
+                break
+        took = time.monotonic() - started if ran else None
+        if not ran:
             print(f"Nothing has changed since key {key}: scoring the saved runs, no agent started.", file=sys.stderr)
+        note = f"Task `tasks/{args.skill}`, agent Claude Code, batches of {args.batch} each way run side by side. Key `{key}`."
 
-    summary = summarise(read_job(jobs["without"]), read_job(jobs["with"]))
+    summary = summarise(sides["without"], sides["with"])
     summary["took_seconds"] = took
     if args.json:
         print(json.dumps(summary, indent=2))

@@ -119,6 +119,7 @@ For step 3:
 - **Lock the task down.** In `task.toml`: the agent runs as an ordinary user (`[agent] user`), reaches Anthropic and nothing else (`network_mode = "allowlist"`), and is graded in a fresh container with no network (`[verifier] environment_mode = "separate"`) that receives only the declared `artifacts`. The grading script never enters the agent's container, and this repository is public, so open internet would let an agent read it. The fixture's git history holds the faults, never a later commit that fixes them, and the build leaves nothing else on the disk. Copy `tasks/cleaning/task.toml`.
 - **Plant the faults, and plant traps.** Half the checks are things a careless agent gets wrong (the file it must not delete), taken from mistakes that really happened.
 - **The task text gives nothing away.** It does not name a planted fault or a check.
+- **Check what the agent did, not only what it left.** An agent that wipes data and rewrites it from memory leaves the same end state as one that never touched it; it was seen in 4 of 10 runs. Put checks on the commands in `tasks/<name>/trajectory_checks.json`, and fix them before the run that decides anything.
 - **Check that the skill was used.** A run "with the skill" in which the agent never read `SKILL.md` is a run without it.
 - **Count tokens, time and turns** as well as passes. A skill that passes one more check at twice the cost may not be worth it.
 - **Drop a check that passes without the skill.** It costs a run and says nothing.
