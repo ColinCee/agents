@@ -53,6 +53,14 @@ A skill that exists already is listed here and not rewritten. None of these has 
 |---|---|---|---|
 | prune-dead-code | [lukeberrypi/skills](https://skills.sh/lukeberrypi/skills/prune-dead-code) | Code with no references left, reported for approval | `npx skills add lukeberrypi/skills --skill prune-dead-code` |
 
+## My own instructions for agents
+
+[home/AGENTS.md](home/AGENTS.md) is how I want every coding agent to work with me, in every project: rules I had to give more than once. It is mine, not a skill; copy what suits you. To install it as Claude Code's and Codex's user-level instructions:
+
+```bash
+python scripts/install_home.py
+```
+
 ## What every skill here keeps to
 
 - **Scripts report by default.** Nothing is deleted or written unless you pass a flag that says so, and the skill tells the agent to ask you first.

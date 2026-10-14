@@ -32,6 +32,7 @@ skills/<name>/
 - Every file in `scripts/`, `references/` and `assets/` is named in `SKILL.md` with its path and when to use it. No file is reached only through another reference.
 - Paths are relative to the skill folder and use forward slashes.
 - Each skill is listed in the table in `README.md`.
+- `home/AGENTS.md` is the author's own user-level instructions, not a skill. The rules for skills do not apply to it; `scripts/install_home.py` installs it.
 
 ## SKILL.md
 
