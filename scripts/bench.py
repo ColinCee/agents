@@ -45,7 +45,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 JOBS = ROOT / "jobs"  # Harbor's raw output; not kept in git
 # The tasks hold graders and answers, so they live in a private repository: beside this one, or at AGENTS_BENCH.
-# It mirrors skills/: <skill>/task is the test for that skill.
+# It mirrors this repository: skills/<skill>/task is the test for that skill.
 BENCH = Path(os.environ.get("AGENTS_BENCH") or ROOT.parent / "agents-bench")
 DEFAULT_MODEL = "claude-haiku-5-5"
 DEFAULT_RUNS = 10  # AGENTS.md: the fewest runs each way at which a skill can be promoted
@@ -88,7 +88,7 @@ def free_memory_gb() -> float | None:
 def find(skill: str, task_name: str, plain: bool = False) -> tuple[Path | None, Path]:
     homes = [ROOT / "skills" / skill, ROOT / "skills" / ".experimental" / skill]
     folder = None if plain else next((h for h in homes if (h / "SKILL.md").is_file()), None)
-    task = BENCH / task_name / "task"
+    task = BENCH / "skills" / task_name / "task"
     if folder is None and not plain:
         print(f"Error: no skill named {skill!r} under skills/ or skills/.experimental/.", file=sys.stderr)
         sys.exit(2)
@@ -405,7 +405,7 @@ def main() -> int:
         for job in args.existing:
             if not job.is_dir():
                 parser.error(f"{job} is not a folder")
-        task = BENCH / task_name / "task"
+        task = BENCH / "skills" / task_name / "task"
         checks = load_trajectory_checks(task if task.is_dir() else None)
         sides = {
             "without": read_job(args.existing[0], checks)["trials"],

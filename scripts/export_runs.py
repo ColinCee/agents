@@ -4,7 +4,7 @@
 
 Reads Harbor's job folders in jobs/ and files each trial, by test then side, as
 
-    <skill>/runs/<side>/<date>-<time>-<trial>/
+    skills/<skill>/runs/<side>/<date>-<time>-<trial>/
 
 mirroring skills/, where <skill> is the one whose test it ran and <side> is no-skill, the skill's name, reference-solution or do-nothing. Only what a run says is kept
 (checks.txt, reward.txt, result.json, trajectory.json, agent.txt, exception.txt), not the copies of the test
@@ -79,6 +79,8 @@ def main() -> int:
             if path.name == "task"
             else RENAMED.get(path.name, path.name)
         )
+        if not test.startswith("archive/"):
+            test = f"skills/{test}"
         if not (args.to / test / "task").is_dir():
             continue  # smoke tests and probes that were never benchmark tasks
         for trial in sorted(

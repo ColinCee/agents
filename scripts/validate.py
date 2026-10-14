@@ -342,7 +342,7 @@ def check(root: Path) -> Report:
     # endings reaches the container as is: `import os\r` matches no sed pattern and a shell script fails.
     # The tests are in the private agents-bench repository, when it is checked out beside this one.
     bench = Path(os.environ.get("AGENTS_BENCH") or root.parent / "agents-bench")
-    tests = sorted(bench.glob("*/task")) + sorted(bench.glob("archive/*/task")) if bench.is_dir() else []
+    tests = sorted(bench.glob("skills/*/task")) + sorted(bench.glob("archive/*/task")) if bench.is_dir() else []
     for path in (p for test in tests for p in sorted(test.rglob("*"))):
         caches = {"__pycache__", ".ruff_cache", ".pytest_cache"}
         if path.is_file() and not caches & set(path.parts) and b"\r\n" in path.read_bytes():
