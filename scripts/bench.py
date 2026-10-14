@@ -46,10 +46,34 @@ DEFAULT_RUNS = 10  # AGENTS.md: the fewest runs each way at which a skill can be
 DEFAULT_BATCH = 5  # ten containers at once used 1.5 GB in all and met no refusal (14 October 2026)
 RETRIES = 2  # Harbor retries only errors it treats as passing (not sign-in or usage-limit errors)
 BUDGET_SECONDS = 300  # AGENTS.md: the task step is to finish in under five minutes
+MIN_FREE_GB = 8.0  # a batch of ten used 1.5 GB at the peak; the rest is room for whatever else is running
 
 # The decision rule in AGENTS.md, as shares of the runs each way.
 PROMOTE_RUNS, PROMOTE_GAP, WORST_DROP, TOKEN_RATIO = 10, 0.4, 0.1, 1.25
 DELETE_RUNS, DELETE_GAP = 20, 0.3
+
+
+def free_memory_gb() -> float | None:
+    """Free physical memory, or None where it cannot be read without a package."""
+    if sys.platform == "win32":
+        import ctypes
+
+        class Status(ctypes.Structure):
+            _fields_ = [("length", ctypes.c_ulong), ("load", ctypes.c_ulong)] + [
+                (name, ctypes.c_ulonglong)
+                for name in ("total", "free", "page_total", "page_free", "virtual_total", "virtual_free", "extended")
+            ]
+
+        status = Status()
+        status.length = ctypes.sizeof(Status)
+        ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(status))
+        return status.free / 1024**3
+    meminfo = Path("/proc/meminfo")
+    if meminfo.is_file():
+        for line in meminfo.read_text().splitlines():
+            if line.startswith("MemAvailable:"):
+                return int(line.split()[1]) / 1024**2
+    return None
 
 
 def find(skill: str) -> tuple[Path, Path]:
@@ -284,6 +308,12 @@ def main() -> int:
         help="score two existing Harbor job folders",
     )
     parser.add_argument("--json", action="store_true", help="print JSON instead of text")
+    parser.add_argument(
+        "--min-free-gb",
+        type=float,
+        default=MIN_FREE_GB,
+        help=f"refuse to start a batch with less free memory than this (default {MIN_FREE_GB})",
+    )
     args = parser.parse_args()
     if args.runs < 1 or args.batch < 1:
         parser.error("--runs and --batch must be 1 or more")
@@ -322,6 +352,13 @@ def main() -> int:
                     return 1
                 break
             if missing:
+                free = free_memory_gb()
+                if free is not None and free < args.min_free_gb:
+                    print(
+                        f"Error: {free:.1f} GB of memory is free and --min-free-gb is {args.min_free_gb}. Something else needs the machine; try later.",
+                        file=sys.stderr,
+                    )
+                    return 1
                 JOBS.mkdir(exist_ok=True)
                 print(
                     f"Batch {batch + 1}: running {size} trials {' and '.join(missing)} the skill on {args.model} ...",
