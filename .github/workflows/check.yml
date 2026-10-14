@@ -29,7 +29,3 @@ jobs:
       - run: npm run validate
       # The scripts that ship inside skills are compiled from src/; the committed output must match the source.
       - run: npm run build && git diff --exit-code -- skills
-      # Repo tools not yet ported from Python.
-      - uses: astral-sh/setup-uv@v10.3.0
-      - run: uvx ruff@0.17.0 check scripts
-      - run: uvx ruff@0.17.0 format --check scripts

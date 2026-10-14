@@ -119,7 +119,7 @@ A skill is tested in four steps, the cheapest first. Each step has a time budget
 - it is behind on no check by more than one run in ten,
 - and it costs no more than three times the input tokens. Cost is reported on every run, but it is a cap for runaway skills, not a trade-off: the run without the skill did not do the job, so its lower cost buys nothing. (Set by the owner on 14 October, after a quarter and then a half held back skills that did the job fully.)
 
-It is deleted when twenty runs each way show no check ahead by three runs in ten. Both arms run on the same task, model, harness and agent versions; `bench.py` keys saved runs on all of them, so a no-skill arm is reused only when none has changed. Results from a changed set-up are never compared. Change this rule only between skills, never to rescue one. The run that decides has a number of runs fixed before it starts. Stopping at the first batch that crosses the line favours a positive verdict, so `--until-decided` is for exploring, never for deciding.
+It is deleted when twenty runs each way show no check ahead by three runs in ten. Both arms run on the same task, model, harness and agent versions; `npm run bench` keys saved runs on all of them, so a no-skill arm is reused only when none has changed. Results from a changed set-up are never compared. Change this rule only between skills, never to rescue one. The run that decides has a number of runs fixed before it starts. Stopping at the first batch that crosses the line favours a positive verdict, so `--until-decided` is for exploring, never for deciding.
 
 For step 3:
 
@@ -133,7 +133,7 @@ For step 3:
 - **Check that the skill was used.** A run "with the skill" in which the agent never read `SKILL.md` is a run without it.
 - **Count tokens, time and turns** as well as passes. A skill that passes one more check at twice the cost may not be worth it.
 - **Drop a check that passes without the skill.** It costs a run and says nothing.
-- **Grade only what the task asks for.** A check the task text never asks for (one way of writing "none" when the project documents another) grades agreement with the skill, not the job, and a skill that states the preference wins on taste. Drop it, or make the task ask. For a command, the run with the skill starts with `/<name>`, as the user types it, and the run without it gets the same request in plain words; what the task asks for is every step the command promises, so grade each step. `bench.py` does this for any skill marked `disable-model-invocation: true`.
+- **Grade only what the task asks for.** A check the task text never asks for (one way of writing "none" when the project documents another) grades agreement with the skill, not the job, and a skill that states the preference wins on taste. Drop it, or make the task ask. For a command, the run with the skill starts with `/<name>`, as the user types it, and the run without it gets the same request in plain words; what the task asks for is every step the command promises, so grade each step. `npm run bench` does this for any skill marked `disable-model-invocation: true`.
 - **Count a fault as handled when it is fixed or named in the report.** An agent told to leave decisions to the user is right to report and not fix.
 - **Deleting a rule needs a run too.** Removing a rule loses most of what adding it gained.
 - **Read what the agent did,** not only its last message, and keep only the instructions that changed the result.
@@ -149,10 +149,10 @@ npm run check
 When a skill's body or its task changed, and Docker is free:
 
 ```bash
-python scripts/bench.py <skill>
+npm run bench -- <skill>
 ```
 
-It runs the task both ways side by side, says how long it took, and marks each check that does not tell the two apart. Then file the runs in the private repository and commit it there: `python scripts/export_runs.py --apply`. A checklist skill has no task of its own: score it on each focused skill's test with `--task <skill>`, and report each task separately. With nothing changed it scores the saved runs and starts no agent. (`bench` and `export_runs` are being ported to `tools/`.)
+It runs the task both ways side by side, says how long it took, and marks each check that does not tell the two apart. Then file the runs in the private repository and commit it there: `npm run export-runs -- --apply`. On Windows start long runs hidden (`Start-Process node -WindowStyle Hidden`, through `npm run hidden`), or Docker's calls flash terminal windows up on the owner's screen. A checklist skill has no task of its own: score it on each focused skill's test with `--task <skill>`, and report each task separately. With nothing changed it scores the saved runs and starts no agent.
 
 Commit messages say what changed and why, in a plain sentence.
 

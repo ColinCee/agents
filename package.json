@@ -15,7 +15,10 @@
     "build:lease": "tsc -p tsconfig.lease.json",
     "install-lease": "npm run build:lease && tsx tools/install-lease.ts",
     "check": "npm run typecheck && npm run lint && npm test && npm run validate && npm run build && git diff --exit-code -- skills",
-    "install-home": "tsx tools/install-home.ts"
+    "install-home": "tsx tools/install-home.ts",
+    "bench": "tsx tools/bench.ts",
+    "export-runs": "tsx tools/export-runs.ts",
+    "hidden": "tsx tools/run-hidden.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.15",
