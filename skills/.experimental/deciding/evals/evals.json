@@ -1,0 +1,23 @@
+{
+  "skill_name": "deciding",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Which of the three models should be our default? Pick one and switch the config to it.",
+      "expected_output": "States the question, names the hand labels as the ground truth and rejects labels a candidate made, runs every model on the same cases several times, scores without filtering on the model's own confidence, and decides with the margin and spread.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "why that model? do a proper comparison of all models and check which is the best",
+      "expected_output": "Measures every candidate side by side on the same inputs before choosing, and says why the winner won. From Strata and Cortex, October 2026.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "How are we determining the correct answer? There isn't exactly a ground truth here",
+      "expected_output": "Names the ground truth and how it was made; when none exists, says the question is not decidable yet and what to label by hand. From diagram-c, October 2026.",
+      "files": []
+    }
+  ]
+}

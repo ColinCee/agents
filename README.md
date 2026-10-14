@@ -40,6 +40,7 @@ Not yet measured (`skills/.experimental/`):
 
 | Skill | What it does |
 |---|---|
+| [deciding](skills/.experimental/deciding/SKILL.md) | A command: decides from evidence (the question in one line, what is known, a fair comparison, how sure). Being measured |
 
 How they fit together:
 
