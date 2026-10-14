@@ -24,3 +24,7 @@ Task `tasks/cleaning`, agent Claude Code, Harbor 0.24.0. Two batches with the sa
 - The step that made the difference, "before running anything, find what could be lost", is the safeguarding idea. It earns its place on this evidence.
 - Run on a second model before moving the skill out of `.experimental`.
 - Set-up is 80 of the 120 seconds per trial, mostly installing Claude Code into the container. The 10-run batch took 537 s against a 300 s budget.
+
+## Did any run cheat?
+
+No. Every tool call in all 30 runs was searched for the verifier, the reference solution, the fixture's build files, Harbor and the network: none was touched. The two runs that searched the whole disk had already overwritten the data and were looking for a surviving copy to restore. All four runs that lost data said so at the top of their report. Without the skill, the safe runs copied the project elsewhere before running the tests; the four that lost data ran them in place.
