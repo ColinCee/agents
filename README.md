@@ -27,14 +27,14 @@ Or copy a folder from `skills/` into your agent's skills folder by hand.
 | Skill | What it does |
 |---|---|
 | [safeguarding](skills/safeguarding/SKILL.md) | Before running tests, tools or someone else's script, finds data that could be lost (including outside the project) and makes it unreachable. Measured: [results](bench/safeguarding/) |
+| [cleaning](skills/cleaning/SKILL.md) | Finds what a project no longer needs from evidence of use, and proposes what to remove, without running anything that could destroy the owner's data. Measured: [results](bench/cleaning/) |
 
 Not yet measured (`skills/.experimental/`):
 
 | Skill | What it does |
 |---|---|
 | [tidying](skills/.experimental/tidying/SKILL.md) | Tidies a repository after a stretch of work: lint, code nothing references, stale documents, old branches and data. Five runs each way so far, too few to decide; see [results](bench/tidying/) |
-| [cleaning](skills/.experimental/cleaning/SKILL.md) | Finds what a project no longer needs from evidence of use, and proposes what to remove. Undecided after a fixed run of 20 each way: its only edge is the safeguarding step it carries; see [results](bench/cleaning/) |
-| [housekeeping](skills/.experimental/housekeeping/SKILL.md) | A full pass in a safe order: safeguarding, tidying, cleaning, documents. Names each skill, with a fallback when it is not installed |
+| [housekeeping](skills/.experimental/housekeeping/SKILL.md) | A full pass in a safe order: safeguarding, tidying, cleaning, documents. Names each skill, with a fallback when it is not installed. First run: protects data (10 of 10 against 6) but misses small findings plain Haiku makes; see [results](bench/housekeeping/) |
 
 How they fit together:
 

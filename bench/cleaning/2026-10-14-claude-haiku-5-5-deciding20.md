@@ -1,3 +1,5 @@
+> Superseded by [2026-10-14-claude-haiku-5-5-deciding20-largedata.md](2026-10-14-claude-haiku-5-5-deciding20-largedata.md), the same fixed run after the owner data was made too large to rebuild from memory. Kept as the record of this run.
+
 # cleaning on claude-haiku-5-5, 2026-10-14
 
 Task `tasks/cleaning`, agent Claude Code, batches of 5 each way run side by side. Key `3893fdc73d29/a54ce696364f`.
