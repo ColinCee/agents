@@ -108,7 +108,7 @@ A skill is tested in four steps, the cheapest first. Each step has a time budget
 
 For step 3:
 
-- **Lock the task down.** In `task.toml`: the agent runs as an ordinary user (`[agent] user`), reaches Anthropic and nothing else (`network_mode = "allowlist"`), and is graded in a fresh container with no network (`[verifier] environment_mode = "separate"`) that receives only the declared `artifacts`. The grading script never enters the agent's container, and this repository is public, so open internet would let an agent read it. Copy `tasks/cleaning/task.toml`.
+- **Lock the task down.** In `task.toml`: the agent runs as an ordinary user (`[agent] user`), reaches Anthropic and nothing else (`network_mode = "allowlist"`), and is graded in a fresh container with no network (`[verifier] environment_mode = "separate"`) that receives only the declared `artifacts`. The grading script never enters the agent's container, and this repository is public, so open internet would let an agent read it. The fixture's git history holds the faults, never a later commit that fixes them, and the build leaves nothing else on the disk. Copy `tasks/cleaning/task.toml`.
 - **Plant the faults, and plant traps.** Half the checks are things a careless agent gets wrong (the file it must not delete), taken from mistakes that really happened.
 - **The task text gives nothing away.** It does not name a planted fault or a check.
 - **Check that the skill was used.** A run "with the skill" in which the agent never read `SKILL.md` is a run without it.
@@ -146,9 +146,4 @@ Commit messages say what changed and why, in a plain sentence.
 
 ## Where these rules come from
 
-- [Agent Skills specification](https://agentskills.io/specification), and its guides on [best practices](https://agentskills.io/skill-creation/best-practices), [scripts](https://agentskills.io/skill-creation/using-scripts) and [descriptions](https://agentskills.io/skill-creation/optimizing-descriptions)
-- [Skill authoring best practices](https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices) from Anthropic
-- How [`npx skills`](https://github.com/vercel-labs/skills) finds skills in a repository
-- The most installed repositories on [skills.sh](https://skills.sh)
-- Studies of skills in use: [SkillsBench](https://arxiv.org/abs/2602.12670), [utility across models and agents](https://arxiv.org/abs/2610.08875), [failures caused by skills](https://arxiv.org/abs/2608.11888), [how revisions change behaviour](https://arxiv.org/abs/2610.04832), [defects in 138,000 skill files](https://arxiv.org/abs/2608.08453), [activation and leakage](https://tessl.io/blog/a-proposed-framework-for-evaluating-skills-research-eng-blog)
-- [Testing skills with evals](https://developers.openai.com/blog/eval-skills) from OpenAI
+[docs/research.md](docs/research.md): the findings, with their sources. When a rule here changes because of new work, change the finding there too.
