@@ -32,13 +32,13 @@ Every result so far is on Claude Haiku 5.5 in Claude Code; a skill that helps on
 | [cleaning](skills/cleaning/SKILL.md) | Finds what a project no longer needs from evidence of use, and proposes what to remove, without running anything that could destroy the owner's data. Measured: [results](bench/cleaning/README.md) |
 | [housekeeping](skills/housekeeping/SKILL.md) | A command: "do some housekeeping" runs a full pass in a safe order (safeguarding, tidying, cleaning, documents), naming each skill, with a fallback when it is not installed. Measured alone, on its fallbacks, without the focused skills installed: [results](bench/housekeeping/README.md) |
 | [doc-upkeep](skills/doc-upkeep/SKILL.md) | Brings documents back in line with the code and leaves them shorter: stale lines replaced in place, one home per fact, no log of what was removed. Measured: [results](bench/doc-upkeep/README.md) |
+| [ui-decluttering](skills/ui-decluttering/SKILL.md) | Redesigns a cluttered screen so the user decides quickly: one primary action, at most four choices in view, nothing unrelated, controls that look like what they do. Measured: [results](bench/ui-decluttering/README.md) |
 
 Not yet measured (`skills/.experimental/`):
 
 | Skill | What it does |
 |---|---|
 | [tidying](skills/.experimental/tidying/SKILL.md) | Tidies a repository after a stretch of work: lint, code and pages nothing reaches, stale documents, uncommitted work, old branches and data. Passes every check every time, but at x1.59 the tokens, over the x1.5 limit; see [results](bench/tidying/README.md) |
-| [ui-decluttering](skills/.experimental/ui-decluttering/SKILL.md) | Redesigns a cluttered screen so the user decides quickly: one primary action, few choices in view, nothing unrelated. Being measured |
 
 How they fit together:
 
@@ -52,6 +52,7 @@ housekeeping ──► safeguarding   what could be lost
 Benchmark tasks without a skill:
 
 - `tasks/strict-types`: shelved. Plain Haiku types the schema correctly in 8 of 10 runs ([results](bench/strict-types/)); too little room for a skill.
+- `tasks/sidebar`: the test for `ui-decluttering`.
 - `tasks/ui-flow`: shelved. A new choice on a card page must leave the card somewhere (History, with undo); plain Haiku does it in 10 of 10 runs, even with History in its own module ([results](bench/ui-flow/)).
 - `tasks/experiment-design`: shelved. Plain Haiku audits the unfair comparison correctly in 5 of 5 runs ([results](bench/experiment-design/)); the next version asks the agent to build the comparison.
 
