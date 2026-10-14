@@ -123,7 +123,10 @@ words = {
     "same_as": "same as",
 }
 results["every_choice_kept_or_named"] = all(s in values or w in report for s, w in words.items())
-add = next((c for c in found if text(c) == "add to calendar"), None)
+# Found by what it does, not its label: a run that relabels it "Yes, add it" has not broken anything.
+add = next((c for c in found if c["attrs"].get("value") == "added"), None) or next(
+    (c for c in found if re.search(r"\badd\b", text(c)) and "calendar" in text(c)), None
+)
 ok = False
 if add:
     try:
