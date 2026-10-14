@@ -52,7 +52,7 @@ BUDGET_SECONDS = 300  # AGENTS.md: the task step is to finish in under five minu
 MIN_FREE_GB = 8.0  # a batch of ten used 1.5 GB at the peak; the rest is room for whatever else is running
 
 # The decision rule in AGENTS.md, as shares of the runs each way.
-PROMOTE_RUNS, PROMOTE_GAP, WORST_DROP, TOKEN_RATIO = 10, 0.4, 0.1, 1.25
+PROMOTE_RUNS, PROMOTE_GAP, WORST_DROP, TOKEN_RATIO = 10, 0.4, 0.1, 1.5
 DELETE_RUNS, DELETE_GAP = 20, 0.3
 
 
@@ -394,6 +394,12 @@ def main() -> int:
                     )
                     return 1
                 JOBS.mkdir(exist_ok=True)
+                # Harbor resumes a job folder that exists, so a forced run would only read the old trials back.
+                # They are set aside under a dated name, not deleted: they are the record of an earlier run.
+                stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+                for side in missing:
+                    if jobs[side].exists():
+                        jobs[side].rename(jobs[side].with_name(f"{jobs[side].name}.set-aside-{stamp}"))
                 print(
                     f"Batch {batch + 1}: running {size} trials {' and '.join(missing)} the skill on {args.model} ...",
                     file=sys.stderr,

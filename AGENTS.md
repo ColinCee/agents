@@ -108,13 +108,14 @@ A skill is tested in four steps, the cheapest first. Each step has a time budget
 
 - **A slow check is a fault to fix,** not a cost to accept. Run trials side by side, keep the fixture small, and put what every trial installs into the image.
 - **Every run reports how long it took,** so a check that is getting slower is seen.
+- **Each measured skill has `bench/<name>/README.md`:** what to expect from it in one line, a table of the checks that differ (without, with, tokens), what the test asks and which real incident it comes from, and a link to the latest run. Update it with every run that changes the picture.
 - **A task earns its place by telling two things apart:** with the skill and without it, or one version and the next. One that scores the same either way is shelved.
 
 **The decision rule, fixed before any run.** A skill moves out of `skills/.experimental/` when, on at least one model, with at least ten runs each way:
 
 - it is ahead on some check by at least four runs in ten (6 of 10 without, 10 of 10 with, or better),
 - it is behind on no check by more than one run in ten,
-- and it costs no more than a quarter more input tokens.
+- and it costs no more than half again the input tokens. (Raised from a quarter on 14 October, by the owner, before the next deciding run: on small tasks a skill that does the job fully takes a few more steps, and each step resends the conversation.)
 
 It is deleted when twenty runs each way show no check ahead by three runs in ten. Both arms run on the same task, model, harness and agent versions; `bench.py` keys saved runs on all of them, so a no-skill arm is reused only when none has changed. Results from a changed set-up are never compared. Change this rule only between skills, never to rescue one. The run that decides has a number of runs fixed before it starts. Stopping at the first batch that crosses the line favours a positive verdict, so `--until-decided` is for exploring, never for deciding.
 
