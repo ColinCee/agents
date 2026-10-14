@@ -27,7 +27,8 @@ checks = {
     # Corrected three times, all in beta: beta's AGENTS.md.
     ("fix", "migrate_lesson_in_beta"): row(r"make migrate", r"beta"),
     # Already a rule in alpha, corrected again in beta and gamma: it is at the wrong level.
-    ("fix", "uv_rule_moved_up"): row(r"\buv\b", USER),
+    # Counted only when the report also sees it is already in alpha's file, which is what makes it the wrong level.
+    ("fix", "uv_rule_moved_up"): any(re.search(r"\buv\b", l) and re.search(USER, l) and "alpha" in l for l in lines),
     # The same procedure asked for in three sessions: a skill.
     ("fix", "screenshot_skill_candidate"): row(r"screenshot", r"skill"),
     # One-offs and product feedback are not rules.
