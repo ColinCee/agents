@@ -14,7 +14,7 @@ const objs = (v: Json | undefined): Obj[] => (Array.isArray(v) ? v.filter(isObj)
 
 const FRESH_MS = 5 * 60_000; // free RAM older than this is not shown: nobody has run the command since
 const LATE_MS = 60_000; // two missed renewals, as the lease command counts it
-const GPU_BUSY_GB = 4; // as the lease command counts it: the desktop and a browser take 1 to 3 GB of the card
+const GPU_BUSY_GB = 6; // as the lease command counts it: Windows' desktop alone holds 3.3 GB of the card
 const NAME_MAX = 24; // a holder's name on a line that also says what it holds and for how long
 
 const legacy = (gb: number): Want[] => [
