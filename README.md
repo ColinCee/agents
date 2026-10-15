@@ -8,7 +8,13 @@ Skills for coding agents, in the open [Agent Skills](https://agentskills.io) for
 npx skills add ColinCee/agents
 ```
 
-It asks which skills and which agents. To see what is here without installing:
+It asks which skills and which agents. Tick each agent you use: the shared `~/.agents/skills` folder is read by Codex and others but not by Claude Code, which reads only `~/.claude/skills`. For every project, in Claude Code:
+
+```bash
+npx skills add ColinCee/agents --global --skill '*' --agent claude-code
+```
+
+To see what is here without installing:
 
 ```bash
 npx skills add ColinCee/agents --list
