@@ -1,6 +1,6 @@
 ---
 name: deciding
-description: Decides between options from evidence, not first impressions: one-line question, ground truth, a fair repeated comparison, how sure. Use when asked which option is better, which to make the default or to switch to, or whether a change helps.
+description: Decides between options from evidence, not first impressions, with a one-line question, the ground truth, a fair repeated comparison and how sure it is. Use when asked which option is better, which to make the default, or whether a change helps.
 license: MIT
 disable-model-invocation: true
 ---

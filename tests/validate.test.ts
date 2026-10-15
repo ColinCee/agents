@@ -78,3 +78,8 @@ test("a skill missing from the README is reported", () => {
   write(join(root, "README.md"), "nothing here");
   expect(errors().join("\n")).toMatch(/does not list sample/);
 });
+
+test("a description that YAML would read as a second mapping is refused", () => {
+  write(join(root, "skills/sample/SKILL.md"), SKILL.replace("Samples things.", "Samples things: quickly."));
+  expect(errors().join("\n")).toMatch(/a YAML parser will refuse it/);
+});

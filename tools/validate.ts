@@ -113,8 +113,12 @@ function frontmatter(text: string): { fields: Fields; body: string; wrong: strin
       wrong.push(`\`${key}\` is spread over lines; put the value on one line`);
       continue;
     }
-    if (value.length > 1 && value[0] === value.at(-1) && (value[0] === '"' || value[0] === "'"))
-      value = value.slice(1, -1);
+    const quoted = value.length > 1 && value[0] === value.at(-1) && (value[0] === '"' || value[0] === "'");
+    // A YAML parser reads `a: b` inside an unquoted value as a second mapping and refuses the file: the skills
+    // installer skipped four of five skills for this. Our own reading is looser, so check for it here.
+    if (!quoted && (/:\s/.test(value) || / #/.test(value) || /^[[{&*!%@`]/.test(value)))
+      wrong.push(`\`${key}\` holds ": ", " #" or starts with a YAML symbol; a YAML parser will refuse it. Rephrase it`);
+    if (quoted) value = value.slice(1, -1);
     if (line.startsWith(" ") || line.startsWith("\t")) {
       const holder = parent === null ? undefined : fields[parent];
       if (typeof holder === "object") holder[key] = value;

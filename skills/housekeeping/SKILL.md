@@ -1,6 +1,6 @@
 ---
 name: housekeeping
-description: Runs a full housekeeping pass on a repository in a safe order: what could be lost, code health, what is no longer used, documents. Use when asked for housekeeping, to tidy or clean up a project, or to get it ready to hand over.
+description: Runs a full housekeeping pass on a repository in a safe order, from what could be lost to code health, unused things and documents. Use when asked for housekeeping, to tidy or clean up a project, or to get it ready to hand over.
 license: MIT
 compatibility: Requires git and Node 22 or later.
 disable-model-invocation: true

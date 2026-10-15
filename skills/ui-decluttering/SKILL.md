@@ -1,6 +1,6 @@
 ---
 name: ui-decluttering
-description: Redesigns a cluttered screen so the user decides quickly: one primary action, few choices in view, nothing unrelated, controls that look like what they do. Use when a page, sidebar or panel is messy, has too many buttons, or causes decision fatigue.
+description: Redesigns a cluttered screen so the user decides quickly, with one primary action, few choices in view and nothing unrelated. Use when a page, sidebar or panel is messy, has too many buttons, or causes decision fatigue.
 license: MIT
 disable-model-invocation: true
 ---

@@ -1,6 +1,6 @@
 ---
 name: doc-upkeep
-description: Keeps documents and code comments true and few: stale lines fixed in place, one home per fact, comments that say why, not what. Use when code changes that a document or comment describes, when writing either, or to update the docs.
+description: Keeps documents and code comments true and few, fixing stale lines in place, giving each fact one home, and making comments say why, not what. Use when code changes that a document or comment describes, when writing either, or to update the docs.
 license: MIT
 ---
 
