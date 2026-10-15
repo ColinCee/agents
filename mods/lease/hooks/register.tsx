@@ -1,7 +1,7 @@
 import type { EngineInterface, Register } from "claude-code";
 import { atom, read, update } from "claude-code";
 import type { Band, Chip } from "../types";
-import { bandOf, cardLines, freeWords } from "./band";
+import { bandOf, cardLines, freeWords, hoverLine } from "./band";
 
 const band = atom({ plugin: "lease", key: "band" } as const, null);
 const open = atom({ plugin: "lease", key: "open" } as const, null);
@@ -79,39 +79,30 @@ export const register: Register = (on) => {
     const spareShown = await read($, showSpare);
     const message = await read($, said);
     const now = await $.clock.now();
-    // The terminal spends no rows on borders: two lines per chip. Other surfaces draw each chip as a small box.
+    // Cards are boxed off the terminal; on it a border would cost two rows.
     const boxed = e.surface !== "terminal";
     const toggle = (key: string) => async () => {
       await update($, confirming, () => false);
       await update($, open, (was) => (was === key ? null : key));
     };
+    // One small button per held resource, its label and a dot; the whole chip takes the click. The pointer on it
+    // reveals that chip's one-line details under the row (its hover group); a click pins the card with Free it.
     const chip = (c: Chip) => (
-      <Box
-        key={c.key}
-        position="relative"
-        flexDirection="column"
-        paddingX={1}
-        {...(boxed ? { borderStyle: "round", borderDimColor: c.key !== openKey } : {})}
+      <Button
+        key={`chip:${c.key}`}
+        variant={c.key === openKey ? "primary" : undefined}
+        hover={{ scope: `lease:${c.key}` }}
+        onPress={toggle(c.key)}
       >
-        <Button key={`chip:${c.key}`} plain dimColor onPress={toggle(c.key)}>
-          {c.label}
-          {boxed ? "" : <Text color={c.stuck === null ? "success" : "error"}> ●</Text>}
-        </Button>
-        <Button key={`who:${c.key}`} plain onPress={toggle(c.key)}>
-          <Text color={c.stuck === null ? undefined : "error"}>{c.holder}</Text>
-          {c.waiting.length > 0 ? <Text dimColor> +{c.waiting.length}</Text> : ""}
-        </Button>
-        {boxed ? (
-          <Box position="absolute" top={0} right={0}>
-            <Text color={c.stuck === null ? "success" : "error"}>●</Text>
-          </Box>
-        ) : null}
-      </Box>
+        {c.tag}
+        <Text color={c.stuck === null ? "success" : "error"}> ●</Text>
+        {c.waiting.length > 0 ? <Text dimColor> +{c.waiting.length}</Text> : ""}
+      </Button>
     );
     const opened = shown.chips.find((c) => c.key === openKey) ?? null;
     return (
       <Box flexDirection="column">
-        <Box flexDirection="row" gap={boxed ? 1 : 3} alignItems="center">
+        <Box flexDirection="row" gap={1} alignItems="center">
           {shown.chips.map(chip)}
           {shown.spare.length > 0 ? (
             <Button
@@ -130,6 +121,15 @@ export const register: Register = (on) => {
               ))
             : null}
         </Box>
+        {openKey === null
+          ? shown.chips.map((c) => (
+              <Box key={`hover:${c.key}`} display="none" hover={{ scope: `lease:${c.key}`, display: "flex" }}>
+                <Text color={c.stuck === null ? undefined : "error"} dimColor={c.stuck === null} wrap="truncate-end">
+                  {hoverLine(c, now)}
+                </Text>
+              </Box>
+            ))
+          : null}
         {opened !== null ? (
           <Box flexDirection="column" paddingX={1} {...(boxed ? { borderStyle: "round", borderDimColor: true } : {})}>
             {cardLines(opened, shown, now).map((line, i) => (

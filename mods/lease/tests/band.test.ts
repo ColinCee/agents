@@ -1,5 +1,5 @@
 import { expect, test } from "claude-code/testing";
-import { bandOf, cardLines, freeWords } from "../hooks/band";
+import { bandOf, cardLines, freeWords, hoverLine } from "../hooks/band";
 
 const NOW = Date.parse("2026-10-15T12:00:00Z");
 const state = (holds: object[], waiting: object[] = []) =>
@@ -61,6 +61,12 @@ test("one chip per held resource: label over holder, stuck first, waiting counte
       "1 GB of RAM free",
     ]);
     expect(freeWords(ram)).toBe("Stop Strata and free gpu ram:40?");
+    expect(hoverLine(ram, NOW)).toBe("RAM · 40 GB: Strata (cortex) · 12 min · waiting: bench · click for more");
+    const web = band.chips[0];
+    if (web)
+      expect(hoverLine(web, NOW)).toMatch(
+        /^WEB: form-filling-agent · 4 min · stuck: it has not checked in for over a minute/,
+      );
   }
   expect(bandOf(state([]), NOW)).toBe(null); // nothing held, nobody waiting: no band
   expect(bandOf(null, NOW)).toBe(null);
@@ -100,9 +106,10 @@ test("a click opens the card; Free it asks first, then frees that hold by name",
   for (const surface of ["terminal", "desktop"] as const) {
     const ui = await $.ui.mount({ ...BAND, surface });
     expect(await ui.find({ key: "free" })).toBeUndefined(); // no card until a click
-    await ui.press({ key: "who:gpu/cortex/100" });
+    expect(await ui.find({ key: "hover:gpu/cortex/100" })).toBeDefined(); // its one-line details, shown by the pointer
+    await ui.press({ key: "chip:gpu/cortex/100" });
     expect(await ui.find({ type: "Text", text: /Strata \(cortex, pid 100\) holds gpu ram:40/ })).toBeDefined();
-    await ui.press({ key: "who:gpu/cortex/100" }); // the same chip again closes it
+    await ui.press({ key: "chip:gpu/cortex/100" }); // the same chip again closes it
     expect(await ui.find({ key: "free" })).toBeUndefined();
     await ui.unmount();
   }

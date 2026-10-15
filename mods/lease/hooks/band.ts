@@ -67,6 +67,7 @@ export function bandOf(text: string | null, now: number): Band | null {
     const pid = num(h.pid) ?? 0;
     return wants.map((w) => ({
       key: `${w.resource}/${name}/${pid}`,
+      tag: labelOf(w.resource, labels),
       label: w.gb === null ? labelOf(w.resource, labels) : `${labelOf(w.resource, labels)} · ${Math.round(w.gb)} GB`,
       holder: short(str(h.note) || name),
       stuck,
@@ -110,6 +111,15 @@ export function cardLines(chip: Chip, band: Band, now: number): string[] {
   if (chip.waiting.length > 0) lines.push(`waiting: ${chip.waiting.join(", ")}`);
   if (chip.key.startsWith("ram/") && band.freeGb !== null) lines.push(`${Math.round(band.freeGb)} GB of RAM free`);
   return lines;
+}
+
+/** The one line shown while the pointer is on a chip: who, for how long, and anything wrong. */
+export function hoverLine(chip: Chip, now: number): string {
+  const who = chip.note === "" ? chip.name : `${chip.note} (${chip.name})`;
+  const waiting = chip.waiting.length > 0 ? ` · waiting: ${chip.waiting.join(", ")}` : "";
+  const stuck =
+    chip.stuck === null ? "" : ` · ${STUCK_WORDS[chip.stuck].replace(/^Stuck: /, "stuck: ").replace(/.$/, "")}`;
+  return `${chip.label}: ${who} · ${ago(now - chip.taken)}${waiting}${stuck} · click for more`;
 }
 
 /** What "Free it" will do, in words, for the confirm row. */

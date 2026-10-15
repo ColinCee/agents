@@ -3,6 +3,9 @@ export type Stuck = "orphaned" | "late" | "over" | null;
 /** One held resource, as one chip: a small label over the holder's name. */
 export type Chip = {
   key: string;
+  /** The short label drawn on the chip: GPU, RAM, WEB. */
+  tag: string;
+  /** The label with its share, for the details: RAM · 40 GB. */
   label: string;
   holder: string;
   stuck: Stuck;
