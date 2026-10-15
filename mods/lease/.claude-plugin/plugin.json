@@ -1,6 +1,6 @@
 {
   "name": "lease",
   "version": "0.1.0",
-  "description": "Shows who holds each shared lock (the lease command): one chip per resource, a click for details and Free it",
+  "description": "Shows who holds each shared lock (the lease command), one line per holder, red when stuck",
   "types": "./types/index.d.ts"
 }

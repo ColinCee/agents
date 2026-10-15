@@ -1,4 +1,4 @@
-import type { Band, Chip, Spare, Stuck } from "../types";
+import type { Band, Line, Stuck } from "../types";
 
 // Read, never written: the lease command owns the file and its lock. Both its versions are read, so the band works
 // whichever was installed first.
@@ -14,7 +14,7 @@ const objs = (v: Json | undefined): Obj[] => (Array.isArray(v) ? v.filter(isObj)
 
 const FRESH_MS = 5 * 60_000; // free RAM older than this is not shown: nobody has run the command since
 const LATE_MS = 60_000; // two missed renewals, as the lease command counts it
-const NAME_MAX = 14; // a chip's title; the card has the whole name
+const NAME_MAX = 24; // a holder's name on a line that also says what it holds and for how long
 
 const legacy = (gb: number): Want[] => [
   { resource: "gpu", gb: null },
@@ -26,10 +26,7 @@ function wantsOf(v: Json | undefined, gb: Json | undefined): Want[] {
   return objs(v).map((w) => ({ resource: str(w.resource), gb: num(w.gb) }));
 }
 
-const wantWords = (wants: Want[]) => wants.map((w) => (w.gb === null ? w.resource : `${w.resource}:${w.gb}`)).join(" ");
 const short = (text: string) => (text.length > NAME_MAX ? `${text.slice(0, NAME_MAX - 1)}…` : text);
-const labelOf = (resource: string, labels: Map<string, string>) =>
-  labels.get(resource) ?? resource.replace(/-/g, "").slice(0, 3).toUpperCase();
 
 export function ago(ms: number): string {
   const s = Math.max(0, Math.round(ms / 1000));
@@ -38,93 +35,62 @@ export function ago(ms: number): string {
   return m < 90 ? `${m} min` : `${Math.floor(m / 60)} h ${m % 60} min`;
 }
 
-/** The band for the state file's text at `now`, or null when there is nothing to show. */
+const PROBLEM: Record<Exclude<Stuck, null>, string> = {
+  orphaned: "stuck: its holder is gone, its job still runs",
+  late: "stuck: no check-in for over a minute",
+  over: "over the time it gave",
+};
+
+/** The band for the state file's text at `now`: one line per holder, stuck ones first, or null when nothing is
+ * held (no band at all). */
 export function bandOf(text: string | null, now: number): Band | null {
   if (text === null) return null;
   let raw: Json;
   try {
     raw = JSON.parse(text) as Json;
   } catch {
-    return { chips: [], spare: [], freeGb: null, unreadable: true };
+    return { lines: [], unreadable: true };
   }
   if (!isObj(raw)) return null;
   const labels = new Map(objs(raw.resources).map((r) => [str(r.name), str(r.label)]));
+  const label = (r: string) => labels.get(r) ?? r.replace(/-/g, "").slice(0, 3).toUpperCase();
   const holds = raw.version === 1 ? (isObj(raw.holder) ? [raw.holder] : []) : objs(raw.holds);
   const waiters = objs(raw.waiting).map((w) => ({ name: str(w.name), wants: wantsOf(w.wants, w.gb) }));
-  const chips: Chip[] = holds.flatMap((h) => {
+  const freeGb = num(raw.free_gb);
+  const fresh = freeGb !== null && now - Date.parse(str(raw.measured)) < FRESH_MS;
+  const lines = holds.map((h) => {
     const wants = wantsOf(h.wants, h.gb);
-    const renewed = Date.parse(str(h.renewed));
-    const until = h.until === undefined || h.until === null ? null : Date.parse(str(h.until));
+    const until = typeof h.until === "string" ? Date.parse(h.until) : null;
     const stuck: Stuck =
       typeof h.orphaned === "string"
         ? "orphaned"
-        : now - renewed > LATE_MS
+        : now - Date.parse(str(h.renewed)) > LATE_MS
           ? "late"
           : until !== null && now > until
             ? "over"
             : null;
-    const name = str(h.name);
-    const pid = num(h.pid) ?? 0;
-    return wants.map((w) => ({
-      key: `${w.resource}/${name}/${pid}`,
-      tag: labelOf(w.resource, labels),
-      label: w.gb === null ? labelOf(w.resource, labels) : `${labelOf(w.resource, labels)} · ${Math.round(w.gb)} GB`,
-      holder: short(str(h.note) || name),
+    const what = wants.map((w) => (w.gb === null ? label(w.resource) : `${label(w.resource)} ${Math.round(w.gb)} GB`));
+    const ram = wants.some((w) => w.resource === "ram") && fresh ? `${Math.round(freeGb ?? 0)} GB RAM free` : "";
+    const waiting = waiters
+      .filter((x) => x.wants.some((y) => wants.some((w) => w.resource === y.resource)))
+      .map((x) => x.name);
+    const parts = [
+      short(str(h.note) || str(h.name)),
+      what.join(" + "),
+      ago(now - Date.parse(str(h.taken))),
+      ram,
+      waiting.length > 0 ? `waiting: ${waiting.join(", ")}` : "",
+    ].filter(Boolean);
+    const line: Line = {
+      key: `${str(h.name)}/${num(h.pid) ?? 0}`,
       stuck,
-      waiting: waiters.filter((x) => x.wants.some((y) => y.resource === w.resource)).map((x) => x.name),
-      name,
-      pid,
-      note: str(h.note),
-      wants: wantWords(wants),
-      job: isObj(h.job),
-      taken: Date.parse(str(h.taken)),
-      renewed,
-      until,
-    }));
+      text: parts.join(" · "),
+      problem: stuck === null ? "" : PROBLEM[stuck],
+    };
+    return { line, taken: Date.parse(str(h.taken)) };
   });
-  // Stuck first, then the oldest: chips keep their places as others come and go.
-  chips.sort((a, b) => Number(b.stuck !== null) - Number(a.stuck !== null) || a.taken - b.taken);
-  const used = new Set(chips.map((c) => c.key.split("/")[0]));
-  const spare: Spare[] = [...labels.keys()]
-    .filter((r) => !used.has(r))
-    .map((r) => ({ key: r, label: labelOf(r, labels) }));
-  const waited = waiters.length > 0;
-  if (chips.length === 0 && !waited) return null; // nothing held and nobody waiting: no band at all
-  const freeGb = num(raw.free_gb);
-  const fresh = now - Date.parse(str(raw.measured)) < FRESH_MS;
-  return { chips, spare, freeGb: freeGb !== null && fresh ? freeGb : null, unreadable: false };
-}
-
-const STUCK_WORDS: Record<Exclude<Stuck, null>, string> = {
-  orphaned: "Stuck: its holder is gone and its job still runs.",
-  late: "Stuck: it has not checked in for over a minute; it frees itself at two.",
-  over: "Stuck: it is past the time it said it would take.",
-};
-
-/** The card a click on a chip opens: who, how long, how it is doing, who waits. */
-export function cardLines(chip: Chip, band: Band, now: number): string[] {
-  const who = chip.note === "" ? `${chip.name} (pid ${chip.pid})` : `${chip.note} (${chip.name}, pid ${chip.pid})`;
-  const lines = [`${who} holds ${chip.wants}`];
-  const due = chip.until === null ? "" : chip.until > now ? ` · done in ${ago(chip.until - now)}` : "";
-  lines.push(`held ${ago(now - chip.taken)} · checked in ${ago(now - chip.renewed)} ago${due}`);
-  if (chip.stuck !== null) lines.push(STUCK_WORDS[chip.stuck]);
-  if (chip.waiting.length > 0) lines.push(`waiting: ${chip.waiting.join(", ")}`);
-  if (chip.key.startsWith("ram/") && band.freeGb !== null) lines.push(`${Math.round(band.freeGb)} GB of RAM free`);
-  return lines;
-}
-
-/** The one line shown while the pointer is on a chip: who, for how long, and anything wrong. */
-export function hoverLine(chip: Chip, now: number): string {
-  const who = chip.note === "" ? chip.name : `${chip.note} (${chip.name})`;
-  const waiting = chip.waiting.length > 0 ? ` · waiting: ${chip.waiting.join(", ")}` : "";
-  const stuck =
-    chip.stuck === null ? "" : ` · ${STUCK_WORDS[chip.stuck].replace(/^Stuck: /, "stuck: ").replace(/.$/, "")}`;
-  return `${chip.label}: ${who} · ${ago(now - chip.taken)}${waiting}${stuck} · click for more`;
-}
-
-/** What "Free it" will do, in words, for the confirm row. */
-export function freeWords(chip: Chip): string {
-  const who = chip.note || chip.name;
-  if (chip.job) return `Stop ${who} and free ${chip.wants}?`;
-  return `Free ${chip.wants}? ${who} stops its own work when it next checks in.`;
+  if (lines.length === 0) return null;
+  // Stuck first, then the oldest: lines keep their places as others come and go.
+  lines.sort((a, b) => Number(b.line.stuck !== null) - Number(a.line.stuck !== null) || a.taken - b.taken);
+  return { lines: lines.map((l) => l.line), unreadable: false };
 }

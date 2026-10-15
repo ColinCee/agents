@@ -1,30 +1,11 @@
 /** Why a hold wants a look: its holder is gone with its job running, no renewal for a minute, or past its time. */
 export type Stuck = "orphaned" | "late" | "over" | null;
-/** One held resource, as one chip: a small label over the holder's name. */
-export type Chip = {
-  key: string;
-  /** The short label drawn on the chip: GPU, RAM, WEB. */
-  tag: string;
-  /** The label with its share, for the details: RAM · 40 GB. */
-  label: string;
-  holder: string;
-  stuck: Stuck;
-  waiting: string[];
-  name: string;
-  pid: number;
-  note: string;
-  wants: string;
-  job: boolean;
-  taken: number;
-  renewed: number;
-  until: number | null;
-};
-/** A resource used before and free now, behind the band's › button. */
-export type Spare = { key: string; label: string };
-export type Band = { chips: Chip[]; spare: Spare[]; freeGb: number | null; unreadable: boolean };
+/** One holder, as one line of the band: who, what, how long, and anything wrong. */
+export type Line = { key: string; stuck: Stuck; text: string; problem: string };
+export type Band = { lines: Line[]; unreadable: boolean };
 
 declare module "claude-code" {
   interface PluginState {
-    lease: { band: Band | null; open: string | null; confirming: boolean; showSpare: boolean; said: string };
+    lease: { band: Band | null };
   }
 }

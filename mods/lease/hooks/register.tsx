@@ -1,23 +1,11 @@
 import type { EngineInterface, Register } from "claude-code";
 import { atom, read, update } from "claude-code";
-import type { Band, Chip } from "../types";
-import { bandOf, cardLines, freeWords, hoverLine } from "./band";
+import type { Band } from "../types";
+import { bandOf } from "./band";
 
 const band = atom({ plugin: "lease", key: "band" } as const, null);
-const open = atom({ plugin: "lease", key: "open" } as const, null);
-const confirming = atom({ plugin: "lease", key: "confirming" } as const, false);
-const showSpare = atom({ plugin: "lease", key: "showSpare" } as const, false);
-const said = atom({ plugin: "lease", key: "said" } as const, "");
 
-const PANE = "lease";
 const EVERY_MS = 5_000; // one small file read: cheap, and a lease changes on the scale of seconds
-const DOT_PX = 8; // a notification dot: seen at a glance, smaller than the label's letters
-// The theme's green and red are not reachable inside a picture; these read on light and dark backgrounds alike.
-const dotSvg = (fill: string) =>
-  `<svg xmlns="http://www.w3.org/2000/svg" width="${DOT_PX}" height="${DOT_PX}"><circle cx="4" cy="4" r="4" fill="${fill}"/></svg>`;
-const DOT_OK = dotSvg("#3fb950");
-const DOT_STUCK = dotSvg("#f85149");
-const COOLDOWN_S = 600; // after Free it, the holder may not take anything back for ten minutes
 
 async function folder($: EngineInterface): Promise<string> {
   const own = await $.env.get("LEASES_HOME");
@@ -34,254 +22,28 @@ async function refresh($: EngineInterface): Promise<void> {
   if (JSON.stringify(now) !== JSON.stringify(next)) await update($, band, () => next);
 }
 
-// Only on his press, after he confirms: the lease command frees that hold under its lock, logs it, and stops the
-// job its holder declared.
-async function freeIt($: EngineInterface, chip: Chip): Promise<void> {
-  const dir = await folder($);
-  const argv = [
-    "node",
-    `${dir}/lease.mjs`,
-    "free",
-    "--force",
-    "--name",
-    chip.name,
-    "--pid",
-    String(chip.pid),
-    "--stop-job",
-    "--by",
-    "Colin (Claude Code)",
-    "--cooldown",
-    String(COOLDOWN_S),
-  ];
-  const words = await $.process
-    .run(argv, { timeoutMs: 90_000 })
-    .then((r) =>
-      r.exitCode === 0
-        ? `Freed ${chip.wants} from ${chip.note || chip.name}.`
-        : `lease said: ${(r.stdout || r.stderr).trim()}`,
-    )
-    .catch(
-      (error: unknown) =>
-        `could not run lease (${String(error)}); in a terminal: lease free --force --name ${chip.name}`,
-    );
-  await update($, said, () => words);
-  await update($, open, () => null);
-  await refresh($);
-}
-
+// Shows only: taking and freeing are the agents' and programs' work, through the lease command.
 export const register: Register = (on) => {
   on("session.start", async ($, e, next) => {
     await refresh($);
     $.clock.every(EVERY_MS, () => refresh($));
-    await $.command.register({ name: "lease", description: "Show the shared locks (GPU, RAM, browser ...) in a pane" });
     return next(e);
-  });
-
-  on("command.run", { command: "lease" }, async ($) => {
-    await $.ui.open({ id: PANE, title: "Locks" });
-    return { text: "Locks pane opened." };
-  });
-
-  // The pane: one entry per held resource, coloured dot, label and holder, its details under it, and Free it.
-  on("ui.render", { component: "Pane", requestId: PANE }, async ($, e) => {
-    const { Box, Button, Text } = $.ui.resolve(e);
-    const shown: Band | null = await read($, band);
-    const now = await $.clock.now();
-    const asking = (await read($, confirming)) ? await read($, open) : null;
-    const message = await read($, said);
-    if (shown === null || shown.chips.length === 0)
-      return (
-        <Box flexDirection="column">
-          <Text dimColor>Nothing is locked.</Text>
-          {shown?.spare.length ? <Text dimColor>Used before: {shown.spare.map((s) => s.label).join(" ")}</Text> : null}
-        </Box>
-      );
-    return (
-      <Box flexDirection="column" gap={1}>
-        {shown.chips.map((c) => {
-          const lines = cardLines(c, shown, now);
-          return (
-            <Box key={`pane:${c.key}`} flexDirection="column">
-              <Text>
-                <Text color={c.stuck === null ? "success" : "error"}>● </Text>
-                <Text bold>{c.label}</Text>
-                <Text> {c.note || c.name}</Text>
-                {c.stuck !== null ? (
-                  <Text color="error" bold>
-                    {" "}
-                    {c.stuck === "over" ? "OVER TIME" : "STUCK"}
-                  </Text>
-                ) : null}
-              </Text>
-              {lines.slice(1).map((line, i) => (
-                <Text
-                  key={`pane:${c.key}:${i}`}
-                  dimColor={!line.startsWith("Stuck")}
-                  color={line.startsWith("Stuck") ? "error" : undefined}
-                >
-                  {"  "}
-                  {line}
-                </Text>
-              ))}
-              {asking === c.key ? (
-                <Box gap={1}>
-                  <Text>
-                    {"  "}
-                    {freeWords(c)}
-                  </Text>
-                  <Button
-                    key={`pane-yes:${c.key}`}
-                    label="Yes, free it"
-                    variant="primary"
-                    onPress={async () => {
-                      await update($, confirming, () => false);
-                      await freeIt($, c);
-                    }}
-                  />
-                  <Button key={`pane-no:${c.key}`} label="No" onPress={() => update($, confirming, () => false)} />
-                </Box>
-              ) : (
-                <Box paddingLeft={2}>
-                  <Button
-                    key={`pane-free:${c.key}`}
-                    label="Free it"
-                    dimColor
-                    onPress={async () => {
-                      await update($, open, () => c.key);
-                      await update($, confirming, () => true);
-                    }}
-                  />
-                </Box>
-              )}
-            </Box>
-          );
-        })}
-        {shown.spare.length > 0 ? (
-          <Text dimColor>Free, used before: {shown.spare.map((s) => s.label).join(" ")}</Text>
-        ) : null}
-        {message ? <Text dimColor>{message}</Text> : null}
-      </Box>
-    );
   });
 
   on("ui.render", { component: "AbovePrompt" }, async ($, e, next) => {
     const shown: Band | null = await read($, band);
     if (e.props.hasSurvey || shown === null) return next(e);
-    const elements = $.ui.resolve(e);
-    const { Box, Button, Text } = elements;
-    const Svg = "Svg" in elements ? elements.Svg : null;
+    const { Box, Text } = $.ui.resolve(e);
     if (shown.unreadable) return <Text color="error">lease: the state file cannot be read; run lease show</Text>;
-    const openKey = await read($, open);
-    const isAsking = await read($, confirming);
-    const spareShown = await read($, showSpare);
-    const message = await read($, said);
-    const now = await $.clock.now();
-    // Cards are boxed off the terminal; on it a border would cost two rows.
-    const boxed = e.surface !== "terminal";
-    const toggle = (key: string) => async () => {
-      await update($, confirming, () => false);
-      await update($, open, (was) => (was === key ? null : key));
-    };
-    // One small button per held resource; the whole chip takes the click. The pointer on it reveals that chip's
-    // one-line details under the row (its hover group); a click pins the card with Free it. The dot is outside the
-    // button, because the desktop draws a button natively and drops the colours of text inside it. Where pictures
-    // are drawn it is a small one pinned to the chip's top-right corner: offsets are whole character cells, so a ●
-    // there sits on the middle of the button's side, not its corner.
-    const chip = (c: Chip) => {
-      const ok = c.stuck === null;
-      const dot =
-        Svg !== null ? (
-          <Svg source={ok ? DOT_OK : DOT_STUCK} alt={ok ? "in use" : "stuck"} width={DOT_PX} height={DOT_PX} />
-        ) : (
-          <Text color={ok ? "success" : "error"}> ●</Text>
-        );
-      return (
-        <Box key={c.key} position="relative">
-          <Button
-            key={`chip:${c.key}`}
-            label={c.waiting.length > 0 ? `${c.tag} +${c.waiting.length}` : c.tag}
-            variant={c.key === openKey ? "primary" : undefined}
-            hover={{ scope: `lease:${c.key}` }}
-            onPress={toggle(c.key)}
-          />
-          {Svg !== null ? (
-            <Box position="absolute" top={0} right={0}>
-              {dot}
-            </Box>
-          ) : (
-            dot
-          )}
-        </Box>
-      );
-    };
-    const opened = shown.chips.find((c) => c.key === openKey) ?? null;
     return (
       <Box flexDirection="column">
-        <Box flexDirection="row" gap={1} alignItems="center">
-          {shown.chips.map(chip)}
-          {shown.spare.length > 0 ? (
-            <Button
-              key="spare"
-              plain
-              dimColor
-              label={spareShown ? "‹" : `› ${shown.spare.length}`}
-              onPress={() => update($, showSpare, (was) => !was)}
-            />
-          ) : null}
-          {spareShown
-            ? shown.spare.map((s) => (
-                <Text key={`spare:${s.key}`} dimColor>
-                  {s.label}
-                </Text>
-              ))
-            : null}
-        </Box>
-        {openKey === null
-          ? shown.chips.map((c) => (
-              <Box key={`hover:${c.key}`} display="none" hover={{ scope: `lease:${c.key}`, display: "flex" }}>
-                <Text color={c.stuck === null ? undefined : "error"} dimColor={c.stuck === null} wrap="truncate-end">
-                  {hoverLine(c, now)}
-                </Text>
-              </Box>
-            ))
-          : null}
-        {opened !== null ? (
-          <Box flexDirection="column" paddingX={1} {...(boxed ? { borderStyle: "round", borderDimColor: true } : {})}>
-            {cardLines(opened, shown, now).map((line, i) => (
-              <Text key={`line:${i}`} color={i === 2 && opened.stuck !== null ? "error" : undefined} dimColor={i > 0}>
-                {line}
-              </Text>
-            ))}
-            {isAsking ? (
-              <Box gap={1}>
-                <Text>{freeWords(opened)}</Text>
-                <Button
-                  key="yes"
-                  label="Yes, free it"
-                  variant="primary"
-                  onPress={async () => {
-                    await update($, confirming, () => false);
-                    await freeIt($, opened);
-                  }}
-                />
-                <Button key="no" label="No" onPress={() => update($, confirming, () => false)} />
-              </Box>
-            ) : (
-              <Box gap={1}>
-                <Button key="free" label="Free it" onPress={() => update($, confirming, () => true)} />
-                <Button key="close" label="Close" dimColor onPress={toggle(opened.key)} />
-              </Box>
-            )}
-          </Box>
-        ) : null}
-        {message ? (
-          <Box gap={1}>
-            <Text dimColor wrap="truncate-end">
-              {message}
-            </Text>
-            <Button key="ok" label="OK" dimColor onPress={() => update($, said, () => "")} />
-          </Box>
-        ) : null}
+        {shown.lines.map((line) => (
+          <Text key={line.key} wrap="truncate-end">
+            <Text color={line.stuck === null ? "success" : "error"}>● </Text>
+            <Text dimColor={line.stuck === null}>{line.text}</Text>
+            {line.problem ? <Text color="error"> · {line.problem}</Text> : null}
+          </Text>
+        ))}
       </Box>
     );
   });
