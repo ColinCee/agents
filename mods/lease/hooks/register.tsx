@@ -85,20 +85,30 @@ export const register: Register = (on) => {
       await update($, confirming, () => false);
       await update($, open, (was) => (was === key ? null : key));
     };
-    // One small button per held resource, its label and a dot; the whole chip takes the click. The pointer on it
-    // reveals that chip's one-line details under the row (its hover group); a click pins the card with Free it.
-    const chip = (c: Chip) => (
-      <Button
-        key={`chip:${c.key}`}
-        variant={c.key === openKey ? "primary" : undefined}
-        hover={{ scope: `lease:${c.key}` }}
-        onPress={toggle(c.key)}
-      >
-        {c.tag}
-        <Text color={c.stuck === null ? "success" : "error"}> ●</Text>
-        {c.waiting.length > 0 ? <Text dimColor> +{c.waiting.length}</Text> : ""}
-      </Button>
-    );
+    // One small button per held resource; the whole chip takes the click. The pointer on it reveals that chip's
+    // one-line details under the row (its hover group); a click pins the card with Free it. The dot sits outside the
+    // button, on its top-right corner: the desktop draws a button natively and drops the colours of text inside it.
+    const chip = (c: Chip) => {
+      const dot = <Text color={c.stuck === null ? "success" : "error"}>●</Text>;
+      return (
+        <Box key={c.key} position="relative">
+          <Button
+            key={`chip:${c.key}`}
+            label={c.waiting.length > 0 ? `${c.tag} +${c.waiting.length}` : c.tag}
+            variant={c.key === openKey ? "primary" : undefined}
+            hover={{ scope: `lease:${c.key}` }}
+            onPress={toggle(c.key)}
+          />
+          {boxed ? (
+            <Box position="absolute" top={0} right={0}>
+              {dot}
+            </Box>
+          ) : (
+            dot
+          )}
+        </Box>
+      );
+    };
     const opened = shown.chips.find((c) => c.key === openKey) ?? null;
     return (
       <Box flexDirection="column">
