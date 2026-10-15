@@ -1,15 +1,20 @@
 /**
- * lease: one shared lock on this machine's GPU and big RAM, kept in a small file, with no server.
+ * lease: shared locks on this machine's resources (the GPU, big RAM, a browser ...), kept in a small file, with no
+ * server.
  *
- * A program about to start a heavy job (a local model, a batch of containers) takes the lease, renews it while the
- * job runs and frees it after. The lease is never stuck: it lapses when its holder stops renewing, frees at once when
- * the holder's process is gone, and anyone can force it free (`free --force`). Every take, free, lapse and forced free
- * is a line in the log, so "who did what when" has an answer.
+ * A program about to start a heavy job takes the resources it needs in one step (all or none), renews the lease
+ * while the job runs and frees it after. A lease is never stuck: it lapses when its holder stops renewing, frees at
+ * once when the holder's process is gone, and anyone can force it free (`free --force`). Every take, free, lapse and
+ * forced free is a line in the log, so "who did what when" has an answer.
  *
- *   lease take --name N --gb G [--note T] [--pid P] [--wait S]
- *   lease renew --name N [--pid P] [--job-pid J]
+ * Resources are named by whoever takes them; nothing is listed in advance. `ram` is a pool shared by size (`ram:10`
+ * is 10 GB of it); every other resource has one holder at a time. A take with `--gb` and no `--res` means
+ * `gpu ram:<gb>`, what the first version of this command locked.
+ *
+ *   lease take --name N (--res R[:GB] ... | --gb G) [--label R=TEXT] [--note T] [--pid P] [--wait S] [--for S]
+ *   lease renew --name N [--pid P] [--job-pid J] [--for S]
  *   lease free --name N [--pid P]
- *   lease free --force [--stop-job] [--by WHO] [--cooldown S]
+ *   lease free --force [--name N [--pid P]] [--stop-job] [--by WHO] [--cooldown S]
  *   lease show
  *   lease log [--lines N]
  *
@@ -31,38 +36,50 @@ import {
   writeFileSync,
   writeSync,
 } from "node:fs";
-import { freemem, homedir } from "node:os";
+import { freemem, homedir, totalmem } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { parseArgs } from "node:util";
 
 export const RENEW_SECONDS = 30;
 export const TTL_SECONDS = 120; // four missed renewals: a slow disk or a busy minute does not lose the lease
+export const LATE_SECONDS = 2 * RENEW_SECONDS; // two missed renewals: shown as stuck, a minute before it lapses
 export const WAITER_SECONDS = 150; // a waiter polls every few seconds; one not seen for this long has given up
 export const POLL_SECONDS = 3;
+export const RAM = "ram";
+export const RAM_RESERVE_GB = 8; // Windows, the desktop and a browser: never handed out as a share of the pool
+export const LOADING_SECONDS = 120; // a RAM share taken this recently may not be in use yet: counted as used anyway
+export const FORGET_DAYS = 30; // a resource nobody has held for this long drops off the list of free ones
+const LABEL_MAX = 4; // a band shows several side by side: four capitals are enough to tell them apart
+const NAME_PATTERN = /^[a-z0-9][a-z0-9-]{0,31}$/; // a word a person can type; 32 characters is plenty
 const LOCK_STALE_MS = 10_000; // an operation holds the lock for milliseconds: a lock this old was left by a killed process
 const LOCK_GIVE_UP_MS = 15_000;
 const LOG_MAX_BYTES = 1_000_000;
 
+/** One resource a hold or a waiter asks for: `gb` is a share of a pool (`ram`), null the whole resource. */
+export type Want = { resource: string; gb: number | null };
 export type Job = { pid: number; started: string | null };
-export type Holder = {
+export type Hold = {
   name: string;
   pid: number;
   taken: string;
   renewed: string;
   expires: string;
-  gb: number;
+  until: string | null;
+  wants: Want[];
   note: string;
   job: Job | null;
   orphaned: string | null;
 };
-export type Waiter = { name: string; pid: number; gb: number; note: string; since: string; seen: string };
+export type Waiter = { name: string; pid: number; wants: Want[]; note: string; since: string; seen: string };
 export type Cooldown = { name: string; until: string };
+export type Resource = { name: string; label: string; used: string };
 export type State = {
-  version: 1;
-  holder: Holder | null;
+  version: 2;
+  holds: Hold[];
   waiting: Waiter[];
   cooldowns: Cooldown[];
+  resources: Resource[];
   free_gb: number | null;
   measured: string | null;
 };
@@ -75,6 +92,7 @@ export type Event =
   | "expire"
   | "holder-gone"
   | "orphaned"
+  | "over-time"
   | "forced-free"
   | "job-stopped"
   | "wait"
@@ -102,12 +120,21 @@ export type Outcome =
   | "shown"
   | "gave-up";
 export type Status = "free" | "held" | "orphaned";
+/** How a hold is doing: `late` (no renewal for a minute), `over` (past the time it gave) and `orphaned` (its holder
+ * is gone, its job runs) are stuck and want a look; none of them frees it. */
+export type Health = "ok" | "late" | "over" | "orphaned";
+/** The first version's single holder, kept in every answer for the programs that read it (Cortex). */
+export type LegacyHolder = Omit<Hold, "wants" | "until"> & { gb: number };
+export type HoldView = Hold & { health: Health; gb: number; seconds_left: number };
 export type View = {
   status: Status;
-  holder: Holder | null;
+  holder: LegacyHolder | null;
   seconds_left: number | null;
-  waiting: Waiter[];
+  holds: HoldView[];
+  waiting: (Waiter & { gb: number })[];
   cooldowns: Cooldown[];
+  resources: Resource[];
+  ram_gb: number;
   free_gb: number | null;
   measured: string | null;
 };
@@ -120,6 +147,7 @@ export type System = {
   started: (pid: number) => string | null;
   stop: (pid: number) => boolean;
   freeGb: () => number;
+  totalGb: () => number;
   sleep: (ms: number) => void;
 };
 
@@ -163,6 +191,7 @@ export const realSystem: System = {
     }
   },
   freeGb: () => freemem() / 2 ** 30,
+  totalGb: () => totalmem() / 2 ** 30,
   sleep: (ms) => {
     Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
   },
@@ -177,8 +206,16 @@ const lockPath = () => join(home(), "state.lock");
 const logPath = () => join(home(), "log.jsonl");
 
 export function emptyState(): State {
-  return { version: 1, holder: null, waiting: [], cooldowns: [], free_gb: null, measured: null };
+  return { version: 2, holds: [], waiting: [], cooldowns: [], resources: [], free_gb: null, measured: null };
 }
+
+const ramOf = (wants: Want[]) => wants.find((w) => w.resource === RAM)?.gb ?? 0;
+const wantWords = (wants: Want[]) => wants.map((w) => (w.gb === null ? w.resource : `${w.resource}:${w.gb}`)).join(" ");
+/** What the first version locked: the GPU and `gb` of RAM, together. */
+export const legacyWants = (gb: number): Want[] => [
+  { resource: "gpu", gb: null },
+  { resource: RAM, gb },
+];
 
 // --- the edge: the file is read once into its type -----------------------------------------------------------
 
@@ -192,6 +229,8 @@ const pid = (v: Json | undefined): number | undefined => {
   const n = num(v);
   return n !== undefined && Number.isInteger(n) && n > 0 ? n : undefined;
 };
+const maybe = (v: Json | undefined, what: string): string | null =>
+  v === null || v === undefined ? null : need(str(v), what);
 
 class Shape extends Error {}
 
@@ -200,6 +239,11 @@ function need<T>(value: T | undefined, what: string): T {
   return value;
 }
 
+const list = (v: Json | undefined): Json[] => {
+  if (!Array.isArray(v)) throw new Shape("list");
+  return v;
+};
+
 function parseJob(v: Json | undefined): Job | null {
   if (v === null || v === undefined) return null;
   if (!isObj(v)) throw new Shape("job");
@@ -207,29 +251,38 @@ function parseJob(v: Json | undefined): Job | null {
   return { pid: need(pid(v.pid), "job.pid"), started: started === null ? null : need(str(started), "job.started") };
 }
 
-function parseHolder(v: Json | undefined): Holder | null {
-  if (v === null || v === undefined) return null;
-  if (!isObj(v)) throw new Shape("holder");
-  const orphaned = v.orphaned;
+function parseWants(v: Json | undefined): Want[] {
+  const wants = list(v).map((w) => {
+    if (!isObj(w)) throw new Shape("want");
+    const gb = w.gb;
+    return { resource: need(str(w.resource), "want.resource"), gb: gb === null ? null : need(num(gb), "want.gb") };
+  });
+  if (wants.length === 0) throw new Shape("wants");
+  return wants;
+}
+
+function parseHold(v: Json): Hold {
+  if (!isObj(v)) throw new Shape("hold");
   return {
-    name: need(str(v.name), "holder.name"),
-    pid: need(pid(v.pid), "holder.pid"),
-    taken: need(str(v.taken), "holder.taken"),
-    renewed: need(str(v.renewed), "holder.renewed"),
-    expires: need(str(v.expires), "holder.expires"),
-    gb: need(num(v.gb), "holder.gb"),
-    note: need(str(v.note), "holder.note"),
+    name: need(str(v.name), "hold.name"),
+    pid: need(pid(v.pid), "hold.pid"),
+    taken: need(str(v.taken), "hold.taken"),
+    renewed: need(str(v.renewed), "hold.renewed"),
+    expires: need(str(v.expires), "hold.expires"),
+    until: maybe(v.until, "hold.until"),
+    wants: parseWants(v.wants),
+    note: need(str(v.note), "hold.note"),
     job: parseJob(v.job),
-    orphaned: orphaned === null || orphaned === undefined ? null : need(str(orphaned), "holder.orphaned"),
+    orphaned: maybe(v.orphaned, "hold.orphaned"),
   };
 }
 
-function parseWaiter(v: Json): Waiter {
+function parseWaiter(v: Json, version: 1 | 2): Waiter {
   if (!isObj(v)) throw new Shape("waiter");
   return {
     name: need(str(v.name), "waiter.name"),
     pid: need(pid(v.pid), "waiter.pid"),
-    gb: need(num(v.gb), "waiter.gb"),
+    wants: version === 1 ? legacyWants(need(num(v.gb), "waiter.gb")) : parseWants(v.wants),
     note: need(str(v.note), "waiter.note"),
     since: need(str(v.since), "waiter.since"),
     seen: need(str(v.seen), "waiter.seen"),
@@ -241,21 +294,52 @@ function parseCooldown(v: Json): Cooldown {
   return { name: need(str(v.name), "cooldown.name"), until: need(str(v.until), "cooldown.until") };
 }
 
-/** The state file's text as a State. Throws Shape (a SyntaxError for text that is not JSON) when it is not one. */
+function parseResource(v: Json): Resource {
+  if (!isObj(v)) throw new Shape("resource");
+  return {
+    name: need(str(v.name), "resource.name"),
+    label: need(str(v.label), "resource.label"),
+    used: need(str(v.used), "resource.used"),
+  };
+}
+
+/** The first version's single holder as a hold of the GPU and its RAM, so a lease held across the upgrade stays
+ * held (a Strata running while this command is replaced keeps its lock). */
+function parseLegacyHolder(v: Json | undefined): Hold[] {
+  if (v === null || v === undefined) return [];
+  if (!isObj(v)) throw new Shape("holder");
+  return [
+    {
+      name: need(str(v.name), "holder.name"),
+      pid: need(pid(v.pid), "holder.pid"),
+      taken: need(str(v.taken), "holder.taken"),
+      renewed: need(str(v.renewed), "holder.renewed"),
+      expires: need(str(v.expires), "holder.expires"),
+      until: null,
+      wants: legacyWants(need(num(v.gb), "holder.gb")),
+      note: need(str(v.note), "holder.note"),
+      job: parseJob(v.job),
+      orphaned: maybe(v.orphaned, "holder.orphaned"),
+    },
+  ];
+}
+
+/** The state file's text as a State; a first-version file is read into the same shape. Throws Shape (a
+ * SyntaxError for text that is not JSON) when it is neither. */
 export function parseState(text: string): State {
   const raw = JSON.parse(text) as Json;
-  if (!isObj(raw) || raw.version !== 1) throw new Shape("version");
-  const list = (v: Json | undefined): Json[] => {
-    if (!Array.isArray(v)) throw new Shape("list");
-    return v;
-  };
+  if (!isObj(raw) || (raw.version !== 1 && raw.version !== 2)) throw new Shape("version");
+  const version = raw.version;
   const free = raw.free_gb ?? null;
   const measured = raw.measured ?? null;
+  const holds = version === 1 ? parseLegacyHolder(raw.holder) : list(raw.holds).map(parseHold);
+  const resources = version === 1 ? [] : list(raw.resources ?? []).map(parseResource);
   return {
-    version: 1,
-    holder: parseHolder(raw.holder),
-    waiting: list(raw.waiting).map(parseWaiter),
+    version: 2,
+    holds,
+    waiting: list(raw.waiting).map((w) => parseWaiter(w, version)),
     cooldowns: list(raw.cooldowns ?? []).map(parseCooldown),
+    resources,
     free_gb: free === null ? null : need(num(free), "free_gb"),
     measured: measured === null ? null : need(str(measured), "measured"),
   };
@@ -318,6 +402,15 @@ const ms = (stamp: string) => Date.parse(stamp);
 
 type Ops = { state: State; sys: System; log: (line: Omit<LogLine, "at">) => void };
 
+const holdLine = (h: Hold, event: Event, detail: string, by: string | null = null): Omit<LogLine, "at"> => ({
+  event,
+  name: h.name,
+  pid: h.pid,
+  gb: ramOf(h.wants),
+  by,
+  detail,
+});
+
 /** Read, tidy, change and write the state under the lock. The change runs on a state already tidied (`tidy`). */
 export function withState<T>(sys: System, change: (ops: Ops) => T): T {
   const release = lock(sys);
@@ -353,55 +446,94 @@ export function withState<T>(sys: System, change: (ops: Ops) => T): T {
   }
 }
 
-/** The four ways out, applied on every read: a lapsed lease and a gone holder free it, unless the job the holder
- * declared still runs (then it is orphaned: the RAM is still in use, so it stays held until someone frees it and stops
- * the job). Waiters who stopped asking and cooldowns that ran out are dropped. */
+/** The ways out, applied on every read: a lapsed hold and a gone holder free it, unless the job the holder declared
+ * still runs (then it is orphaned: the RAM is still in use, so it stays held until someone frees it and stops the
+ * job). A hold past the time it gave is logged once and stays held. Waiters who stopped asking, cooldowns that ran
+ * out and resources unused for a month are dropped. */
 export function tidy({ state, sys, log }: Ops): void {
   const now = sys.now();
   state.free_gb = Math.round(sys.freeGb() * 10) / 10;
   state.measured = iso(now);
-  const h = state.holder;
-  if (h !== null) {
+  state.holds = state.holds.filter((h) => {
     const lapsed = now > ms(h.expires);
     const gone = !sys.alive(h.pid);
-    if (lapsed || gone) {
-      const why = gone ? `its process ${h.pid} is gone` : `not renewed since ${h.renewed}`;
-      if (jobRuns(h, sys)) {
-        if (h.orphaned === null) {
-          h.orphaned = iso(now);
-          log({
-            event: "orphaned",
-            name: h.name,
-            pid: h.pid,
-            gb: h.gb,
-            by: null,
-            detail: `${why}; its job ${h.job?.pid} still runs`,
-          });
-        }
-      } else {
-        state.holder = null;
-        log({ event: gone ? "holder-gone" : "expire", name: h.name, pid: h.pid, gb: h.gb, by: null, detail: why });
+    if (!lapsed && !gone) return true;
+    const why = gone ? `its process ${h.pid} is gone` : `not renewed since ${h.renewed}`;
+    if (jobRuns(h, sys)) {
+      if (h.orphaned === null) {
+        h.orphaned = iso(now);
+        log(holdLine(h, "orphaned", `${why}; its job ${h.job?.pid} still runs`));
       }
+      return true;
     }
+    log(holdLine(h, gone ? "holder-gone" : "expire", why));
+    return false;
+  });
+  for (const h of state.holds) {
+    for (const w of h.wants) remember(state, w.resource, null, now);
   }
   state.waiting = state.waiting.filter((w) => now - ms(w.seen) <= WAITER_SECONDS * 1000 && sys.alive(w.pid));
   state.cooldowns = state.cooldowns.filter((c) => now < ms(c.until));
+  state.resources = state.resources.filter((r) => now - ms(r.used) <= FORGET_DAYS * 86_400_000);
 }
 
-function jobRuns(h: Holder, sys: System): boolean {
+function jobRuns(h: Hold, sys: System): boolean {
   if (h.job === null || !sys.alive(h.job.pid)) return false;
   if (h.orphaned !== null || h.job.started === null) return true; // its start time was compared when it was orphaned
   return sys.started(h.job.pid) === h.job.started; // the same pid, now another program, is not the job
 }
 
+/** Note a resource as used now, with the label given, the one it had, or its name's first letters. */
+function remember(state: State, name: string, label: string | null, now: number): void {
+  const known = state.resources.find((r) => r.name === name);
+  const text = (label ?? known?.label ?? name.replace(/-/g, "").slice(0, 3)).toUpperCase().slice(0, LABEL_MAX);
+  if (known === undefined) state.resources.push({ name, label: text, used: iso(now) });
+  else Object.assign(known, { label: text, used: iso(now) });
+}
+
+export function health(h: Hold, now: number): Health {
+  if (h.orphaned !== null) return "orphaned";
+  if (now - ms(h.renewed) > LATE_SECONDS * 1000) return "late";
+  if (h.until !== null && now > ms(h.until)) return "over";
+  return "ok";
+}
+
+/** The pool `ram` may hand out: what the machine has, less what it needs for itself. */
+const ramGb = (sys: System) => Math.max(0, Math.floor(sys.totalGb() - RAM_RESERVE_GB));
+
 export function view(state: State, sys: System): View {
-  const h = state.holder;
+  const now = sys.now();
+  const holds = state.holds.map((h) => ({
+    ...h,
+    health: health(h, now),
+    gb: ramOf(h.wants),
+    seconds_left: Math.max(0, Math.round((ms(h.expires) - now) / 1000)),
+  }));
+  // The first version had one holder; the hold of the GPU stands in for it, else the oldest.
+  const first = holds.find((h) => h.wants.some((w) => w.resource === "gpu")) ?? holds[0] ?? null;
+  const holder: LegacyHolder | null =
+    first === null
+      ? null
+      : {
+          name: first.name,
+          pid: first.pid,
+          taken: first.taken,
+          renewed: first.renewed,
+          expires: first.expires,
+          gb: first.gb,
+          note: first.note,
+          job: first.job,
+          orphaned: first.orphaned,
+        };
   return {
-    status: h === null ? "free" : h.orphaned !== null ? "orphaned" : "held",
-    holder: h,
-    seconds_left: h === null ? null : Math.max(0, Math.round((ms(h.expires) - sys.now()) / 1000)),
-    waiting: state.waiting,
+    status: first === null ? "free" : first.orphaned !== null ? "orphaned" : "held",
+    holder,
+    seconds_left: first === null ? null : first.seconds_left,
+    holds,
+    waiting: state.waiting.map((w) => ({ ...w, gb: ramOf(w.wants) })),
     cooldowns: state.cooldowns,
+    resources: state.resources,
+    ram_gb: ramGb(sys),
     free_gb: state.free_gb,
     measured: state.measured,
   };
@@ -410,36 +542,71 @@ export function view(state: State, sys: System): View {
 // --- the operations --------------------------------------------------------------------------------------------
 
 export type Who = { name: string; pid: number };
-export type TakeArgs = Who & { gb: number; note: string; ttl: number };
+export type TakeArgs = Who & {
+  wants: Want[];
+  labels?: Record<string, string>;
+  note: string;
+  ttl: number;
+  forSeconds?: number | null;
+};
 
-const mine = (h: Holder | null, who: Who) => h !== null && h.name === who.name && h.pid === who.pid;
+const mine = (h: Hold, who: Who) => h.name === who.name && h.pid === who.pid;
+const shares = (a: Want[], b: Want[]) => a.some((x) => b.some((y) => x.resource === y.resource));
+
+/** Why `wants` cannot be taken now, or null when it can. A whole resource needs nobody else on it. A share of RAM
+ * needs room in the pool by what the holds declared, and, beside another RAM hold, that much RAM really free: a
+ * holder often uses more than it declared (on 14 October a model said 40 GB and left 1 GB free). */
+function blocked(state: State, wants: Want[], sys: System): string | null {
+  const now = sys.now();
+  for (const want of wants) {
+    const others = state.holds.filter((h) => h.wants.some((w) => w.resource === want.resource));
+    if (others.length === 0) continue;
+    const by = others.map((h) => h.name).join(", ");
+    if (want.resource !== RAM || want.gb === null) return `held by ${by}`;
+    const declared = others.reduce((sum, h) => sum + ramOf(h.wants), 0);
+    if (declared + want.gb > ramGb(sys)) return `held by ${by}`;
+    const loading = others
+      .filter((h) => now - ms(h.taken) < LOADING_SECONDS * 1000)
+      .reduce((sum, h) => sum + ramOf(h.wants), 0);
+    if ((state.free_gb ?? 0) - loading < want.gb) return `held by ${by} (${Math.round(state.free_gb ?? 0)} GB free)`;
+  }
+  return null;
+}
 
 export function takeOnce(args: TakeArgs, sys: System = realSystem): Answer {
   return withState(sys, ({ state, log }) => {
     const now = sys.now();
-    if (mine(state.holder, args)) return { outcome: renewHeld(state, args, sys, log), view: view(state, sys) };
+    const held = state.holds.find((h) => mine(h, args));
+    if (held !== undefined) {
+      if (args.forSeconds != null) held.until = iso(now + args.forSeconds * 1000);
+      return { outcome: renewHeld(held, args, sys, log), view: view(state, sys) };
+    }
     const isMe = (w: Waiter) => w.name === args.name && w.pid === args.pid;
     const cools = (name: string) => state.cooldowns.some((c) => c.name === name);
     const me = state.waiting.find(isMe);
-    const queue = state.waiting.filter((w) => !cools(w.name)); // first come, first served; a waiter in its cooldown is not served
-    const place = me === undefined ? queue.length : queue.indexOf(me);
-    const behind = place > 0;
+    // First come, first served among those who want a resource this taker wants; a waiter in its cooldown is not
+    // served. One queue, not one per resource: a waiter for RAM can keep a later GPU-only taker waiting too.
+    const before = me === undefined ? state.waiting : state.waiting.slice(0, state.waiting.indexOf(me));
+    const behind = before.some((w) => !cools(w.name) && shares(w.wants, args.wants));
     const cooling = cools(args.name);
-    const ahead = state.waiting.filter((w) => !isMe(w));
-    if (state.holder === null && !behind && !cooling) {
-      state.holder = {
+    const why = blocked(state, args.wants, sys);
+    if (why === null && !behind && !cooling) {
+      for (const w of args.wants) remember(state, w.resource, args.labels?.[w.resource] ?? null, now);
+      const hold: Hold = {
         name: args.name,
         pid: args.pid,
         taken: iso(now),
         renewed: iso(now),
         expires: iso(now + args.ttl * 1000),
-        gb: args.gb,
+        until: args.forSeconds == null ? null : iso(now + args.forSeconds * 1000),
+        wants: args.wants,
         note: args.note,
         job: null,
         orphaned: null,
       };
-      state.waiting = ahead;
-      log({ event: "take", name: args.name, pid: args.pid, gb: args.gb, by: null, detail: args.note });
+      state.holds.push(hold);
+      state.waiting = state.waiting.filter((w) => !isMe(w));
+      log(holdLine(hold, "take", [wantWords(args.wants), args.note].filter(Boolean).join(" · ")));
       return { outcome: "taken", view: view(state, sys) };
     }
     if (me === undefined && cooling) {
@@ -448,20 +615,27 @@ export function takeOnce(args: TakeArgs, sys: System = realSystem): Answer {
       state.waiting.push({
         name: args.name,
         pid: args.pid,
-        gb: args.gb,
+        wants: args.wants,
         note: args.note,
         since: iso(now),
         seen: iso(now),
       });
-      const why = state.holder !== null ? `held by ${state.holder.name}` : cooling ? "cooling down" : "behind a waiter";
-      log({ event: "wait", name: args.name, pid: args.pid, gb: args.gb, by: null, detail: why });
+      log({
+        event: "wait",
+        name: args.name,
+        pid: args.pid,
+        gb: ramOf(args.wants),
+        by: null,
+        detail: `${wantWords(args.wants)}: ${why ?? (cooling ? "cooling down" : "behind a waiter")}`,
+      });
     } else me.seen = iso(now);
-    const outcome: Outcome = state.holder !== null ? "held" : cooling ? "cooldown" : "behind";
+    const outcome: Outcome = why !== null ? "held" : cooling ? "cooldown" : "behind";
     return { outcome, view: view(state, sys) };
   });
 }
 
-/** Take, waiting up to `waitSeconds` while another holds it (visible as a waiter). One lock: no deadlock. */
+/** Take, waiting up to `waitSeconds` while another holds it (visible as a waiter). All of `wants` is taken in one
+ * step or none of it, so two takers never each hold half of what the other needs. */
 export function take(args: TakeArgs, waitSeconds: number, sys: System = realSystem): Answer {
   const deadline = sys.now() + waitSeconds * 1000;
   for (;;) {
@@ -476,7 +650,7 @@ export function take(args: TakeArgs, waitSeconds: number, sys: System = realSyst
             event: "gave-up",
             name: args.name,
             pid: args.pid,
-            gb: args.gb,
+            gb: ramOf(args.wants),
             by: null,
             detail: `after ${waitSeconds} s`,
           });
@@ -487,35 +661,31 @@ export function take(args: TakeArgs, waitSeconds: number, sys: System = realSyst
   }
 }
 
-function renewHeld(state: State, args: Who & { ttl: number }, sys: System, log: Ops["log"]): Outcome {
-  const h = state.holder;
-  if (h === null) return "lost";
+function renewHeld(h: Hold, args: { ttl: number }, sys: System, log: Ops["log"]): Outcome {
   const now = sys.now();
   const gap = (now - ms(h.renewed)) / 1000;
-  if (gap > 2 * RENEW_SECONDS)
-    log({
-      event: "renew-gap",
-      name: h.name,
-      pid: h.pid,
-      gb: h.gb,
-      by: null,
-      detail: `${Math.round(gap)} s since the last renewal`,
-    });
+  if (gap > LATE_SECONDS) log(holdLine(h, "renew-gap", `${Math.round(gap)} s since the last renewal`));
+  if (h.until !== null && now > ms(h.until) && ms(h.renewed) <= ms(h.until))
+    log(holdLine(h, "over-time", `past the time it gave, ${h.until}; still held`));
   h.renewed = iso(now);
   h.expires = iso(now + args.ttl * 1000);
   h.orphaned = null;
   return "renewed";
 }
 
-export function renew(args: Who & { ttl: number; jobPid: number | null }, sys: System = realSystem): Answer {
+export function renew(
+  args: Who & { ttl: number; jobPid: number | null; forSeconds?: number | null },
+  sys: System = realSystem,
+): Answer {
   const started = args.jobPid === null ? null : sys.started(args.jobPid);
   return withState(sys, ({ state, log }) => {
-    if (!mine(state.holder, args)) return { outcome: "lost", view: view(state, sys) };
-    const outcome = renewHeld(state, args, sys, log);
-    const h = state.holder;
-    if (h !== null && args.jobPid !== null && h.job?.pid !== args.jobPid) {
+    const h = state.holds.find((x) => mine(x, args));
+    if (h === undefined) return { outcome: "lost", view: view(state, sys) };
+    const outcome = renewHeld(h, args, sys, log);
+    if (args.forSeconds != null) h.until = iso(sys.now() + args.forSeconds * 1000);
+    if (args.jobPid !== null && h.job?.pid !== args.jobPid) {
       h.job = { pid: args.jobPid, started };
-      log({ event: "job", name: h.name, pid: h.pid, gb: h.gb, by: null, detail: `job ${args.jobPid}` });
+      log(holdLine(h, "job", `job ${args.jobPid}`));
     }
     return { outcome, view: view(state, sys) };
   });
@@ -523,40 +693,44 @@ export function renew(args: Who & { ttl: number; jobPid: number | null }, sys: S
 
 export function free(who: Who, sys: System = realSystem): Answer {
   return withState(sys, ({ state, log }) => {
-    const h = state.holder;
-    if (h === null || !mine(h, who)) return { outcome: "not-held", view: view(state, sys) };
-    state.holder = null;
-    log({ event: "free", name: h.name, pid: h.pid, gb: h.gb, by: null, detail: h.note });
+    const h = state.holds.find((x) => mine(x, who));
+    if (h === undefined) return { outcome: "not-held", view: view(state, sys) };
+    state.holds = state.holds.filter((x) => x !== h);
+    log(holdLine(h, "free", h.note));
     return { outcome: "freed", view: view(state, sys) };
   });
 }
 
-/** Free it whoever holds it. With `stopJob`, the job its holder declared (and only that) is stopped too; a holder
- * that declared none is told by its next renewal and stops its own work. `cooldown` keeps that holder from taking it
- * straight back. */
-export function forceFree(args: { by: string; stopJob: boolean; cooldown: number }, sys: System = realSystem): Answer {
+/** Free a hold whoever has it: the one named by `target`, or with none the one `show` reports as the holder (the
+ * hold of the GPU, else the oldest). With `stopJob`, the job its holder declared (and only that) is stopped too; a
+ * holder that declared none is told by its next renewal and stops its own work. `cooldown` keeps that holder from
+ * taking anything straight back. */
+export function forceFree(
+  args: { by: string; stopJob: boolean; cooldown: number; target?: { name: string; pid: number | null } },
+  sys: System = realSystem,
+): Answer {
   const freed = withState(sys, ({ state, log }) => {
-    const h = state.holder;
-    if (h === null) return null;
-    state.holder = null;
+    const target = args.target;
+    const h =
+      target === undefined
+        ? (state.holds.find((x) => x.wants.some((w) => w.resource === "gpu")) ?? state.holds[0])
+        : state.holds.find((x) => x.name === target.name && (target.pid === null || x.pid === target.pid));
+    if (h === undefined) return null;
+    state.holds = state.holds.filter((x) => x !== h);
     if (args.cooldown > 0) {
       state.cooldowns = state.cooldowns.filter((c) => c.name !== h.name);
       state.cooldowns.push({ name: h.name, until: iso(sys.now() + args.cooldown * 1000) });
     }
     const stopping = args.stopJob && h.job !== null ? ` and stopping job ${h.job.pid}` : "";
-    log({ event: "forced-free", name: h.name, pid: h.pid, gb: h.gb, by: args.by, detail: `${h.note}${stopping}` });
+    log(holdLine(h, "forced-free", `${wantWords(h.wants)} · ${h.note}${stopping}`, args.by));
     return h;
   });
   if (freed !== null && args.stopJob && freed.job !== null && sys.alive(freed.job.pid)) {
     const stopped = sys.stop(freed.job.pid);
     withState(sys, ({ log }) =>
       log({
-        event: "job-stopped",
-        name: freed.name,
+        ...holdLine(freed, "job-stopped", stopped ? "stopped" : "could not be stopped", args.by),
         pid: freed.job?.pid ?? null,
-        gb: freed.gb,
-        by: args.by,
-        detail: stopped ? "stopped" : "could not be stopped",
       }),
     );
   }
@@ -587,15 +761,23 @@ function minutes(seconds: number): string {
   return seconds >= 90 ? `${Math.round(seconds / 60)} min` : `${seconds} s`;
 }
 
+const HEALTH_WORDS: Record<Health, string> = {
+  ok: "",
+  late: " · stuck: no renewal for a minute",
+  over: " · stuck: past the time it gave",
+  orphaned: " · stuck: its holder is gone, its job still runs",
+};
+
 export function words(v: View): string {
-  const free = v.free_gb === null ? "" : ` · ${Math.round(v.free_gb)} GB free`;
-  const waiting = v.waiting.length > 0 ? ` · waiting: ${v.waiting.map((w) => w.name).join(", ")}` : "";
-  const h = v.holder;
-  if (h === null) return `free${free}${waiting}`;
-  const what = `${h.name} (pid ${h.pid})${h.note === "" ? "" : `, ${h.note}`} · ${Math.round(h.gb)} GB`;
-  if (v.status === "orphaned")
-    return `orphaned: ${what}, its holder is gone and job ${h.job?.pid} still runs${free}${waiting}`;
-  return `held by ${what} · ${minutes(v.seconds_left ?? 0)} left${free}${waiting}`;
+  const free = v.free_gb === null ? "" : `${Math.round(v.free_gb)} GB free`;
+  const waiting =
+    v.waiting.length > 0 ? ` · waiting: ${v.waiting.map((w) => `${w.name} (${wantWords(w.wants)})`).join(", ")}` : "";
+  if (v.holds.length === 0) return `free · ${free}${waiting}`;
+  const holds = v.holds.map((h) => {
+    const what = `${h.name} (pid ${h.pid})${h.note === "" ? "" : `, ${h.note}`}`;
+    return `${wantWords(h.wants)} held by ${what} · ${minutes(h.seconds_left)} left${HEALTH_WORDS[h.health]}`;
+  });
+  return `${holds.join("; ")} · ${free}${waiting}`;
 }
 
 export function logWords(line: LogLine): string {
@@ -630,6 +812,33 @@ function wholeNumber(value: string | undefined, flag: string, fallback: number |
   return n;
 }
 
+function parseWant(text: string): Want {
+  const [name = "", gb, ...extra] = text.split(":");
+  if (!NAME_PATTERN.test(name) || extra.length > 0)
+    throw new Usage(
+      `--res takes a lowercase name with an optional size, such as gpu or ram:10, not ${JSON.stringify(text)}`,
+    );
+  if (gb === undefined) {
+    if (name === RAM) throw new Usage("--res ram needs a size in GB, such as ram:10");
+    return { resource: name, gb: null };
+  }
+  if (name !== RAM) throw new Usage(`only ram is shared by size; --res ${name} takes no :GB`);
+  return { resource: name, gb: wholeNumber(gb, "--res ram:GB", 0) ?? 0 };
+}
+
+function parseLabels(values: string[] | undefined): Record<string, string> {
+  const labels: Record<string, string> = {};
+  for (const v of values ?? []) {
+    const [name = "", text = ""] = v.split("=");
+    if (!NAME_PATTERN.test(name) || !/^[A-Za-z0-9+]{1,4}$/.test(text))
+      throw new Usage(
+        `--label takes resource=TEXT, one to four letters or digits, such as browser=WEB, not ${JSON.stringify(v)}`,
+      );
+    labels[name] = text;
+  }
+  return labels;
+}
+
 export function main(argv: string[], out: (text: string) => void = console.log, sys: System = realSystem): number {
   const [command, ...rest] = argv;
   let parsed: ReturnType<typeof parseCli>;
@@ -651,17 +860,27 @@ export function main(argv: string[], out: (text: string) => void = console.log, 
       pid: wholeNumber(o.pid, "--pid", process.ppid) ?? process.ppid,
     });
     const ttl = wholeNumber(o.ttl, "--ttl", TTL_SECONDS) ?? TTL_SECONDS;
+    const forSeconds = wholeNumber(o.for, "--for", null);
     let answer: Answer;
     switch (command) {
-      case "take":
+      case "take": {
+        const res = o.res ?? [];
+        if (res.length > 0 && o.gb !== undefined)
+          throw new Usage("take needs --res or --gb, not both: --gb G means --res gpu --res ram:G");
+        if (res.length === 0 && o.gb === undefined)
+          throw new Usage("take needs --res (such as --res gpu --res ram:10) or --gb");
+        const wants = res.length > 0 ? res.map(parseWant) : legacyWants(wholeNumber(o.gb, "--gb", 0) ?? 0);
+        if (new Set(wants.map((w) => w.resource)).size < wants.length)
+          throw new Usage("each --res names a different resource");
         answer = take(
-          { ...who(), gb: wholeNumber(need(o.gb, "--gb"), "--gb", 0) ?? 0, note: o.note ?? "", ttl },
+          { ...who(), wants, labels: parseLabels(o.label), note: o.note ?? "", ttl, forSeconds },
           wholeNumber(o.wait, "--wait", 0) ?? 0,
           sys,
         );
         break;
+      }
       case "renew":
-        answer = renew({ ...who(), ttl, jobPid: wholeNumber(o["job-pid"], "--job-pid", null) }, sys);
+        answer = renew({ ...who(), ttl, jobPid: wholeNumber(o["job-pid"], "--job-pid", null), forSeconds }, sys);
         break;
       case "free":
         answer =
@@ -671,6 +890,7 @@ export function main(argv: string[], out: (text: string) => void = console.log, 
                   by: o.by ?? "someone",
                   stopJob: o["stop-job"] === true,
                   cooldown: wholeNumber(o.cooldown, "--cooldown", 0) ?? 0,
+                  target: o.name === undefined ? undefined : { name: o.name, pid: wholeNumber(o.pid, "--pid", null) },
                 },
                 sys,
               )
@@ -709,9 +929,12 @@ function parseCli(args: string[]) {
     options: {
       name: { type: "string" },
       pid: { type: "string" },
+      res: { type: "string", multiple: true },
       gb: { type: "string" },
+      label: { type: "string", multiple: true },
       note: { type: "string" },
       wait: { type: "string" },
+      for: { type: "string" },
       ttl: { type: "string" },
       "job-pid": { type: "string" },
       force: { type: "boolean" },
@@ -724,19 +947,21 @@ function parseCli(args: string[]) {
   });
 }
 
-const HELP = `lease: one shared lock on this machine's GPU and big RAM (state and log in ${home()}).
+const HELP = `lease: shared locks on this machine's resources (state and log in ${home()}).
 
-  lease take --name N --gb G [--note T] [--pid P] [--wait S] [--ttl S]
-      Take it for process P (default: the caller). Held by another: wait up to S seconds (default 0),
-      listed as a waiter meanwhile. Taking it again while holding it renews it.
-  lease renew --name N [--pid P] [--job-pid J] [--ttl S]
+  lease take --name N --res R[:GB] [--res ...] [--label R=TEXT] [--note T] [--pid P] [--wait S] [--for S]
+      Take every resource named, or none, for process P (default: the caller). ram is shared by size
+      (ram:10 is 10 GB); any other name, such as gpu or browser, has one holder. --gb G alone means
+      --res gpu --res ram:G. Held: wait up to S seconds (default 0), listed as a waiter. --for says how long
+      the job should take; past it the lease shows as stuck, and stays held. Taking again renews it.
+  lease renew --name N [--pid P] [--job-pid J] [--for S]
       Keep it: every ${RENEW_SECONDS} s; it lapses ${TTL_SECONDS} s after the last renewal. --job-pid declares the
       process doing the heavy work, which "free --stop-job" may stop and whose life keeps an orphaned lease held.
   lease free --name N [--pid P]          Give it back.
-  lease free --force [--stop-job] [--by WHO] [--cooldown S]
-      Free it whoever holds it; --stop-job also stops the job its holder declared (nothing else);
-      --cooldown keeps that holder from taking it again for S seconds.
-  lease show                             Who holds it, until when, who waits, free RAM.
+  lease free --force [--name N [--pid P]] [--stop-job] [--by WHO] [--cooldown S]
+      Free N's lease (with no --name: the GPU's holder, else the oldest) whoever you are; --stop-job also
+      stops the job it declared (nothing else); --cooldown keeps it from taking again for S seconds.
+  lease show                             Who holds what, how it is doing, who waits, free RAM.
   lease log [--lines N]                  The last N events (default 30).
 
   --json prints a form a program can read. Exit codes: 0 done, 1 held by another, behind a waiter or cooling

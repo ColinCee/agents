@@ -37,7 +37,7 @@ SKILL            a folder name under skills/ or skills/.experimental/
 --from           score two Harbor job folders that already exist
 --json           print JSON instead of text
 --min-free-gb    refuse to start a batch with less free memory than this (default 8)
---lease-wait     seconds to wait for the shared GPU and RAM lease before giving up (default 600; 0 refuses at once)
+--lease-wait     seconds to wait for a share of RAM from the lease before giving up (default 600; 0 refuses at once)
 
 A command (a skill marked disable-model-invocation: true) is run as the user types it: the prompt starts with
 /<name>. Each batch runs both sides at the same time, so they share load and versions. Saved batches are kept under
@@ -437,7 +437,8 @@ function harbor(task: string, model: string, runs: number, name: string, skill: 
 const exited = (child: ChildProcess): Promise<number> =>
   new Promise((done) => child.on("close", (code) => done(code ?? 1)));
 
-/** The shared lock on the GPU and big RAM, through the lease command (see src/lease). */
+/** A share of the machine's RAM, through the lease command (see src/lease), so a batch never starts on memory a
+ * local model is using. */
 class Lease {
   private timer: NodeJS.Timeout | null = null;
   held = false;
@@ -470,8 +471,8 @@ class Lease {
     }
     const { code, out } = await this.run(
       "take",
-      "--gb",
-      String(LEASE_GB),
+      "--res",
+      `ram:${LEASE_GB}`, // Docker needs memory, not the GPU: a model on the GPU alone may run beside it
       "--note",
       note,
       "--wait",
@@ -480,13 +481,14 @@ class Lease {
     if (code !== 0) {
       let holder = "";
       try {
-        const view = JSON.parse(out).view;
-        if (view?.holder) holder = ` It is held by ${view.holder.name} (${view.holder.note ?? "no note"}).`;
+        const holds: { name: string; note: string; gb: number }[] = JSON.parse(out).view?.holds ?? [];
+        const ram = holds.filter((h) => h.gb > 0).map((h) => `${h.name} (${h.note || "no note"}, ${h.gb} GB)`);
+        if (ram.length > 0) holder = ` RAM is held by ${ram.join(", ")}.`;
       } catch {
         // no JSON to read: the message below still says what happened
       }
       console.error(
-        `Error: the GPU and RAM lease was not given within ${waitSeconds} s (lease exit ${code}).${holder} Try later.`,
+        `Error: ${LEASE_GB} GB of RAM was not given by the lease within ${waitSeconds} s (lease exit ${code}).${holder} Try later.`,
       );
       return false;
     }
