@@ -141,3 +141,34 @@ test("a click opens the card; Free it asks first, then frees that hold by name",
   expect(await ui.find({ type: "Text", text: /Freed browser from form-filling-agent/ })).toBeDefined();
   await ui.unmount();
 });
+
+test("/lease opens a pane listing each lock with its details and Free it", async ($, on) => {
+  on("fs.read", async () => ({ value: state([strata, forms]) }));
+  on("env.get", async (_$, e) => ({ value: e.name === "LEASES_HOME" ? undefined : "C:/Users/someone" }));
+  on("clock.now", async () => ({ value: NOW }));
+  on("clock.every", async () => ({ value: undefined }));
+  on("session.start", async (_$, e) => ({ cwd: e.cwd }));
+  await $.session.start({ cwd: "C:/", surface: "terminal", isInteractive: true });
+  for (const surface of ["terminal", "desktop"] as const) {
+    const pane = await $.ui.mount({
+      plugin: "lease",
+      component: "Pane",
+      requestId: "lease",
+      surface,
+      props: {
+        title: "Locks",
+        isFocused: true,
+        bodyColumns: 60,
+        placement: "dock",
+        scroll: { offset: 0, bodyRows: 30 },
+        view: {},
+      },
+    } as Parameters<typeof $.ui.mount>[0]);
+    expect(await pane.find({ type: "Text", text: /STUCK/ })).toBeDefined();
+    expect(await pane.find({ key: "pane-free:gpu/cortex/100" })).toBeDefined();
+    await pane.press({ key: "pane-free:gpu/cortex/100" });
+    expect(await pane.find({ key: "pane-yes:gpu/cortex/100" })).toBeDefined();
+    await pane.press({ key: "pane-no:gpu/cortex/100" });
+    await pane.unmount();
+  }
+});

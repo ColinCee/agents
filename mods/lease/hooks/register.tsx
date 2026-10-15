@@ -9,6 +9,7 @@ const confirming = atom({ plugin: "lease", key: "confirming" } as const, false);
 const showSpare = atom({ plugin: "lease", key: "showSpare" } as const, false);
 const said = atom({ plugin: "lease", key: "said" } as const, "");
 
+const PANE = "lease";
 const EVERY_MS = 5_000; // one small file read: cheap, and a lease changes on the scale of seconds
 const DOT_PX = 8; // a notification dot: seen at a glance, smaller than the label's letters
 // The theme's green and red are not reachable inside a picture; these read on light and dark backgrounds alike.
@@ -72,7 +73,95 @@ export const register: Register = (on) => {
   on("session.start", async ($, e, next) => {
     await refresh($);
     $.clock.every(EVERY_MS, () => refresh($));
+    await $.command.register({ name: "lease", description: "Show the shared locks (GPU, RAM, browser ...) in a pane" });
     return next(e);
+  });
+
+  on("command.run", { command: "lease" }, async ($) => {
+    await $.ui.open({ id: PANE, title: "Locks" });
+    return { text: "Locks pane opened." };
+  });
+
+  // The pane: one entry per held resource, coloured dot, label and holder, its details under it, and Free it.
+  on("ui.render", { component: "Pane", requestId: PANE }, async ($, e) => {
+    const { Box, Button, Text } = $.ui.resolve(e);
+    const shown: Band | null = await read($, band);
+    const now = await $.clock.now();
+    const asking = (await read($, confirming)) ? await read($, open) : null;
+    const message = await read($, said);
+    if (shown === null || shown.chips.length === 0)
+      return (
+        <Box flexDirection="column">
+          <Text dimColor>Nothing is locked.</Text>
+          {shown?.spare.length ? <Text dimColor>Used before: {shown.spare.map((s) => s.label).join(" ")}</Text> : null}
+        </Box>
+      );
+    return (
+      <Box flexDirection="column" gap={1}>
+        {shown.chips.map((c) => {
+          const lines = cardLines(c, shown, now);
+          return (
+            <Box key={`pane:${c.key}`} flexDirection="column">
+              <Text>
+                <Text color={c.stuck === null ? "success" : "error"}>● </Text>
+                <Text bold>{c.label}</Text>
+                <Text> {c.note || c.name}</Text>
+                {c.stuck !== null ? (
+                  <Text color="error" bold>
+                    {" "}
+                    {c.stuck === "over" ? "OVER TIME" : "STUCK"}
+                  </Text>
+                ) : null}
+              </Text>
+              {lines.slice(1).map((line, i) => (
+                <Text
+                  key={`pane:${c.key}:${i}`}
+                  dimColor={!line.startsWith("Stuck")}
+                  color={line.startsWith("Stuck") ? "error" : undefined}
+                >
+                  {"  "}
+                  {line}
+                </Text>
+              ))}
+              {asking === c.key ? (
+                <Box gap={1}>
+                  <Text>
+                    {"  "}
+                    {freeWords(c)}
+                  </Text>
+                  <Button
+                    key={`pane-yes:${c.key}`}
+                    label="Yes, free it"
+                    variant="primary"
+                    onPress={async () => {
+                      await update($, confirming, () => false);
+                      await freeIt($, c);
+                    }}
+                  />
+                  <Button key={`pane-no:${c.key}`} label="No" onPress={() => update($, confirming, () => false)} />
+                </Box>
+              ) : (
+                <Box paddingLeft={2}>
+                  <Button
+                    key={`pane-free:${c.key}`}
+                    label="Free it"
+                    dimColor
+                    onPress={async () => {
+                      await update($, open, () => c.key);
+                      await update($, confirming, () => true);
+                    }}
+                  />
+                </Box>
+              )}
+            </Box>
+          );
+        })}
+        {shown.spare.length > 0 ? (
+          <Text dimColor>Free, used before: {shown.spare.map((s) => s.label).join(" ")}</Text>
+        ) : null}
+        {message ? <Text dimColor>{message}</Text> : null}
+      </Box>
+    );
   });
 
   on("ui.render", { component: "AbovePrompt" }, async ($, e, next) => {
