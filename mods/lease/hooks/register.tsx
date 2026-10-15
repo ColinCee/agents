@@ -1,13 +1,16 @@
 import type { EngineInterface, Register } from "claude-code";
 import { atom, read, update } from "claude-code";
-import type { Band } from "../types";
-import { bandOf, freeWords } from "./band";
+import type { Band, Chip } from "../types";
+import { bandOf, cardLines, freeWords } from "./band";
 
 const band = atom({ plugin: "lease", key: "band" } as const, null);
+const open = atom({ plugin: "lease", key: "open" } as const, null);
 const confirming = atom({ plugin: "lease", key: "confirming" } as const, false);
+const showSpare = atom({ plugin: "lease", key: "showSpare" } as const, false);
 const said = atom({ plugin: "lease", key: "said" } as const, "");
 
 const EVERY_MS = 5_000; // one small file read: cheap, and a lease changes on the scale of seconds
+const COOLDOWN_S = 600; // after Free it, the holder may not take anything back for ten minutes
 
 async function folder($: EngineInterface): Promise<string> {
   const own = await $.env.get("LEASES_HOME");
@@ -24,25 +27,38 @@ async function refresh($: EngineInterface): Promise<void> {
   if (JSON.stringify(now) !== JSON.stringify(next)) await update($, band, () => next);
 }
 
-// Only on his press: the lease command frees it under its lock, logs it, and stops the job the holder declared.
-async function freeIt($: EngineInterface): Promise<void> {
+// Only on his press, after he confirms: the lease command frees that hold under its lock, logs it, and stops the
+// job its holder declared.
+async function freeIt($: EngineInterface, chip: Chip): Promise<void> {
   const dir = await folder($);
   const argv = [
     "node",
     `${dir}/lease.mjs`,
     "free",
     "--force",
+    "--name",
+    chip.name,
+    "--pid",
+    String(chip.pid),
     "--stop-job",
     "--by",
     "Colin (Claude Code)",
     "--cooldown",
-    "600",
+    String(COOLDOWN_S),
   ];
   const words = await $.process
     .run(argv, { timeoutMs: 90_000 })
-    .then((r) => (r.exitCode === 0 ? r.stdout.trim() : `lease said: ${(r.stdout || r.stderr).trim()}`))
-    .catch((error: unknown) => `could not run lease (${String(error)}); in a terminal: lease free --force --stop-job`);
+    .then((r) =>
+      r.exitCode === 0
+        ? `Freed ${chip.wants} from ${chip.note || chip.name}.`
+        : `lease said: ${(r.stdout || r.stderr).trim()}`,
+    )
+    .catch(
+      (error: unknown) =>
+        `could not run lease (${String(error)}); in a terminal: lease free --force --name ${chip.name}`,
+    );
   await update($, said, () => words);
+  await update($, open, () => null);
   await refresh($);
 }
 
@@ -56,43 +72,99 @@ export const register: Register = (on) => {
   on("ui.render", { component: "AbovePrompt" }, async ($, e, next) => {
     const shown: Band | null = await read($, band);
     if (e.props.hasSurvey || shown === null) return next(e);
-    const isAsking = await read($, confirming);
-    const message = await read($, said);
     const { Box, Button, Text } = $.ui.resolve(e);
-    const color = shown.kind === "free" ? "subtle" : shown.kind === "held" ? "warning" : "error";
+    if (shown.unreadable) return <Text color="error">lease: the state file cannot be read; run lease show</Text>;
+    const openKey = await read($, open);
+    const isAsking = await read($, confirming);
+    const spareShown = await read($, showSpare);
+    const message = await read($, said);
+    const now = await $.clock.now();
+    // The terminal spends no rows on borders: two lines per chip. Other surfaces draw each chip as a small box.
+    const boxed = e.surface !== "terminal";
+    const toggle = (key: string) => async () => {
+      await update($, confirming, () => false);
+      await update($, open, (was) => (was === key ? null : key));
+    };
+    const chip = (c: Chip) => (
+      <Box
+        key={c.key}
+        position="relative"
+        flexDirection="column"
+        paddingX={1}
+        {...(boxed ? { borderStyle: "round", borderDimColor: c.key !== openKey } : {})}
+      >
+        <Button key={`chip:${c.key}`} plain dimColor onPress={toggle(c.key)}>
+          {c.label}
+          {boxed ? "" : <Text color={c.stuck === null ? "success" : "error"}> ●</Text>}
+        </Button>
+        <Button key={`who:${c.key}`} plain onPress={toggle(c.key)}>
+          <Text color={c.stuck === null ? undefined : "error"}>{c.holder}</Text>
+          {c.waiting.length > 0 ? <Text dimColor> +{c.waiting.length}</Text> : ""}
+        </Button>
+        {boxed ? (
+          <Box position="absolute" top={0} right={0}>
+            <Text color={c.stuck === null ? "success" : "error"}>●</Text>
+          </Box>
+        ) : null}
+      </Box>
+    );
+    const opened = shown.chips.find((c) => c.key === openKey) ?? null;
     return (
       <Box flexDirection="column">
-        <Box>
-          <Text color={color} wrap="truncate-end">
-            {shown.kind === "free" ? "" : "\u{1F512} "}
-            {shown.line}
-            {shown.waiting ? ` · waiting: ${shown.waiting}` : ""}{" "}
-          </Text>
-          {shown.kind === "held" || shown.kind === "orphaned" ? (
-            <Button key="free" label="Free it" onPress={() => update($, confirming, () => true)} />
-          ) : null}
-        </Box>
-        {isAsking && shown.holder ? (
-          <Box>
-            <Text>{freeWords(shown)} </Text>
+        <Box flexDirection="row" gap={boxed ? 1 : 3} alignItems="center">
+          {shown.chips.map(chip)}
+          {shown.spare.length > 0 ? (
             <Button
-              key="yes"
-              label="Yes, free it"
-              variant="primary"
-              onPress={async () => {
-                await update($, confirming, () => false);
-                await freeIt($);
-              }}
+              key="spare"
+              plain
+              dimColor
+              label={spareShown ? "‹" : `› ${shown.spare.length}`}
+              onPress={() => update($, showSpare, (was) => !was)}
             />
-            <Button key="no" label="No" onPress={() => update($, confirming, () => false)} />
+          ) : null}
+          {spareShown
+            ? shown.spare.map((s) => (
+                <Text key={`spare:${s.key}`} dimColor>
+                  {s.label}
+                </Text>
+              ))
+            : null}
+        </Box>
+        {opened !== null ? (
+          <Box flexDirection="column" paddingX={1} {...(boxed ? { borderStyle: "round", borderDimColor: true } : {})}>
+            {cardLines(opened, shown, now).map((line, i) => (
+              <Text key={`line:${i}`} color={i === 2 && opened.stuck !== null ? "error" : undefined} dimColor={i > 0}>
+                {line}
+              </Text>
+            ))}
+            {isAsking ? (
+              <Box gap={1}>
+                <Text>{freeWords(opened)}</Text>
+                <Button
+                  key="yes"
+                  label="Yes, free it"
+                  variant="primary"
+                  onPress={async () => {
+                    await update($, confirming, () => false);
+                    await freeIt($, opened);
+                  }}
+                />
+                <Button key="no" label="No" onPress={() => update($, confirming, () => false)} />
+              </Box>
+            ) : (
+              <Box gap={1}>
+                <Button key="free" label="Free it" onPress={() => update($, confirming, () => true)} />
+                <Button key="close" label="Close" dimColor onPress={toggle(opened.key)} />
+              </Box>
+            )}
           </Box>
         ) : null}
         {message ? (
-          <Box>
+          <Box gap={1}>
             <Text dimColor wrap="truncate-end">
-              {message}{" "}
+              {message}
             </Text>
-            <Button key="ok" label="OK" onPress={() => update($, said, () => "")} />
+            <Button key="ok" label="OK" dimColor onPress={() => update($, said, () => "")} />
           </Box>
         ) : null}
       </Box>
