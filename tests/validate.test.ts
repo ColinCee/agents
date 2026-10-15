@@ -15,9 +15,6 @@ compatibility: Requires Node 22 or later.
 
 Run \`node scripts/run.mjs\` to sample.
 `;
-const EVALS = JSON.stringify({
-  evals: [1, 2, 3].map((i) => ({ prompt: `p${i}`, expected_output: `e${i}` })),
-});
 const SCRIPT = `#!/usr/bin/env node
 // Samples things.
 import { argv } from "node:process";
@@ -37,10 +34,8 @@ function errors(): string[] {
 
 beforeEach(() => {
   root = mkdtempSync(join(tmpdir(), "validate-"));
-  process.env.AGENTS_BENCH = join(root, "no-bench");
   write(join(root, "README.md"), "| [sample](skills/sample/SKILL.md) |");
   write(join(root, "skills/sample/SKILL.md"), SKILL);
-  write(join(root, "skills/sample/evals/evals.json"), EVALS);
   write(join(root, "skills/sample/scripts/run.mjs"), SCRIPT);
   write(join(root, "src/skills/sample/scripts/run.mts"), SCRIPT);
 });

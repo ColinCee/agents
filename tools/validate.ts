@@ -32,8 +32,6 @@ const FIELDS = new Set([
   "disable-model-invocation",
 ]);
 const NODE_FLOOR = 22; // the oldest Node release line still given security fixes
-const MIN_EVALS = 3; // the fewest tasks that show a pattern and not one lucky run
-const MIN_TRIGGERS_EACH = 8; // about twenty queries in all, half each way
 const HELP_TIMEOUT_MS = 30_000; // --help only prints, so longer than this means it is waiting for input
 const CONTENTS_OVER = 100; // lines; an agent may read only the top of a longer reference file
 
@@ -45,7 +43,7 @@ const USE_WHEN = /\buse (this skill |it )?when\b/i;
 const LINK = /\]\(([^)\s#]+)/g;
 const NOT_FOR_THE_BODY =
   /^#+\s*(changelog|installation|install|license|licence|todo)\b|\b(pip|npm|brew|apt(-get)?) install\b|\bTODO\b/im;
-const BACKSLASH_PATH = /\b(scripts|references|assets|evals)\\\w/;
+const BACKSLASH_PATH = /\b(scripts|references|assets)\\\w/;
 const OWN_PATH = /[A-Za-z]:[\\/]+Users[\\/]|\/Users\/\w|\/home\/\w/;
 const AGENT_TOOLS =
   /\b(TodoWrite|AskUserQuestion|WebFetch|WebSearch|NotebookEdit|mcp__\w+|(Bash|Read|Edit|Write|Task|Grep|Glob) tool)\b/;
@@ -207,7 +205,7 @@ function checkText(skill: string, body: string, report: Report): void {
     }
   for (const path of files(skill)) {
     const rel = posix(relative(skill, path));
-    if (!/\.(md|mjs)$/.test(path) || rel.startsWith("evals/")) continue;
+    if (!/\.(md|mjs)$/.test(path)) continue;
     const text = read(path);
     const at = `${name}/${rel}`;
     if (BACKSLASH_PATH.test(text))
@@ -272,58 +270,12 @@ function checkScripts(root: string, skill: string, fields: Fields, report: Repor
   }
 }
 
-function loadJson(path: string, at: string, report: Report): unknown {
-  try {
-    return JSON.parse(read(path));
-  } catch (e) {
-    report.error(at, `is not valid JSON: ${(e as Error).message}`);
-    return null;
-  }
-}
-
-function checkEvals(skill: string, report: Report): void {
-  const name = skill.split(/[\\/]/).at(-1) ?? "";
-  let at = `${name}/evals/evals.json`;
-  const evalsPath = join(skill, "evals", "evals.json");
-  if (!existsSync(evalsPath))
-    report.error(at, `is missing; write at least ${MIN_EVALS} real tasks with what a good result looks like`);
-  else {
-    const data = loadJson(evalsPath, at, report) as { evals?: unknown } | null;
-    if (data !== null) {
-      const evals = Array.isArray(data?.evals) ? (data.evals as Record<string, unknown>[]) : [];
-      const good = evals.filter((e) => e && e.prompt && e.expected_output);
-      if (good.length < MIN_EVALS || good.length !== evals.length)
-        report.error(
-          at,
-          `needs at least ${MIN_EVALS} evals, each with \`prompt\` and \`expected_output\`; found ${good.length} complete of ${evals.length}`,
-        );
-    }
-  }
-  at = `${name}/evals/triggers.json`;
-  const triggersPath = join(skill, "evals", "triggers.json");
-  if (!existsSync(triggersPath))
-    report.warn(at, "is missing; the description has not been tested against what users type");
-  else {
-    const data = loadJson(triggersPath, at, report);
-    if (data !== null) {
-      const queries = Array.isArray(data) ? (data as Record<string, unknown>[]).filter((q) => q?.query) : [];
-      const should = queries.filter((q) => q.should_trigger === true).length;
-      const shouldNot = queries.filter((q) => q.should_trigger === false).length;
-      if (should < MIN_TRIGGERS_EACH || shouldNot < MIN_TRIGGERS_EACH)
-        report.warn(
-          at,
-          `has ${should} queries that should load the skill and ${shouldNot} that should not; aim for ${MIN_TRIGGERS_EACH} of each`,
-        );
-    }
-  }
-}
-
 export function check(root: string): Report {
   const report = new Report();
   const home = join(root, "skills");
   const listed = isDir(home) ? readdirSync(home).sort() : [];
   const skills = listed.filter((n) => !n.startsWith(".") && isDir(join(home, n))).map((n) => join(home, n));
-  // Not yet measured: checked like the rest, but not listed in the README.
+  // Drafts: checked like the rest, but not listed in the README until they have proved themselves in real work.
   const draftsHome = join(home, ".experimental");
   const drafts = isDir(draftsHome)
     ? readdirSync(draftsHome)
@@ -344,25 +296,8 @@ export function check(root: string): Report {
     checkFrontmatter(skill, fields, report);
     checkText(skill, body, report);
     checkScripts(root, skill, fields, report);
-    checkEvals(skill, report);
     if (!drafts.includes(skill) && !readme.includes(`skills/${name}/SKILL.md`))
       report.error("README.md", `does not list ${name}; add a row to the table of skills`);
-  }
-  // Harbor copies a task from the working folder, not from git, so a file saved with Windows line endings reaches
-  // the container as is: `import os\r` matches no sed pattern and a shell script fails. The tests are in the private
-  // agents-bench repository, when it is checked out beside this one.
-  const bench = process.env.AGENTS_BENCH ?? join(root, "..", "agents-bench");
-  for (const group of ["skills", "archive"]) {
-    const base = join(bench, group);
-    for (const test of isDir(base) ? readdirSync(base).sort() : []) {
-      for (const path of files(join(base, test, "task"))) {
-        if (readFileSync(path).includes("\r\n"))
-          report.error(
-            `agents-bench/${posix(relative(bench, path))}`,
-            "has Windows line endings (CRLF); save it with LF, as a container reads it",
-          );
-      }
-    }
   }
   return report;
 }
