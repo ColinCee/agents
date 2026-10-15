@@ -448,3 +448,27 @@ describe("lease run", () => {
     expect(main(["show", "extra"], () => {}, sys)).toBe(2);
   });
 });
+
+describe("one holder, several jobs", () => {
+  const gpuOnly = { name: "cortex", pid: 100, wants: [{ resource: "gpu", gb: null }], note: "classifier", ttl: 120 };
+
+  test("taking again with more adds it to the hold, and freeing some keeps the rest", () => {
+    expect(takeOnce(gpuOnly, sys).outcome).toBe("taken"); // the classifier
+    expect(takeOnce(cortex, sys).outcome).toBe("renewed"); // Strata: adds 40 GB of RAM to the same hold
+    expect(show(sys).view.holds.map((h) => wantWords_(h.wants))).toEqual(["gpu ram:40"]);
+    expect(main(["free", "--name", "cortex", "--pid", "100", "--res", "ram"], () => {}, sys)).toBe(0); // Strata stops
+    expect(show(sys).view.holds.map((h) => wantWords_(h.wants))).toEqual(["gpu"]);
+    expect(free({ name: "cortex", pid: 100 }, sys).outcome).toBe("freed"); // Cortex stops
+    expect(show(sys).view.holds).toEqual([]);
+  });
+
+  test("what it adds must be free: more RAM than the pool has is refused, the hold kept as it was", () => {
+    takeOnce(gpuOnly, sys);
+    takeOnce({ name: "bench", pid: 200, wants: [{ resource: "ram", gb: 30 }], note: "", ttl: 120 }, sys);
+    expect(takeOnce(cortex, sys).outcome).toBe("held"); // 30 + 40 is past the 55 GB pool
+    expect(show(sys).view.holds.find((h) => h.name === "cortex")?.wants).toEqual(gpuOnly.wants);
+  });
+});
+
+const wantWords_ = (wants: { resource: string; gb: number | null }[]) =>
+  wants.map((w) => (w.gb === null ? w.resource : `${w.resource}:${w.gb}`)).join(" ");

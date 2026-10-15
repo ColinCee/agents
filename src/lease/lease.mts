@@ -621,6 +621,23 @@ export function takeOnce(args: TakeArgs, sys: System = realSystem): Answer {
     const held = state.holds.find((h) => mine(h, args));
     if (held !== undefined) {
       if (args.forSeconds != null) held.until = iso(now + args.forSeconds * 1000);
+      // Taking again with more (another resource, a larger share) adds it to the hold, if it is free: one program
+      // that starts a second job on the same GPU keeps one hold, not two that block each other.
+      const more = args.wants.filter((w) => {
+        const had = held.wants.find((x) => x.resource === w.resource);
+        return had === undefined || (w.gb ?? 0) > (had.gb ?? 0);
+      });
+      if (more.length > 0) {
+        const growth = more.map((w) => {
+          const had = held.wants.find((x) => x.resource === w.resource);
+          return { resource: w.resource, gb: w.gb === null ? null : w.gb - (had?.gb ?? 0) };
+        });
+        const why = blocked({ ...state, holds: state.holds.filter((x) => x !== held) }, growth, sys);
+        if (why !== null) return { outcome: "held", view: view(state, sys) };
+        for (const w of more) remember(state, w.resource, args.labels?.[w.resource] ?? null, now);
+        held.wants = [...held.wants.filter((x) => !more.some((w) => w.resource === x.resource)), ...more];
+        log(holdLine(held, "take", `adds ${wantWords(more)} · now ${wantWords(held.wants)}`));
+      }
       return { outcome: renewHeld(held, args, sys, log), view: view(state, sys) };
     }
     const isMe = (w: Waiter) => w.name === args.name && w.pid === args.pid;
@@ -733,10 +750,18 @@ export function renew(
   });
 }
 
-export function free(who: Who, sys: System = realSystem): Answer {
+/** Give the hold back; with `resources`, only those of it, keeping the rest (all of it when none is left). */
+export function free(who: Who, sys: System = realSystem, resources: string[] = []): Answer {
   return withState(sys, ({ state, log }) => {
     const h = state.holds.find((x) => mine(x, who));
     if (h === undefined) return { outcome: "not-held", view: view(state, sys) };
+    const kept = h.wants.filter((w) => !resources.includes(w.resource));
+    if (resources.length > 0 && kept.length > 0) {
+      const given = h.wants.filter((w) => resources.includes(w.resource));
+      h.wants = kept;
+      log(holdLine(h, "free", `gives back ${wantWords(given)} · keeps ${wantWords(kept)}`));
+      return { outcome: "freed", view: view(state, sys) };
+    }
     state.holds = state.holds.filter((x) => x !== h);
     log(holdLine(h, "free", h.note));
     return { outcome: "freed", view: view(state, sys) };
@@ -871,6 +896,14 @@ function parseWant(text: string): Want {
   }
   if (name !== RAM) throw new Usage(`only ram is shared by size; --res ${name} takes no :GB`);
   return { resource: name, gb: wholeNumber(gb, "--res ram:GB", 0) ?? 0 };
+}
+
+/** A resource named to give back: its name, any size after it ignored. */
+function resourceName(text: string): string {
+  const name = text.split(":")[0] ?? "";
+  if (!NAME_PATTERN.test(name))
+    throw new Usage(`--res takes a lowercase resource name, such as ram, not ${JSON.stringify(text)}`);
+  return name;
 }
 
 function parseLabels(values: string[] | undefined): Record<string, string> {
@@ -1031,7 +1064,7 @@ export function main(
                 },
                 sys,
               )
-            : free(who(), sys);
+            : free(who(), sys, (o.res ?? []).map(resourceName));
         break;
       case "show":
         answer = show(sys);
@@ -1094,7 +1127,8 @@ const HELP = `lease: shared locks on this machine's resources (state and log in 
   lease renew --name N [--pid P] [--job-pid J] [--for S]
       Keep it: every ${RENEW_SECONDS} s; it lapses ${TTL_SECONDS} s after the last renewal. --job-pid declares the
       process doing the heavy work, which "free --stop-job" may stop and whose life keeps an orphaned lease held.
-  lease free --name N [--pid P]          Give it back.
+  lease free --name N [--pid P] [--res R ...]
+      Give it back; with --res, only those resources (lease free --name N --res ram), keeping the rest.
   lease free --force [--name N [--pid P]] [--stop-job] [--by WHO] [--cooldown S]
       Free N's lease (with no --name: the GPU's holder, else the oldest) whoever you are; --stop-job also
       stops the job it declared (nothing else); --cooldown keeps it from taking again for S seconds.
