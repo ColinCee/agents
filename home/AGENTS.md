@@ -46,7 +46,7 @@ He runs about ten pieces of work at once and skims each reply for what he has to
 
 - **Windows, PowerShell 7.** Run any command you hand him in that shell first: quoting, PATH and certificates have broken handed-over commands.
 - **The GPU and PC are his first.** Ask before starting a GPU run, and stop yours the moment he wants to game.
-- **The GPU and 10 GB or more of RAM are taken through `lease`** (`lease show` says who has them). Code that starts such a job takes the lease itself, renews it while the job runs and frees it after; a refusal means wait, never start anyway.
+- **Where `lease` is installed, the GPU and 10 GB or more of RAM are taken through it** (`lease show` says who has them). Code that starts such a job takes the lease itself, renews it while the job runs and frees it after; a refusal means wait, never start anyway.
 - **Large installs and data go on D:,** not C:.
 - **Before taking a port or another shared resource,** check what is in use and tell other running sessions what changed.
 

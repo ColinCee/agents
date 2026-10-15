@@ -62,13 +62,13 @@ npm run install-home -- --apply   # install, keeping a backup of anything replac
 `lease` is a lock on the GPU and big RAM, shared by every program and agent on one machine, kept in a file (`~/.leases/`) with no server: a local model server, a batch of containers and a game-playing owner stop fighting over memory. The holder renews it every 30 s; it lapses 2 minutes after the last renewal, frees at once when the holder's process is gone, and anyone can force it free. A holder that declared its job (`renew --job-pid`) keeps it held while that job runs, and a forced free with `--stop-job` stops that job and nothing else. Every take, free, lapse and forced free is a line in `~/.leases/log.jsonl`.
 
 ```bash
-npm run install-lease          # the command to ~/.leases, `lease` on PATH, the Claude Code band (mods/lease)
+npm run install-lease          # the command to ~/.leases, `lease` on PATH, the Claude Code band where claude is
 lease show                     # who holds it, for how long, who waits, free RAM
 lease log                      # who did what when
 lease take --name batch --gb 10 --pid 1234 --wait 600 --json   # from a program: then renew every 30 s, free at the end
 ```
 
-`lease --help` has the rest: the commands, `--json`, and the exit codes (0 done, 1 held by another, 2 bad arguments, 3 not yours). The band shows the same above the prompt in every Claude Code session, terminal or desktop, with a **Free it** button.
+`lease --help` has the rest: the commands, `--json`, and the exit codes (0 done, 1 held by another, 2 bad arguments, 3 not yours). The lease needs only Node. Where the `claude` CLI is installed, a band shows the same above the prompt in every Claude Code session, terminal or desktop, with a **Free it** button; elsewhere the installer skips it.
 
 ## What every skill here keeps to
 

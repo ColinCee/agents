@@ -3,7 +3,9 @@
  *
  *   ~/.leases/lease.mjs        the command, one file with no dependencies (state and log live beside it)
  *   ~/.local/bin/lease(.cmd)   `lease` on PATH
- *   the `lease` mod            installed at user scope from mods/lease, read from that folder (claude CLI)
+ *   the `lease` mod            the band in Claude Code, from mods/lease; only where the claude CLI is
+ *
+ * The lease itself needs only Node: other agents and apps call the command and never see the mod.
  *
  * Safe to run again: each step replaces what an earlier run wrote. Exit codes: 0 done, 1 a step failed.
  */
@@ -39,7 +41,9 @@ const claude = spawnSync(
   { encoding: "utf8", windowsHide: true },
 );
 const said = `${claude.stdout ?? ""}${claude.stderr ?? ""}`.trim();
-if (claude.status === 0) console.log(said || "installed the lease mod");
+if ((claude.error as NodeJS.ErrnoException | undefined)?.code === "ENOENT")
+  console.log("no claude CLI here: skipped the Claude Code band; the lease works without it");
+else if (claude.status === 0) console.log(said || "installed the lease mod");
 else {
   console.error(`the lease mod was not installed (${said || claude.error?.message || `exit ${claude.status}`}).`);
   console.error(`By hand: claude plugin install lease --marketplace "${join(root, "mods", "lease")}" --scope user`);
