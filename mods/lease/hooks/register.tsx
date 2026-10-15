@@ -107,12 +107,11 @@ export const register: Register = (on) => {
           <Text color={ok ? "success" : "error"}> ●</Text>
         );
       return (
-        <Box key={c.key} position="relative">
+        <Box key={c.key} position="relative" paddingRight={Svg !== null ? 1 : 0} hover={{ scope: `lease:${c.key}` }}>
           <Button
             key={`chip:${c.key}`}
             label={c.waiting.length > 0 ? `${c.tag} +${c.waiting.length}` : c.tag}
             variant={c.key === openKey ? "primary" : undefined}
-            hover={{ scope: `lease:${c.key}` }}
             onPress={toggle(c.key)}
           />
           {Svg !== null ? (
@@ -128,7 +127,7 @@ export const register: Register = (on) => {
     const opened = shown.chips.find((c) => c.key === openKey) ?? null;
     return (
       <Box flexDirection="column">
-        <Box flexDirection="row" gap={1} alignItems="center">
+        <Box flexDirection="row" gap={2} alignItems="center">
           {shown.chips.map(chip)}
           {shown.spare.length > 0 ? (
             <Button
