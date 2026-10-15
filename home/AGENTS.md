@@ -15,6 +15,7 @@ The levels, highest first: this file, a project's `AGENTS.md`, that project's do
 Fewer is better: add a document or a comment only when there is no way around it. When code or a document changes, use the `doc-upkeep` skill; without it:
 
 - **Fix a stale line where it is.** Never add a correction below it ("Update: …") or a log of what was removed; git keeps that.
+- **Shape documents to be scanned:** one line on what it is first, the most-used part next as a table, links instead of retelling, reasons last.
 - **Code explains itself:** a clearer name or a smaller function beats a comment. A comment says *why*, never *what*, and points to where a quirk is explained rather than repeating it.
 
 ## Replies

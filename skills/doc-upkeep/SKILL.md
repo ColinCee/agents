@@ -1,6 +1,6 @@
 ---
 name: doc-upkeep
-description: Keeps documents and code comments true and few, fixing stale lines in place, giving each fact one home, and making comments say why, not what. Use when code changes that a document or comment describes, when writing either, or to update the docs.
+description: Keeps documents and comments true, few and easy to scan, fixing stale lines in place, giving each fact one home, and making comments say why. Use when code changes that a document or comment describes, when writing either, or to update the docs.
 license: MIT
 ---
 
@@ -14,6 +14,18 @@ Every document and comment is a promise that has to be kept true. Make each one 
 4. **Delete what describes removed things.** Git already records what was removed and when; the reader needs what is there now.
 5. **Give each fact one home.** When the same text is in more than one file, keep it in the one it belongs to and turn the others into a pointer ("Checks: see `AGENTS.md`"). Rules for working on the project belong in `AGENTS.md`; how to use it, in `README.md`; anything the user's own instructions already say needs no copy in the project.
 6. **Compare sizes.** The documents together should be no longer than before, unless a new feature needed a new section. Check with `git diff --stat`.
+
+## Shape
+
+Readers scan; shape every document for that. These are the defaults; the project's own documents win where they differ.
+
+- **One line on what it is, at the top.** No introduction paragraph.
+- **What readers use most comes first;** the reasons why come last.
+- **Items of the same shape go in a table** (name, what it does, how to get it). Steps are a numbered list; anything else is bullets. Prose only for a reason that needs a sentence.
+- **Headings are short nouns** ("Skills", "Tools"), and no heading stands over a single unexplained item.
+- **Link to details; do not retell them.** A README points to the file that explains.
+- **One copyable command per job.**
+- **Plain words.** No selling ("powerful", "simple") and no hedging.
 
 ## Comments
 
@@ -45,3 +57,4 @@ From real corrections:
 - An appended correction ("Update (Sep 30): now 14 tests") is how documents grow and contradict themselves. The fix is to rewrite the first line and delete the second.
 - A rule copied word for word into three files was updated in one and left stale in two. Copies drift; pointers do not.
 - A record of what was deleted, when and how big, is something no later reader acts on. Leave it out.
+- A README was rewritten twice because the content was right but the order was not: an introduction first, the main table halfway down, a heading naming a tool nobody had explained. Put the most-used table first and say what each thing is where it appears.
