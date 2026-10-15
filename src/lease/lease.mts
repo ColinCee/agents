@@ -51,6 +51,9 @@ export const RAM = "ram";
 export const RAM_RESERVE_GB = 8; // Windows, the desktop and a browser: never handed out as a share of the pool
 export const LOADING_SECONDS = 120; // a RAM share taken this recently may not be in use yet: counted as used anyway
 export const GPU_BUSY_GB = 6; // Windows' desktop alone holds 3.3 GB of the card (measured 15 Oct); a model or a game far more
+// Shown, not yet waited on: Cortex's classifier uses the GPU without a lock, so waiting would keep Strata from
+// starting. Turn on once every program that uses the GPU takes the lease.
+export const BLOCK_UNLOCKED_GPU = false;
 export const FORGET_DAYS = 30; // a resource nobody has held for this long drops off the list of free ones
 const LABEL_MAX = 4; // a band shows several side by side: four capitals are enough to tell them apart
 const NAME_PATTERN = /^[a-z0-9][a-z0-9-]{0,31}$/; // a word a person can type; 32 characters is plenty
@@ -597,7 +600,7 @@ function blocked(state: State, wants: Want[], sys: System): string | null {
   for (const want of wants) {
     const others = state.holds.filter((h) => h.wants.some((w) => w.resource === want.resource));
     // Nobody holds the GPU but something uses it: a program that took no lock, or the owner playing a game.
-    if (want.resource === "gpu" && others.length === 0 && (state.gpu_used_gb ?? 0) > GPU_BUSY_GB)
+    if (BLOCK_UNLOCKED_GPU && want.resource === "gpu" && others.length === 0 && (state.gpu_used_gb ?? 0) > GPU_BUSY_GB)
       return `the GPU is in use without a lock (${Math.round(state.gpu_used_gb ?? 0)} GB)`;
     if (others.length === 0) continue;
     const by = others.map((h) => h.name).join(", ");

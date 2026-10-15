@@ -407,28 +407,16 @@ describe("the first version's file and callers", () => {
 });
 
 describe("the GPU in use without a lock", () => {
-  test("a GPU taker waits while something holding no lock uses the card, such as a game", () => {
+  test("is measured and said, and does not yet keep a GPU taker waiting", () => {
     sys.gpu_ = 18;
-    const refused = takeOnce(cortex, sys);
-    expect(refused.outcome).toBe("held");
-    expect(readLog(5).at(-1)?.detail).toContain("the GPU is in use without a lock (18 GB)");
-    expect(main(["show"], () => {}, sys)).toBe(0);
-    sys.gpu_ = 1.5; // the game closed
+    expect(show(sys).view.gpu_used_gb).toBe(18);
+    const out: string[] = [];
+    main(["show"], (t) => out.push(t), sys);
+    expect(out.join("")).toContain("the GPU is in use without a lock (18 GB)");
     expect(takeOnce(cortex, sys).outcome).toBe("taken");
-    sys.gpu_ = 23; // its own model loaded: a held GPU is not "in use without a lock"
-    expect(takeOnce({ ...cortex, pid: 300, name: "other" }, sys).outcome).toBe("held");
-    expect(readLog(1)[0]?.detail).toMatch(/held by cortex/);
-  });
-
-  test("RAM-only takers do not look at the GPU, and a machine with no GPU reading takes as before", () => {
-    sys.gpu_ = 18;
-    expect(
-      takeOnce({ name: "bench", pid: 200, wants: [{ resource: "ram", gb: 10 }], note: "", ttl: 120 }, sys).outcome,
-    ).toBe("taken");
-    sys.gpu_ = null;
-    expect(
-      takeOnce({ name: "x", pid: 300, wants: [{ resource: "gpu", gb: null }], note: "", ttl: 120 }, sys).outcome,
-    ).toBe("taken");
+    out.length = 0;
+    main(["show"], (t) => out.push(t), sys);
+    expect(out.join("")).not.toContain("without a lock"); // its own model now: the GPU is held
   });
 });
 
