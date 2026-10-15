@@ -12,6 +12,7 @@
  * `gpu ram:<gb>`, what the first version of this command locked.
  *
  *   lease take --name N (--res R[:GB] ... | --gb G) [--label R=TEXT] [--note T] [--pid P] [--wait S] [--for S]
+ *   lease run --name N (--res R[:GB] ... | --gb G) [--note T] [--wait S] [--for S] -- COMMAND [ARGS]
  *   lease renew --name N [--pid P] [--job-pid J] [--for S]
  *   lease free --name N [--pid P]
  *   lease free --force [--name N [--pid P]] [--stop-job] [--by WHO] [--cooldown S]
@@ -22,7 +23,7 @@
  * 3 not yours (the lease was freed, lapsed or taken by another).
  */
 
-import { spawnSync } from "node:child_process";
+import { type ChildProcess, spawn, spawnSync } from "node:child_process";
 import {
   appendFileSync,
   closeSync,
@@ -49,6 +50,7 @@ export const POLL_SECONDS = 3;
 export const RAM = "ram";
 export const RAM_RESERVE_GB = 8; // Windows, the desktop and a browser: never handed out as a share of the pool
 export const LOADING_SECONDS = 120; // a RAM share taken this recently may not be in use yet: counted as used anyway
+export const GPU_BUSY_GB = 4; // the desktop, a browser and video take 1 to 3 GB of the card; a model or a game far more
 export const FORGET_DAYS = 30; // a resource nobody has held for this long drops off the list of free ones
 const LABEL_MAX = 4; // a band shows several side by side: four capitals are enough to tell them apart
 const NAME_PATTERN = /^[a-z0-9][a-z0-9-]{0,31}$/; // a word a person can type; 32 characters is plenty
@@ -81,6 +83,8 @@ export type State = {
   cooldowns: Cooldown[];
   resources: Resource[];
   free_gb: number | null;
+  /** GPU memory in use on the whole card, any program's, as the driver reports it; null where it cannot be read. */
+  gpu_used_gb: number | null;
   measured: string | null;
 };
 
@@ -136,6 +140,8 @@ export type View = {
   resources: Resource[];
   ram_gb: number;
   free_gb: number | null;
+  /** GPU memory in use on the whole card, any program's, as the driver reports it; null where it cannot be read. */
+  gpu_used_gb: number | null;
   measured: string | null;
 };
 export type Answer = { outcome: Outcome; view: View };
@@ -148,6 +154,7 @@ export type System = {
   stop: (pid: number) => boolean;
   freeGb: () => number;
   totalGb: () => number;
+  gpuUsedGb: () => number | null;
   sleep: (ms: number) => void;
 };
 
@@ -192,6 +199,21 @@ export const realSystem: System = {
   },
   freeGb: () => freemem() / 2 ** 30,
   totalGb: () => totalmem() / 2 ** 30,
+  // The card's total only: on Windows the driver does not say how much each process uses.
+  gpuUsedGb: () => {
+    const run = spawnSync("nvidia-smi", ["--query-gpu=memory.used", "--format=csv,noheader,nounits"], {
+      encoding: "utf8",
+      windowsHide: true,
+      timeout: 10_000,
+    });
+    if (run.status !== 0) return null;
+    const mib = run.stdout
+      .split("\n")
+      .filter((line) => line.trim() !== "")
+      .map(Number)
+      .filter(Number.isFinite);
+    return mib.length === 0 ? null : mib.reduce((a, b) => a + b, 0) / 1024;
+  },
   sleep: (ms) => {
     Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
   },
@@ -206,7 +228,16 @@ const lockPath = () => join(home(), "state.lock");
 const logPath = () => join(home(), "log.jsonl");
 
 export function emptyState(): State {
-  return { version: 2, holds: [], waiting: [], cooldowns: [], resources: [], free_gb: null, measured: null };
+  return {
+    version: 2,
+    holds: [],
+    waiting: [],
+    cooldowns: [],
+    resources: [],
+    free_gb: null,
+    gpu_used_gb: null,
+    measured: null,
+  };
 }
 
 const ramOf = (wants: Want[]) => wants.find((w) => w.resource === RAM)?.gb ?? 0;
@@ -341,6 +372,8 @@ export function parseState(text: string): State {
     cooldowns: list(raw.cooldowns ?? []).map(parseCooldown),
     resources,
     free_gb: free === null ? null : need(num(free), "free_gb"),
+    gpu_used_gb:
+      raw.gpu_used_gb === null || raw.gpu_used_gb === undefined ? null : need(num(raw.gpu_used_gb), "gpu_used_gb"),
     measured: measured === null ? null : need(str(measured), "measured"),
   };
 }
@@ -453,6 +486,8 @@ export function withState<T>(sys: System, change: (ops: Ops) => T): T {
 export function tidy({ state, sys, log }: Ops): void {
   const now = sys.now();
   state.free_gb = Math.round(sys.freeGb() * 10) / 10;
+  const gpu = sys.gpuUsedGb();
+  state.gpu_used_gb = gpu === null ? null : Math.round(gpu * 10) / 10;
   state.measured = iso(now);
   state.holds = state.holds.filter((h) => {
     const lapsed = now > ms(h.expires);
@@ -535,6 +570,7 @@ export function view(state: State, sys: System): View {
     resources: state.resources,
     ram_gb: ramGb(sys),
     free_gb: state.free_gb,
+    gpu_used_gb: state.gpu_used_gb,
     measured: state.measured,
   };
 }
@@ -560,6 +596,9 @@ function blocked(state: State, wants: Want[], sys: System): string | null {
   const now = sys.now();
   for (const want of wants) {
     const others = state.holds.filter((h) => h.wants.some((w) => w.resource === want.resource));
+    // Nobody holds the GPU but something uses it: a program that took no lock, or the owner playing a game.
+    if (want.resource === "gpu" && others.length === 0 && (state.gpu_used_gb ?? 0) > GPU_BUSY_GB)
+      return `the GPU is in use without a lock (${Math.round(state.gpu_used_gb ?? 0)} GB)`;
     if (others.length === 0) continue;
     const by = others.map((h) => h.name).join(", ");
     if (want.resource !== RAM || want.gb === null) return `held by ${by}`;
@@ -769,7 +808,12 @@ const HEALTH_WORDS: Record<Health, string> = {
 };
 
 export function words(v: View): string {
-  const free = v.free_gb === null ? "" : `${Math.round(v.free_gb)} GB free`;
+  const gpuHeld = v.holds.some((h) => h.wants.some((w) => w.resource === "gpu"));
+  const unlocked =
+    !gpuHeld && (v.gpu_used_gb ?? 0) > GPU_BUSY_GB
+      ? ` · the GPU is in use without a lock (${Math.round(v.gpu_used_gb ?? 0)} GB)`
+      : "";
+  const free = v.free_gb === null ? "" : `${Math.round(v.free_gb)} GB free${unlocked}`;
   const waiting =
     v.waiting.length > 0 ? ` · waiting: ${v.waiting.map((w) => `${w.name} (${wantWords(w.wants)})`).join(", ")}` : "";
   if (v.holds.length === 0) return `free · ${free}${waiting}`;
@@ -839,7 +883,83 @@ function parseLabels(values: string[] | undefined): Record<string, string> {
   return labels;
 }
 
-export function main(argv: string[], out: (text: string) => void = console.log, sys: System = realSystem): number {
+function wantsFrom(o: ReturnType<typeof parseCli>["values"], command: string): Want[] {
+  const res = o.res ?? [];
+  if (res.length > 0 && o.gb !== undefined)
+    throw new Usage(`${command} needs --res or --gb, not both: --gb G means --res gpu --res ram:G`);
+  if (res.length === 0 && o.gb === undefined)
+    throw new Usage(`${command} needs --res (such as --res gpu --res ram:10) or --gb`);
+  const wants = res.length > 0 ? res.map(parseWant) : legacyWants(wholeNumber(o.gb, "--gb", 0) ?? 0);
+  if (new Set(wants.map((w) => w.resource)).size < wants.length)
+    throw new Usage("each --res names a different resource");
+  return wants;
+}
+
+/** Run a command under a lease: take it (waiting up to `waitSeconds`), start the command as its declared job,
+ * renew while it runs, and free it however the command ends. The exit code is the command's, or 1 when the lease
+ * was not given. A forced free with --stop-job stops the command. */
+export async function runUnder(
+  args: TakeArgs,
+  waitSeconds: number,
+  command: string[],
+  sys: System = realSystem,
+  out: (text: string) => void = console.error,
+): Promise<number> {
+  const answer = take(args, waitSeconds, sys);
+  if (answer.outcome !== "taken" && answer.outcome !== "renewed") {
+    out(`lease: not given (${answer.outcome}): ${words(answer.view)}`);
+    return 1;
+  }
+  const who = { name: args.name, pid: args.pid };
+  const start = (file: string) =>
+    spawn(file, command.slice(1), { stdio: "inherit", windowsHide: true }) as ChildProcess;
+  return new Promise<number>((done) => {
+    let child = start(command[0] ?? "");
+    let tried = false;
+    let timer: NodeJS.Timeout | null = null;
+    let warned = false;
+    const finish = (code: number) => {
+      if (timer) clearInterval(timer);
+      process.removeListener("SIGINT", stopChild);
+      process.removeListener("SIGTERM", stopChild);
+      free(who, sys);
+      done(code);
+    };
+    const stopChild = () => child.kill();
+    const watch = () => {
+      child.once("spawn", () => {
+        renew({ ...who, ttl: args.ttl, jobPid: child.pid ?? null }, sys);
+        timer = setInterval(() => {
+          if (renew({ ...who, ttl: args.ttl, jobPid: child.pid ?? null }, sys).outcome === "lost" && !warned) {
+            warned = true;
+            out("lease: the lease was taken back (freed by hand, or lapsed); the command keeps running.");
+          }
+        }, RENEW_SECONDS * 1000);
+      });
+      child.once("error", (error: NodeJS.ErrnoException) => {
+        // On Windows `npm`, `npx` and the like are .cmd files, which spawn does not find by their bare name.
+        if (error.code === "ENOENT" && process.platform === "win32" && !tried) {
+          tried = true;
+          child = start(`${command[0]}.cmd`);
+          watch();
+          return;
+        }
+        out(`lease: could not start ${command[0]}: ${error.message}`);
+        finish(127);
+      });
+      child.once("exit", (code, signal) => finish(code ?? (signal ? 1 : 0)));
+    };
+    process.on("SIGINT", stopChild);
+    process.on("SIGTERM", stopChild);
+    watch();
+  });
+}
+
+export function main(
+  argv: string[],
+  out: (text: string) => void = console.log,
+  sys: System = realSystem,
+): number | Promise<number> {
   const [command, ...rest] = argv;
   let parsed: ReturnType<typeof parseCli>;
   try {
@@ -862,16 +982,30 @@ export function main(argv: string[], out: (text: string) => void = console.log, 
     const ttl = wholeNumber(o.ttl, "--ttl", TTL_SECONDS) ?? TTL_SECONDS;
     const forSeconds = wholeNumber(o.for, "--for", null);
     let answer: Answer;
+    if (command !== "run" && parsed.positionals.length > 0)
+      throw new Usage(`${command} takes no words of its own, only flags: ${parsed.positionals.join(" ")}`);
     switch (command) {
+      case "run": {
+        if (parsed.positionals.length === 0)
+          throw new Usage("run needs the command after --, such as lease run --name job --res gpu -- python train.py");
+        const wants = wantsFrom(o, "run");
+        return runUnder(
+          {
+            name: need(o.name, "--name"),
+            pid: process.pid,
+            wants,
+            labels: parseLabels(o.label),
+            note: o.note ?? parsed.positionals.join(" ").slice(0, 60),
+            ttl,
+            forSeconds,
+          },
+          wholeNumber(o.wait, "--wait", 0) ?? 0,
+          parsed.positionals,
+          sys,
+        );
+      }
       case "take": {
-        const res = o.res ?? [];
-        if (res.length > 0 && o.gb !== undefined)
-          throw new Usage("take needs --res or --gb, not both: --gb G means --res gpu --res ram:G");
-        if (res.length === 0 && o.gb === undefined)
-          throw new Usage("take needs --res (such as --res gpu --res ram:10) or --gb");
-        const wants = res.length > 0 ? res.map(parseWant) : legacyWants(wholeNumber(o.gb, "--gb", 0) ?? 0);
-        if (new Set(wants.map((w) => w.resource)).size < wants.length)
-          throw new Usage("each --res names a different resource");
+        const wants = wantsFrom(o, "take");
         answer = take(
           { ...who(), wants, labels: parseLabels(o.label), note: o.note ?? "", ttl, forSeconds },
           wholeNumber(o.wait, "--wait", 0) ?? 0,
@@ -925,7 +1059,7 @@ function parseCli(args: string[]) {
   return parseArgs({
     args,
     strict: true,
-    allowPositionals: false,
+    allowPositionals: true,
     options: {
       name: { type: "string" },
       pid: { type: "string" },
@@ -961,6 +1095,9 @@ const HELP = `lease: shared locks on this machine's resources (state and log in 
   lease free --force [--name N [--pid P]] [--stop-job] [--by WHO] [--cooldown S]
       Free N's lease (with no --name: the GPU's holder, else the oldest) whoever you are; --stop-job also
       stops the job it declared (nothing else); --cooldown keeps it from taking again for S seconds.
+  lease run --name N --res R[:GB] ... [--note T] [--wait S] [--for S] -- COMMAND [ARGS]
+      Take the lease, run COMMAND as its job, renew it while COMMAND runs and free it when COMMAND ends,
+      however it ends. Exits with COMMAND's code, or 1 when the lease was not given within S seconds.
   lease show                             Who holds what, how it is doing, who waits, free RAM.
   lease log [--lines N]                  The last N events (default 30).
 
@@ -968,5 +1105,7 @@ const HELP = `lease: shared locks on this machine's resources (state and log in 
   down, 2 bad arguments or an error, 3 not yours (freed, lapsed or taken by another).`;
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
-  process.exitCode = main(process.argv.slice(2));
+  void Promise.resolve(main(process.argv.slice(2))).then((code) => {
+    process.exitCode = code;
+  });
 }

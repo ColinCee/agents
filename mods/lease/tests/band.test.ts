@@ -43,13 +43,13 @@ test("one line per holder: what it holds, for how long, free RAM, who waits; stu
   expect(band?.lines).toEqual([
     {
       key: "form-filling-agent/300",
-      stuck: "orphaned",
+      tone: "stuck",
       text: "Form filler · WEB · 4 min",
       problem: "stuck: its holder is gone, its job still runs",
     },
     {
       key: "cortex/100",
-      stuck: null,
+      tone: "ok",
       text: "Strata · GPU + RAM 40 GB · 12 min · 1 GB RAM free · waiting: bench",
       problem: "",
     },
@@ -59,6 +59,12 @@ test("one line per holder: what it holds, for how long, free RAM, who waits; stu
   const over = bandOf(state([{ ...strata, until: "2026-10-15T11:50:00Z" }]), NOW);
   expect(over?.lines[0]?.problem).toBe("over the time it gave");
   expect(bandOf(state([]), NOW)).toBe(null); // nothing held: no band
+  const game = JSON.stringify({ ...JSON.parse(state([])), gpu_used_gb: 18.2 });
+  expect(bandOf(game, NOW)?.lines).toEqual([
+    { key: "gpu-unlocked", tone: "unlocked", text: "GPU in use · 18 GB", problem: "no lock" },
+  ]);
+  const held = JSON.stringify({ ...JSON.parse(state([strata])), gpu_used_gb: 23 });
+  expect(bandOf(held, NOW)?.lines).toHaveLength(1); // its own model: not "no lock"
   expect(bandOf(null, NOW)).toBe(null);
   expect(bandOf("{broken", NOW)?.unreadable).toBe(true);
 });

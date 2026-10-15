@@ -10,6 +10,7 @@ import {
   parseState,
   readLog,
   renew,
+  runUnder,
   type System,
   show,
   take,
@@ -18,6 +19,7 @@ import {
 
 type Fake = System & {
   freeGb_: number;
+  gpu_: number | null;
   clock: number;
   living: Set<number>;
   starts: Map<number, string>;
@@ -27,6 +29,7 @@ type Fake = System & {
 function fake(): Fake {
   const f: Fake = {
     freeGb_: 41.2,
+    gpu_: 0.8,
     clock: Date.parse("2026-10-15T12:00:00Z"),
     living: new Set([100, 200, 300, 900]),
     starts: new Map([[900, "start-of-900"]]),
@@ -41,6 +44,7 @@ function fake(): Fake {
     },
     freeGb: () => f.freeGb_,
     totalGb: () => 63.7,
+    gpuUsedGb: () => f.gpu_,
     sleep: (ms) => {
       f.clock += ms;
     },
@@ -399,5 +403,60 @@ describe("the first version's file and callers", () => {
     expect(run("take", "--name", "x", "--res", "GPU").code).toBe(2);
     expect(run("take", "--name", "x", "--res", "gpu", "--gb", "4").out).toMatch(/not both/);
     expect(run("take", "--name", "x", "--res", "gpu", "--label", "gpu=toolong").code).toBe(2);
+  });
+});
+
+describe("the GPU in use without a lock", () => {
+  test("a GPU taker waits while something holding no lock uses the card, such as a game", () => {
+    sys.gpu_ = 18;
+    const refused = takeOnce(cortex, sys);
+    expect(refused.outcome).toBe("held");
+    expect(readLog(5).at(-1)?.detail).toContain("the GPU is in use without a lock (18 GB)");
+    expect(main(["show"], () => {}, sys)).toBe(0);
+    sys.gpu_ = 1.5; // the game closed
+    expect(takeOnce(cortex, sys).outcome).toBe("taken");
+    sys.gpu_ = 23; // its own model loaded: a held GPU is not "in use without a lock"
+    expect(takeOnce({ ...cortex, pid: 300, name: "other" }, sys).outcome).toBe("held");
+    expect(readLog(1)[0]?.detail).toMatch(/held by cortex/);
+  });
+
+  test("RAM-only takers do not look at the GPU, and a machine with no GPU reading takes as before", () => {
+    sys.gpu_ = 18;
+    expect(
+      takeOnce({ name: "bench", pid: 200, wants: [{ resource: "ram", gb: 10 }], note: "", ttl: 120 }, sys).outcome,
+    ).toBe("taken");
+    sys.gpu_ = null;
+    expect(
+      takeOnce({ name: "x", pid: 300, wants: [{ resource: "gpu", gb: null }], note: "", ttl: 120 }, sys).outcome,
+    ).toBe("taken");
+  });
+});
+
+describe("lease run", () => {
+  const job = { name: "job", pid: process.pid, wants: [{ resource: "gpu", gb: null }], note: "", ttl: 120 };
+
+  test("runs the command under the lease, declares it as the job, frees it after, and passes its exit code on", async () => {
+    sys.living.add(process.pid);
+    const code = await runUnder(job, 0, [process.execPath, "-e", "process.exit(3)"], sys, () => {});
+    expect(code).toBe(3);
+    expect(show(sys).view.holds).toEqual([]);
+    expect(events()).toEqual(["take job", "job job", "free job"]);
+  });
+
+  test("a lease not given runs nothing and exits 1", async () => {
+    sys.living.add(process.pid);
+    takeOnce(cortex, sys);
+    const said: string[] = [];
+    const code = await runUnder(job, 0, [process.execPath, "-e", "process.exit(0)"], sys, (t) => said.push(t));
+    expect(code).toBe(1);
+    expect(said.join("")).toMatch(/not given/);
+    expect(events()).not.toContain("take job");
+  });
+
+  test("the command line needs a command after --, and other commands take no words", () => {
+    const out: string[] = [];
+    expect(main(["run", "--name", "job", "--res", "gpu"], (t) => out.push(t), sys)).toBe(2);
+    expect(out.join("")).toMatch(/needs the command after --/);
+    expect(main(["show", "extra"], () => {}, sys)).toBe(2);
   });
 });

@@ -65,10 +65,11 @@ npm run install-home -- --apply   # install, keeping a backup of anything replac
 npm run install-lease          # the command to ~/.leases, `lease` on PATH, the Claude Code band where claude is
 lease show                     # who holds what, how it is doing, who waits, free RAM
 lease log                      # who did what when
+lease run --name train --res gpu --res ram:20 -- python train.py   # a command: taken, renewed, freed however it ends
 lease take --name batch --res ram:10 --pid 1234 --wait 600 --json   # from a program: then renew every 30 s, free at the end
 ```
 
-`lease --help` has the rest: the commands, `--json`, and the exit codes (0 done, 1 held by another, 2 bad arguments, 3 not yours). The lease needs only Node. Where the `claude` CLI is installed, a band above the prompt in every Claude Code session shows one line per holder: a green dot (red when stuck), what it holds, for how long, free RAM and who waits. It only shows; freeing is `lease free --force`, run by an agent or by hand; elsewhere the installer skips it.
+`lease --help` has the rest: the commands, `--json`, and the exit codes (0 done, 1 held by another, 2 bad arguments, 3 not yours). The lease needs only Node. Where the `claude` CLI is installed, a band above the prompt in every Claude Code session shows one line per holder: a green dot (red when stuck), what it holds, for how long, free RAM and who waits. A yellow line says the GPU is in use with no lock (a program that took none, or a game), and a GPU take waits on it too. The band only shows; freeing is `lease free --force`, run by an agent or by hand; elsewhere the installer skips it.
 
 ## What every skill here keeps to
 

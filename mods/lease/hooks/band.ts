@@ -14,6 +14,7 @@ const objs = (v: Json | undefined): Obj[] => (Array.isArray(v) ? v.filter(isObj)
 
 const FRESH_MS = 5 * 60_000; // free RAM older than this is not shown: nobody has run the command since
 const LATE_MS = 60_000; // two missed renewals, as the lease command counts it
+const GPU_BUSY_GB = 4; // as the lease command counts it: the desktop and a browser take 1 to 3 GB of the card
 const NAME_MAX = 24; // a holder's name on a line that also says what it holds and for how long
 
 const legacy = (gb: number): Want[] => [
@@ -83,14 +84,28 @@ export function bandOf(text: string | null, now: number): Band | null {
     ].filter(Boolean);
     const line: Line = {
       key: `${str(h.name)}/${num(h.pid) ?? 0}`,
-      stuck,
+      tone: stuck === null ? "ok" : "stuck",
       text: parts.join(" · "),
       problem: stuck === null ? "" : PROBLEM[stuck],
     };
     return { line, taken: Date.parse(str(h.taken)) };
   });
-  if (lines.length === 0) return null;
   // Stuck first, then the oldest: lines keep their places as others come and go.
-  lines.sort((a, b) => Number(b.line.stuck !== null) - Number(a.line.stuck !== null) || a.taken - b.taken);
+  lines.sort((a, b) => Number(b.line.tone === "stuck") - Number(a.line.tone === "stuck") || a.taken - b.taken);
+  // Something uses the card and nobody holds the GPU: a program that took no lock, or a game.
+  const gpuHeld = holds.some((h) => wantsOf(h.wants, h.gb).some((w) => w.resource === "gpu"));
+  const gpuUsed = num(raw.gpu_used_gb);
+  const gpuFresh = now - Date.parse(str(raw.measured)) < FRESH_MS;
+  if (!gpuHeld && gpuUsed !== null && gpuUsed > GPU_BUSY_GB && gpuFresh)
+    lines.push({
+      line: {
+        key: "gpu-unlocked",
+        tone: "unlocked",
+        text: `GPU in use · ${Math.round(gpuUsed)} GB`,
+        problem: "no lock",
+      },
+      taken: 0,
+    });
+  if (lines.length === 0) return null;
   return { lines: lines.map((l) => l.line), unreadable: false };
 }
