@@ -10,6 +10,12 @@ const showSpare = atom({ plugin: "lease", key: "showSpare" } as const, false);
 const said = atom({ plugin: "lease", key: "said" } as const, "");
 
 const EVERY_MS = 5_000; // one small file read: cheap, and a lease changes on the scale of seconds
+const DOT_PX = 8; // a notification dot: seen at a glance, smaller than the label's letters
+// The theme's green and red are not reachable inside a picture; these read on light and dark backgrounds alike.
+const dotSvg = (fill: string) =>
+  `<svg xmlns="http://www.w3.org/2000/svg" width="${DOT_PX}" height="${DOT_PX}"><circle cx="4" cy="4" r="4" fill="${fill}"/></svg>`;
+const DOT_OK = dotSvg("#3fb950");
+const DOT_STUCK = dotSvg("#f85149");
 const COOLDOWN_S = 600; // after Free it, the holder may not take anything back for ten minutes
 
 async function folder($: EngineInterface): Promise<string> {
@@ -72,7 +78,9 @@ export const register: Register = (on) => {
   on("ui.render", { component: "AbovePrompt" }, async ($, e, next) => {
     const shown: Band | null = await read($, band);
     if (e.props.hasSurvey || shown === null) return next(e);
-    const { Box, Button, Text } = $.ui.resolve(e);
+    const elements = $.ui.resolve(e);
+    const { Box, Button, Text } = elements;
+    const Svg = "Svg" in elements ? elements.Svg : null;
     if (shown.unreadable) return <Text color="error">lease: the state file cannot be read; run lease show</Text>;
     const openKey = await read($, open);
     const isAsking = await read($, confirming);
@@ -86,10 +94,18 @@ export const register: Register = (on) => {
       await update($, open, (was) => (was === key ? null : key));
     };
     // One small button per held resource; the whole chip takes the click. The pointer on it reveals that chip's
-    // one-line details under the row (its hover group); a click pins the card with Free it. The dot sits outside the
-    // button, on its top-right corner: the desktop draws a button natively and drops the colours of text inside it.
+    // one-line details under the row (its hover group); a click pins the card with Free it. The dot is outside the
+    // button, because the desktop draws a button natively and drops the colours of text inside it. Where pictures
+    // are drawn it is a small one pinned to the chip's top-right corner: offsets are whole character cells, so a ●
+    // there sits on the middle of the button's side, not its corner.
     const chip = (c: Chip) => {
-      const dot = <Text color={c.stuck === null ? "success" : "error"}>●</Text>;
+      const ok = c.stuck === null;
+      const dot =
+        Svg !== null ? (
+          <Svg source={ok ? DOT_OK : DOT_STUCK} alt={ok ? "in use" : "stuck"} width={DOT_PX} height={DOT_PX} />
+        ) : (
+          <Text color={ok ? "success" : "error"}> ●</Text>
+        );
       return (
         <Box key={c.key} position="relative">
           <Button
@@ -99,7 +115,7 @@ export const register: Register = (on) => {
             hover={{ scope: `lease:${c.key}` }}
             onPress={toggle(c.key)}
           />
-          {boxed ? (
+          {Svg !== null ? (
             <Box position="absolute" top={0} right={0}>
               {dot}
             </Box>
