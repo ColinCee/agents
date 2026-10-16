@@ -50,4 +50,5 @@ From real use:
 
 - A rule saved in one project's memory or instructions did not stop the same correction in another project: 20 of 85 lessons in one review had been written down already.
 - "Shall I…?" at the end of a turn, followed by the user's "just do it" or "what next", is a correction even though the user never says "wrong".
+- Rules in the user's own file were ignored for weeks because the agent never loaded that file (Claude Code reads `~/.claude/CLAUDE.md`, not `~/.claude/AGENTS.md`). Before blaming a rule's wording, check that the file it is in is one the agent reads.
 - A token pasted into a prompt is still a secret in the transcript. Tell the user to rotate it; never repeat it.
