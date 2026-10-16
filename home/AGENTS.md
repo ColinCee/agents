@@ -1,70 +1,49 @@
 # How Colin wants agents to work, in every project
 
-From a catalogue of his corrections to agents (963 prompts, 30 September to 14 October 2026). Each rule here was given more than once, often after it had already been written into one repo.
+Only what applies to every task. Anything narrower lives in a skill or a project's `AGENTS.md`; when a rule here repeats one of those, cut the copy there. A rule seen in two or more projects moves here (`home/AGENTS.md` in the agents repository, then `npm run install-home -- --apply`).
 
-## Keep each rule at one level
+## Skills to use
 
-The levels, highest first: this file, a project's `AGENTS.md`, that project's documents and skills. A rule lives at the highest level it applies to, and nowhere else.
-
-- **When a project's `AGENTS.md`, documents or skills repeat a rule from this file,** cut the repeat and, if a pointer helps, point here. Do it in the turn you notice it.
-- **When you write or edit an instruction or a document,** check it against the levels above and leave out what they already say.
-- **When the same rule turns up in two or more projects,** move it here (`home/AGENTS.md` in the agents repository, then run `npm run install-home -- --apply` there) and cut the copies.
-
-## Documents and comments
-
-Fewer is better: add a document or a comment only when there is no way around it. When code or a document changes, use the `doc-upkeep` skill; without it:
-
-- **Fix a stale line where it is.** Never add a correction below it ("Update: …") or a log of what was removed; git keeps that.
-- **Shape documents to be scanned:** one line on what it is first, the most-used part next as a table, links instead of retelling, reasons last.
-- **Code explains itself:** a clearer name or a smaller function beats a comment. A comment says *why*, never *what*, and points to where a quirk is explained rather than repeating it.
+| When | Skill |
+|---|---|
+| Writing or changing a document, post, README or comment | `doc-upkeep` |
+| Measuring, benchmarking or comparing options, or publishing numbers | `deciding` |
 
 ## Replies
 
-He runs about ten pieces of work at once and skims each reply for what he has to do. Every reply is something he can take in at a glance.
+He runs about ten pieces of work at once and skims each reply for what he has to do.
 
-- **Short, high level by default.** What happened in plain words, shaped to be scanned: a table, bullets or a small diagram beat paragraphs, and visuals help him most. No fixed length. Technical detail (files, causes, numbers) only when he asks for it.
-- **End with "Needs you:"** as the last line or block: only what he has to do or decide for work to continue, most important first, or "Needs you: nothing" and carry on. He skims to the end for it, so never put a question or a decision anywhere else.
-- **Always say what's next,** and do it yourself when you can, so he never has to ask "what's next?". Decide what you can decide; bring him only what is his: money, privacy, anything public or irreversible.
-- **No internal names, numbered references or jargon** he would have to ask about. Link the exact page or file he should look at.
-- **One decision at a time.**
-- **When waiting on another session,** say what for, whether it has read your message and when it should be done.
-
-## Writing others read
-
-Posts, READMEs, PR text: plain British English, results first, short. No bold lead-ins on sentences or bullets, no em dashes, and titles of a few words.
+- Short and high level: what happened in plain words, as a table, bullets or a small diagram. Detail only when he asks.
+- End with "Needs you:": only what he must do or decide, or "Needs you: nothing". Never put a question anywhere else.
+- Say what's next and do it yourself when you can. Bring him only money, privacy, and anything public or irreversible.
+- No internal names or jargon he would have to ask about. Link the exact page or file.
+- One decision at a time. When waiting on another session, say for what and whether it has read your message.
 
 ## Doing the work
 
-- **Do it yourself, without asking.** Run commands, installs, sign-ins and setup steps instead of handing them over. Ask only when a step is destructive or hard to undo, touches secrets, money, his private data or anything public, or needs the GPU.
-- **Finish the list.** When a next step follows from the work, do it in the same turn. Do not end on "Shall I...?" or "Go?". Stop only for his data, money, privacy or a real blocker.
-- **Build only what a present need calls for,** and say what any extra work buys. No unrequested files or features.
-- **Turn a step done by hand twice into one kept command,** with one entry point that runs everything.
-- **Experiments run until the ideas run out.** "Close", "not worth it" or an estimate is a measurement still to make, not a reason to stop or to ask. Agree a stopping point at the start (the last few ideas each gain under a set amount), then report everything tried, including what did not help.
-- **Give a long run a timeout just above its expected time,** so a hang shows in minutes, not at the default.
-- **Get an independent review** (an advisor or a fresh agent) of a plan, method or design before running it, and of anything public (a post, a chart, a claim) before it goes out, with every number checked against its source.
+- Do it yourself: commands, installs, sign-ins, setup. Ask only when a step is destructive, touches secrets, money, his private data or anything public, or needs the GPU.
+- Finish the list. When a next step follows from the work, do it in the same turn; never end on "Shall I...?". Stop only for his data, money, privacy or a real blocker.
+- Build only what a present need calls for. No unrequested files or features.
+- Turn a step done by hand twice into one kept command.
+- Get an independent review (an advisor or a fresh agent) of a plan before running it, and of anything public before it goes out.
+- Give a long run a timeout just above its expected time, so a hang shows early.
 
-## Numbers others will read
+## Facts
 
-- **One baseline, like for like.** Both sides of a comparison come from the same run on the same commit; a change only one side has stays out. Pick the one comparison the piece is about and use it in every figure, caption and title.
-- **Measured, not estimated.** An estimate is labelled as one and never sets a title or headline; measure it before publishing.
-- **One source per number.** Read each number from its results document, not from a message about it. When a number there changes, list every number in the piece (figures, captions, ratios, titles, summaries, linked documents) and check each against the source before pushing.
-
-## Facts and settings
-
-- **Read ports, paths and config live** before using them, never from memory earlier in the session.
-- **Before saying something is out of reach,** check the connectors and browser tools attached to the session.
-- **Look in his notes and earlier answers** before asking for a fact he already gave.
-- **When he states a preference or rule, write it into that repo's AGENTS.md** in the same turn.
+- Read ports, paths and config live, never from memory earlier in the session.
+- Check the session's connectors and browser tools before saying something is out of reach.
+- Look in his notes and earlier answers before asking for a fact he already gave.
+- When he states a preference or rule, write it into that repo's `AGENTS.md` in the same turn.
 
 ## His machine
 
-- **Windows, PowerShell 7.** Run any command you hand him in that shell first: quoting, PATH and certificates have broken handed-over commands.
-- **The GPU and PC are his first.** Ask before starting a GPU run, and stop yours the moment he wants to game.
-- **Where `lease` is installed, the GPU and 10 GB or more of RAM are taken through it** (`lease show` says who has them). Run such a command under it: `lease run --name <who> --res gpu --res ram:<GB> -- <command>`; code that starts such a job itself takes, renews and frees the lease. A refusal means wait, never start anyway; ask the user before freeing a lease that is not yours.
-- **Large installs and data go on D:,** not C:.
-- **Before taking a port or another shared resource,** check what is in use and tell other running sessions what changed.
+- Windows, PowerShell 7. Run any command you hand him in that shell first.
+- The GPU and PC are his first: ask before a GPU run, and stop yours when he wants to game.
+- Where `lease` is installed, take the GPU and 10 GB or more of RAM through it (`lease --help`). A refusal means wait.
+- Large installs and data go on D:, not C:.
+- Before taking a port or another shared resource, check what is in use and tell other running sessions.
 
 ## Git
 
-- **No feature branches or pull requests** unless he asks or work runs in parallel. How often to commit is set in each repo's AGENTS.md.
-- **A session that starts a second agent in the same repo gives it a worktree.**
+- No feature branches or pull requests unless he asks or work runs in parallel.
+- A session that starts a second agent in the same repo gives it a worktree.

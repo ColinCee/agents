@@ -10,7 +10,7 @@ Skills, instructions and tools for coding agents.
 | [housekeeping](skills/housekeeping/SKILL.md) | `/housekeeping` | A full clean-up pass in a safe order: what could be lost, code health, unused code, docs. |
 | [ui-decluttering](skills/ui-decluttering/SKILL.md) | `/ui-decluttering` | Redesigns a busy screen: one primary action, at most four choices in view. |
 | [session-review](skills/session-review/SKILL.md) | `/session-review` | Finds corrections you keep repeating in past sessions, and where each fix belongs. |
-| [deciding](skills/deciding/SKILL.md) | `/deciding` | Decides from evidence: one question, the ground truth, a fair repeated comparison. |
+| [deciding](skills/deciding/SKILL.md) | by itself | Decides from evidence: one question, the ground truth, a fair repeated comparison. |
 
 ```bash
 npx skills add ColinCee/agents --global --skill '*' --agent claude-code

@@ -1,6 +1,6 @@
 ---
 name: doc-upkeep
-description: Keeps documents and comments true, few and easy to scan, fixing stale lines in place, giving each fact one home, and making comments say why. Use when code changes that a document or comment describes, when writing either, or to update the docs.
+description: Keeps documents, posts and comments true, few and easy to scan, fixing stale lines in place, giving each fact one home and checking every number against its source. Use when writing or updating a doc, post, README or comment.
 license: MIT
 ---
 
@@ -10,6 +10,7 @@ Every document and comment is a promise that has to be kept true. Make each one 
 
 1. **Find what changed.** `git log` since each document was last touched, and read those commits. Each one is a candidate stale line.
 2. **Check each claim against the code**, not against the document's own wording: numbers (count tests by collecting them, for example `pytest --collect-only -q`), paths, commands, names, lists of options, routes. A claim about something removed is stale.
+   Numbers come from their results document, not from a message about them. When a source number changes, list every number in the piece (figures, captions, ratios, titles, summaries, linked documents) and check each one.
 3. **Replace the stale line where it is.** The document should read as if it had always been right.
 4. **Delete what describes removed things.** Git already records what was removed and when; the reader needs what is there now.
 5. **Give each fact one home.** When the same text is in more than one file, keep it in the one it belongs to and turn the others into a pointer ("Checks: see `AGENTS.md`"). Rules for working on the project belong in `AGENTS.md`; how to use it, in `README.md`; anything the user's own instructions already say needs no copy in the project.
@@ -25,7 +26,7 @@ Readers scan; shape every document for that. These are the defaults; the project
 - **Headings are short nouns** ("Skills", "Tools"), and no heading stands over a single unexplained item.
 - **Link to details; do not retell them.** A README points to the file that explains.
 - **One copyable command per job.**
-- **Plain words.** No selling ("powerful", "simple") and no hedging.
+- **Plain words.** No selling ("powerful", "simple") and no hedging. No bold lead-ins on sentences or bullets, no em dashes, and titles of a few words.
 
 ## Comments
 
@@ -58,4 +59,4 @@ From real corrections:
 - A rule copied word for word into three files was updated in one and left stale in two. Copies drift; pointers do not.
 - A record of what was deleted, when and how big, is something no later reader acts on. Leave it out.
 - A README was rewritten twice because the content was right but the order was not: an introduction first, the main table halfway down, a heading naming a tool nobody had explained. Put the most-used table first and say what each thing is where it appears.
-- A results document's summary line went stale twice while its table was right, and a post quoting it updated one chart and left the others, the captions and the title on the old numbers. When a number changes, search every document that quotes it for the old value and for numbers made from it (totals, ratios, "1.4×").
+- A results document's summary line went stale twice while its table was right, and a post quoting it updated one chart and left the others, the captions and the title on the old numbers.
