@@ -58,3 +58,4 @@ From real corrections:
 - A rule copied word for word into three files was updated in one and left stale in two. Copies drift; pointers do not.
 - A record of what was deleted, when and how big, is something no later reader acts on. Leave it out.
 - A README was rewritten twice because the content was right but the order was not: an introduction first, the main table halfway down, a heading naming a tool nobody had explained. Put the most-used table first and say what each thing is where it appears.
+- A results document's summary line went stale twice while its table was right, and a post quoting it updated one chart and left the others, the captions and the title on the old numbers. When a number changes, search every document that quotes it for the old value and for numbers made from it (totals, ratios, "1.4×").

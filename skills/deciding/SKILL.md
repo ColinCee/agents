@@ -34,3 +34,6 @@ From real corrections:
 - Labels a model drafted to save time looked like a test set; the model that drafted them won every comparison against them.
 - Keeping only cases where a measure "looked reliable" decided a result once, and reversed it; the reliability was measured after the treatment.
 - A comparison nobody could summarise in one line produced verdicts no one could use.
+- One side of a speed comparison ran a newer commit with a faster type check; part of its "win" was the code change. Run both sides on the same commit.
+- Two timings looked normal while the thing under test was off: every run failed in under a second, and a cache disk was silently empty. Check the log shows it working (exit codes, cache hits) before timing anything.
+- A baseline taken hours earlier varied by 15 s between runs. Interleave the options in one session instead of reusing an old number.

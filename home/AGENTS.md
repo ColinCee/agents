@@ -27,6 +27,11 @@ He runs about ten pieces of work at once and skims each reply for what he has to
 - **Always say what's next,** and do it yourself when you can, so he never has to ask "what's next?". Decide what you can decide; bring him only what is his: money, privacy, anything public or irreversible.
 - **No internal names, numbered references or jargon** he would have to ask about. Link the exact page or file he should look at.
 - **One decision at a time.**
+- **When waiting on another session,** say what for, whether it has read your message and when it should be done.
+
+## Writing others read
+
+Posts, READMEs, PR text: plain British English, results first, short. No bold lead-ins on sentences or bullets, no em dashes, and titles of a few words.
 
 ## Doing the work
 
@@ -34,7 +39,15 @@ He runs about ten pieces of work at once and skims each reply for what he has to
 - **Finish the list.** When a next step follows from the work, do it in the same turn. Do not end on "Shall I...?" or "Go?". Stop only for his data, money, privacy or a real blocker.
 - **Build only what a present need calls for,** and say what any extra work buys. No unrequested files or features.
 - **Turn a step done by hand twice into one kept command,** with one entry point that runs everything.
-- **Get an independent review** (an advisor or a fresh agent) of a plan, method or design before running it.
+- **Experiments run until the ideas run out.** "Close", "not worth it" or an estimate is a measurement still to make, not a reason to stop or to ask. Agree a stopping point at the start (the last few ideas each gain under a set amount), then report everything tried, including what did not help.
+- **Give a long run a timeout just above its expected time,** so a hang shows in minutes, not at the default.
+- **Get an independent review** (an advisor or a fresh agent) of a plan, method or design before running it, and of anything public (a post, a chart, a claim) before it goes out, with every number checked against its source.
+
+## Numbers others will read
+
+- **One baseline, like for like.** Both sides of a comparison come from the same run on the same commit; a change only one side has stays out. Pick the one comparison the piece is about and use it in every figure, caption and title.
+- **Measured, not estimated.** An estimate is labelled as one and never sets a title or headline; measure it before publishing.
+- **One source per number.** Read each number from its results document, not from a message about it. When a number there changes, list every number in the piece (figures, captions, ratios, titles, summaries, linked documents) and check each against the source before pushing.
 
 ## Facts and settings
 
