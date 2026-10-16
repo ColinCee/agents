@@ -1,6 +1,6 @@
 ---
 name: doc-upkeep
-description: Keeps documents, posts and comments true, few and easy to scan, fixing stale lines in place, giving each fact one home and checking every number against its source. Use when writing or updating a doc, post, README or comment.
+description: Keeps docs, posts and comments true, few and easy to scan, with stale lines fixed in place, one home per fact, numbers checked against their source. Use when code changes that a doc describes, or when writing or updating a doc, post or comment.
 license: MIT
 ---
 

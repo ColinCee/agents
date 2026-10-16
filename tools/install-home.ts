@@ -1,5 +1,5 @@
 // Install home/AGENTS.md as the user-level instructions of the coding agents on this machine.
-import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -69,6 +69,8 @@ function main(): number {
   for (const [path, want] of stale) {
     mkdirSync(dirname(path), { recursive: true });
     if (existsSync(path)) console.log(`kept ${keep(path)}`);
+    // A link (even a dangling one) would be written through, overwriting what it points to.
+    rmSync(path, { force: true });
     writeFileSync(path, want);
     console.log(`installed ${path}`);
   }
