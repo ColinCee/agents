@@ -1,0 +1,16 @@
+{
+ "moto": {
+  "lambda": {
+   "create_to_active_s": 0.01,
+   "first_invoke_ms": 22816.1,
+   "first_invoke_payload": "{\"ok\":true,\"e\":{\"a\":1}}",
+   "Invoke(warm)": {
+    "n": 8,
+    "p50_ms": 20814.171,
+    "p99_ms": 23075.501,
+    "mean_ms": 19047.24,
+    "ops_per_s": 0.1
+   }
+  }
+ }
+}

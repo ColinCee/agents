@@ -1,0 +1,20 @@
+{
+ "moto": {
+  "sqs": {
+   "SendMessage": {
+    "n": 1000,
+    "p50_ms": 11.086,
+    "p99_ms": 20.617,
+    "mean_ms": 11.26,
+    "ops_per_s": 88.8
+   },
+   "Receive+Delete(1 msg)": {
+    "n": 1000,
+    "p50_ms": 29.204,
+    "p99_ms": 62.178,
+    "mean_ms": 29.731,
+    "ops_per_s": 33.6
+   }
+  }
+ }
+}

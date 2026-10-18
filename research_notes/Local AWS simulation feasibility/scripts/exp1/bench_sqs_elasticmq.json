@@ -1,0 +1,20 @@
+{
+ "elasticmq": {
+  "sqs": {
+   "SendMessage": {
+    "n": 1000,
+    "p50_ms": 3.884,
+    "p99_ms": 8.368,
+    "mean_ms": 4.063,
+    "ops_per_s": 246.1
+   },
+   "Receive+Delete(1 msg)": {
+    "n": 1000,
+    "p50_ms": 5.673,
+    "p99_ms": 12.035,
+    "mean_ms": 6.135,
+    "ops_per_s": 163.0
+   }
+  }
+ }
+}

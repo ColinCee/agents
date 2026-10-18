@@ -1,0 +1,63 @@
+{
+ "A_batching": {
+  "sent": 25,
+  "batch_size": 10,
+  "invocations": 25,
+  "records_per_invocation": [
+   1
+  ],
+  "queue_msgs_left": "0"
+ },
+ "A_record_fields": {
+  "ApproximateReceiveCount": "1",
+  "md5OfBody": "098f6bcd4621d373cade4e832627b4f6",
+  "hardcoded_SentTimestamp": "1545082649183",
+  "messageAttributes": {}
+ },
+ "B_failure_retry": {
+  "invocations_after_3s_idle": 1,
+  "msgs_left": "1",
+  "note": "AWS would keep redelivering after visibility timeout; Moto only dispatches on send"
+ },
+ "C_partial_batch": {
+  "invocations": 1,
+  "msgs_left_visible": "0",
+  "note": "function reported its only message as failed; AWS would retain it"
+ },
+ "D_dlq": {
+  "after_send": {
+   "invocations": 1,
+   "dlq": "0"
+  },
+  "after_manual_receives": {
+   "invocations": 1,
+   "dlq": "1"
+  }
+ },
+ "E_ddb": {
+  "writes": 7,
+  "invocations": 7,
+  "records_per_invocation": [
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1
+  ],
+  "events": [
+   "INSERT",
+   "INSERT",
+   "INSERT",
+   "INSERT",
+   "INSERT",
+   "MODIFY",
+   "REMOVE"
+  ]
+ },
+ "E_ddb_fail": {
+  "invocations_after_failing_write": 1,
+  "note": "no retry/bisect/DLQ logic observed"
+ }
+}

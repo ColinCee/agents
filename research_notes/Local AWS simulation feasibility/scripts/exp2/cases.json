@@ -1,0 +1,946 @@
+[
+ {
+  "id": "prefix-yes",
+  "desc": "prefix match",
+  "event": {
+   "k": "us-east-1"
+  },
+  "pattern": {
+   "k": [
+    {
+     "prefix": "us-"
+    }
+   ]
+  },
+  "expected": true
+ },
+ {
+  "id": "prefix-no",
+  "desc": "prefix no match",
+  "event": {
+   "k": "eu-west-1"
+  },
+  "pattern": {
+   "k": [
+    {
+     "prefix": "us-"
+    }
+   ]
+  },
+  "expected": false
+ },
+ {
+  "id": "prefix-ci",
+  "desc": "prefix equals-ignore-case",
+  "event": {
+   "k": "US-east"
+  },
+  "pattern": {
+   "k": [
+    {
+     "prefix": {
+      "equals-ignore-case": "us-"
+     }
+    }
+   ]
+  },
+  "expected": true
+ },
+ {
+  "id": "suffix-yes",
+  "desc": "suffix match",
+  "event": {
+   "k": "a.png"
+  },
+  "pattern": {
+   "k": [
+    {
+     "suffix": ".png"
+    }
+   ]
+  },
+  "expected": true
+ },
+ {
+  "id": "suffix-no",
+  "desc": "suffix no match",
+  "event": {
+   "k": "a.jpg"
+  },
+  "pattern": {
+   "k": [
+    {
+     "suffix": ".png"
+    }
+   ]
+  },
+  "expected": false
+ },
+ {
+  "id": "suffix-ci",
+  "desc": "suffix ignore case",
+  "event": {
+   "k": "a.PNG"
+  },
+  "pattern": {
+   "k": [
+    {
+     "suffix": {
+      "equals-ignore-case": ".png"
+     }
+    }
+   ]
+  },
+  "expected": true
+ },
+ {
+  "id": "wild-mid",
+  "desc": "wildcard in middle",
+  "event": {
+   "k": "arn:aws:s3:::bkt/dir/file.txt"
+  },
+  "pattern": {
+   "k": [
+    {
+     "wildcard": "arn:aws:s3:::bkt/*/file.txt"
+    }
+   ]
+  },
+  "expected": true
+ },
+ {
+  "id": "wild-multi",
+  "desc": "wildcard multiple *",
+  "event": {
+   "k": "abc-def-ghi"
+  },
+  "pattern": {
+   "k": [
+    {
+     "wildcard": "abc*def*ghi"
+    }
+   ]
+  },
+  "expected": true
+ },
+ {
+  "id": "wild-no",
+  "desc": "wildcard no match",
+  "event": {
+   "k": "abc-def"
+  },
+  "pattern": {
+   "k": [
+    {
+     "wildcard": "abc*ghi"
+    }
+   ]
+  },
+  "expected": false
+ },
+ {
+  "id": "wild-escape",
+  "desc": "wildcard escaped literal star",
+  "event": {
+   "k": "a*b"
+  },
+  "pattern": {
+   "k": [
+    {
+     "wildcard": "a\\*b"
+    }
+   ]
+  },
+  "expected": true
+ },
+ {
+  "id": "wild-escape-no",
+  "desc": "escaped star must not match other char",
+  "event": {
+   "k": "axb"
+  },
+  "pattern": {
+   "k": [
+    {
+     "wildcard": "a\\*b"
+    }
+   ]
+  },
+  "expected": false
+ },
+ {
+  "id": "ab-str",
+  "desc": "anything-but string",
+  "event": {
+   "k": "x"
+  },
+  "pattern": {
+   "k": [
+    {
+     "anything-but": "y"
+    }
+   ]
+  },
+  "expected": true
+ },
+ {
+  "id": "ab-str-no",
+  "desc": "anything-but same",
+  "event": {
+   "k": "y"
+  },
+  "pattern": {
+   "k": [
+    {
+     "anything-but": "y"
+    }
+   ]
+  },
+  "expected": false
+ },
+ {
+  "id": "ab-list",
+  "desc": "anything-but list excluded",
+  "event": {
+   "k": "b"
+  },
+  "pattern": {
+   "k": [
+    {
+     "anything-but": [
+      "a",
+      "b"
+     ]
+    }
+   ]
+  },
+  "expected": false
+ },
+ {
+  "id": "ab-num",
+  "desc": "anything-but number",
+  "event": {
+   "k": 5
+  },
+  "pattern": {
+   "k": [
+    {
+     "anything-but": [
+      1,
+      2
+     ]
+    }
+   ]
+  },
+  "expected": true
+ },
+ {
+  "id": "ab-prefix",
+  "desc": "anything-but prefix hit",
+  "event": {
+   "k": "init-1"
+  },
+  "pattern": {
+   "k": [
+    {
+     "anything-but": {
+      "prefix": "init"
+     }
+    }
+   ]
+  },
+  "expected": false
+ },
+ {
+  "id": "ab-prefix-ok",
+  "desc": "anything-but prefix miss",
+  "event": {
+   "k": "run-1"
+  },
+  "pattern": {
+   "k": [
+    {
+     "anything-but": {
+      "prefix": "init"
+     }
+    }
+   ]
+  },
+  "expected": true
+ },
+ {
+  "id": "ab-suffix",
+  "desc": "anything-but suffix hit",
+  "event": {
+   "k": "a.tmp"
+  },
+  "pattern": {
+   "k": [
+    {
+     "anything-but": {
+      "suffix": ".tmp"
+     }
+    }
+   ]
+  },
+  "expected": false
+ },
+ {
+  "id": "ab-wild",
+  "desc": "anything-but wildcard hit",
+  "event": {
+   "k": "a/b/c"
+  },
+  "pattern": {
+   "k": [
+    {
+     "anything-but": {
+      "wildcard": "a/*/c"
+     }
+    }
+   ]
+  },
+  "expected": false
+ },
+ {
+  "id": "ab-ci",
+  "desc": "anything-but equals-ignore-case hit",
+  "event": {
+   "k": "ABC"
+  },
+  "pattern": {
+   "k": [
+    {
+     "anything-but": {
+      "equals-ignore-case": "abc"
+     }
+    }
+   ]
+  },
+  "expected": false
+ },
+ {
+  "id": "ab-missing",
+  "desc": "anything-but on missing field does not match",
+  "event": {
+   "o": 1
+  },
+  "pattern": {
+   "k": [
+    {
+     "anything-but": "y"
+    }
+   ]
+  },
+  "expected": false
+ },
+ {
+  "id": "num-range",
+  "desc": "numeric range inclusive/exclusive",
+  "event": {
+   "n": 10
+  },
+  "pattern": {
+   "n": [
+    {
+     "numeric": [
+      ">",
+      0,
+      "<=",
+      10
+     ]
+    }
+   ]
+  },
+  "expected": true
+ },
+ {
+  "id": "num-range-no",
+  "desc": "numeric range excl",
+  "event": {
+   "n": 0
+  },
+  "pattern": {
+   "n": [
+    {
+     "numeric": [
+      ">",
+      0,
+      "<=",
+      10
+     ]
+    }
+   ]
+  },
+  "expected": false
+ },
+ {
+  "id": "num-eq",
+  "desc": "numeric = ",
+  "event": {
+   "n": 5.0
+  },
+  "pattern": {
+   "n": [
+    {
+     "numeric": [
+      "=",
+      5
+     ]
+    }
+   ]
+  },
+  "expected": true
+ },
+ {
+  "id": "num-literal",
+  "desc": "numeric literal matches 5.0 vs 5",
+  "event": {
+   "n": 5.0
+  },
+  "pattern": {
+   "n": [
+    5
+   ]
+  },
+  "expected": true
+ },
+ {
+  "id": "num-string-no",
+  "desc": "numeric rule vs string value",
+  "event": {
+   "n": "5"
+  },
+  "pattern": {
+   "n": [
+    {
+     "numeric": [
+      "=",
+      5
+     ]
+    }
+   ]
+  },
+  "expected": false
+ },
+ {
+  "id": "num-string-lit",
+  "desc": "number literal vs string '5'",
+  "event": {
+   "n": "5"
+  },
+  "pattern": {
+   "n": [
+    5
+   ]
+  },
+  "expected": false
+ },
+ {
+  "id": "exists-t",
+  "desc": "exists true",
+  "event": {
+   "k": 1
+  },
+  "pattern": {
+   "k": [
+    {
+     "exists": true
+    }
+   ]
+  },
+  "expected": true
+ },
+ {
+  "id": "exists-t-null",
+  "desc": "exists true on null value (docs: matches)",
+  "event": {
+   "k": null
+  },
+  "pattern": {
+   "k": [
+    {
+     "exists": true
+    }
+   ]
+  },
+  "expected": true
+ },
+ {
+  "id": "exists-f-missing",
+  "desc": "exists false on missing",
+  "event": {
+   "o": 1
+  },
+  "pattern": {
+   "k": [
+    {
+     "exists": false
+    }
+   ]
+  },
+  "expected": true
+ },
+ {
+  "id": "exists-f-null",
+  "desc": "exists false on null (field exists)",
+  "event": {
+   "k": null
+  },
+  "pattern": {
+   "k": [
+    {
+     "exists": false
+    }
+   ]
+  },
+  "expected": false
+ },
+ {
+  "id": "null-lit",
+  "desc": "null literal matches null",
+  "event": {
+   "k": null
+  },
+  "pattern": {
+   "k": [
+    null
+   ]
+  },
+  "expected": true
+ },
+ {
+  "id": "null-vs-empty",
+  "desc": "null literal vs empty string",
+  "event": {
+   "k": ""
+  },
+  "pattern": {
+   "k": [
+    null
+   ]
+  },
+  "expected": false
+ },
+ {
+  "id": "empty-lit",
+  "desc": "empty string literal",
+  "event": {
+   "k": ""
+  },
+  "pattern": {
+   "k": [
+    ""
+   ]
+  },
+  "expected": true
+ },
+ {
+  "id": "cidr-v4",
+  "desc": "cidr ipv4 in",
+  "event": {
+   "ip": "10.0.0.5"
+  },
+  "pattern": {
+   "ip": [
+    {
+     "cidr": "10.0.0.0/24"
+    }
+   ]
+  },
+  "expected": true
+ },
+ {
+  "id": "cidr-v4-out",
+  "desc": "cidr ipv4 out",
+  "event": {
+   "ip": "10.0.1.5"
+  },
+  "pattern": {
+   "ip": [
+    {
+     "cidr": "10.0.0.0/24"
+    }
+   ]
+  },
+  "expected": false
+ },
+ {
+  "id": "cidr-v6",
+  "desc": "cidr ipv6",
+  "event": {
+   "ip": "2001:db8::1"
+  },
+  "pattern": {
+   "ip": [
+    {
+     "cidr": "2001:db8::/32"
+    }
+   ]
+  },
+  "expected": true
+ },
+ {
+  "id": "cidr-v6-out",
+  "desc": "cidr ipv6 out",
+  "event": {
+   "ip": "2001:dc8::1"
+  },
+  "pattern": {
+   "ip": [
+    {
+     "cidr": "2001:db8::/32"
+    }
+   ]
+  },
+  "expected": false
+ },
+ {
+  "id": "or-top",
+  "desc": "$or across fields",
+  "event": {
+   "a": 1
+  },
+  "pattern": {
+   "$or": [
+    {
+     "a": [
+      1
+     ]
+    },
+    {
+     "b": [
+      2
+     ]
+    }
+   ]
+  },
+  "expected": true
+ },
+ {
+  "id": "or-none",
+  "desc": "$or none match",
+  "event": {
+   "a": 3
+  },
+  "pattern": {
+   "$or": [
+    {
+     "a": [
+      1
+     ]
+    },
+    {
+     "b": [
+      2
+     ]
+    }
+   ]
+  },
+  "expected": false
+ },
+ {
+  "id": "and-fields",
+  "desc": "multiple fields AND",
+  "event": {
+   "a": 1,
+   "b": 3
+  },
+  "pattern": {
+   "a": [
+    1
+   ],
+   "b": [
+    2
+   ]
+  },
+  "expected": false
+ },
+ {
+  "id": "arr-any",
+  "desc": "event array any element matches",
+  "event": {
+   "tags": [
+    "a",
+    "b",
+    "c"
+   ]
+  },
+  "pattern": {
+   "tags": [
+    "c"
+   ]
+  },
+  "expected": true
+ },
+ {
+  "id": "arr-any-no",
+  "desc": "event array no element",
+  "event": {
+   "tags": [
+    "a",
+    "b"
+   ]
+  },
+  "pattern": {
+   "tags": [
+    "z"
+   ]
+  },
+  "expected": false
+ },
+ {
+  "id": "arr-ab",
+  "desc": "anything-but on array event: all must avoid? (ruler semantic: any elem not in list)",
+  "event": {
+   "tags": [
+    "a",
+    "b"
+   ]
+  },
+  "pattern": {
+   "tags": [
+    {
+     "anything-but": [
+      "a"
+     ]
+    }
+   ]
+  },
+  "expected": true
+ },
+ {
+  "id": "pat-or-values",
+  "desc": "pattern values OR",
+  "event": {
+   "k": "b"
+  },
+  "pattern": {
+   "k": [
+    "a",
+    "b"
+   ]
+  },
+  "expected": true
+ },
+ {
+  "id": "eic",
+  "desc": "equals-ignore-case",
+  "event": {
+   "k": "HeLLo"
+  },
+  "pattern": {
+   "k": [
+    {
+     "equals-ignore-case": "hello"
+    }
+   ]
+  },
+  "expected": true
+ },
+ {
+  "id": "nested",
+  "desc": "nested field",
+  "event": {
+   "detail": {
+    "state": {
+     "v": "ok"
+    }
+   }
+  },
+  "pattern": {
+   "detail": {
+    "state": {
+     "v": [
+      "ok"
+     ]
+    }
+   }
+  },
+  "expected": true
+ },
+ {
+  "id": "nested-no",
+  "desc": "nested mismatch",
+  "event": {
+   "detail": {
+    "state": {
+     "v": "bad"
+    }
+   }
+  },
+  "pattern": {
+   "detail": {
+    "state": {
+     "v": [
+      "ok"
+     ]
+    }
+   }
+  },
+  "expected": false
+ },
+ {
+  "id": "nested-arr-obj",
+  "desc": "array of objects: match within one element",
+  "event": {
+   "d": [
+    {
+     "a": 1,
+     "b": 2
+    },
+    {
+     "a": 3,
+     "b": 4
+    }
+   ]
+  },
+  "pattern": {
+   "d": {
+    "a": [
+     1
+    ],
+    "b": [
+     2
+    ]
+   }
+  },
+  "expected": true
+ },
+ {
+  "id": "nested-arr-cross",
+  "desc": "array of objects: cross-element must NOT match",
+  "event": {
+   "d": [
+    {
+     "a": 1,
+     "b": 2
+    },
+    {
+     "a": 3,
+     "b": 4
+    }
+   ]
+  },
+  "pattern": {
+   "d": {
+    "a": [
+     1
+    ],
+    "b": [
+     4
+    ]
+   }
+  },
+  "expected": false
+ },
+ {
+  "id": "nested-exists-f",
+  "desc": "exists false nested missing",
+  "event": {
+   "d": {
+    "a": 1
+   }
+  },
+  "pattern": {
+   "d": {
+    "b": [
+     {
+      "exists": false
+     }
+    ]
+   }
+  },
+  "expected": true
+ },
+ {
+  "id": "str-vs-num",
+  "desc": "string '1' vs number 1 literal in pattern",
+  "event": {
+   "k": 1
+  },
+  "pattern": {
+   "k": [
+    "1"
+   ]
+  },
+  "expected": false
+ },
+ {
+  "id": "bool",
+  "desc": "boolean literal",
+  "event": {
+   "k": true
+  },
+  "pattern": {
+   "k": [
+    true
+   ]
+  },
+  "expected": true
+ },
+ {
+  "id": "bool-str",
+  "desc": "boolean vs string true",
+  "event": {
+   "k": "true"
+  },
+  "pattern": {
+   "k": [
+    true
+   ]
+  },
+  "expected": false
+ },
+ {
+  "id": "prefix-nonstr",
+  "desc": "prefix against number is no match",
+  "event": {
+   "k": 12
+  },
+  "pattern": {
+   "k": [
+    {
+     "prefix": "1"
+    }
+   ]
+  },
+  "expected": false
+ },
+ {
+  "id": "combo-or-ab",
+  "desc": "combined values: prefix OR exact",
+  "event": {
+   "k": "zzz"
+  },
+  "pattern": {
+   "k": [
+    {
+     "prefix": "a"
+    },
+    "zzz"
+   ]
+  },
+  "expected": true
+ },
+ {
+  "id": "ab-prefix-list",
+  "desc": "anything-but prefix list",
+  "event": {
+   "k": "foo1"
+  },
+  "pattern": {
+   "k": [
+    {
+     "anything-but": {
+      "prefix": [
+       "foo",
+       "bar"
+      ]
+     }
+    }
+   ]
+  },
+  "expected": false
+ }
+]

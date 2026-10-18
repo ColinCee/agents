@@ -1,0 +1,297 @@
+{
+ "localstack": {
+  "D01_condition_fail": {
+   "expect": "400 ConditionalCheckFailedException, msg 'The conditional request failed'",
+   "observed": {
+    "ok": false,
+    "code": "ConditionalCheckFailedException",
+    "msg": "The conditional request failed",
+    "http": 400
+   },
+   "match": true
+  },
+  "D02_transact_same_item": {
+   "expect": "ValidationException 'Transaction request cannot include multiple operations on one item'",
+   "observed": {
+    "ok": false,
+    "code": "ValidationException",
+    "msg": "Transaction request cannot include multiple operations on one item",
+    "http": 400
+   },
+   "match": true
+  },
+  "D03_item_size_400KB": {
+   "expect": "ValidationException 'Item size has exceeded the maximum allowed size'",
+   "observed": {
+    "ok": false,
+    "code": "ValidationException",
+    "msg": "Item size has exceeded the maximum allowed size",
+    "http": 400
+   },
+   "match": true
+  },
+  "D03b_item_399KB_ok": {
+   "expect": "accepted",
+   "observed": {
+    "ok": true,
+    "resp": {}
+   },
+   "match": true
+  },
+  "D04_reserved_word": {
+   "expect": "ValidationException 'Invalid FilterExpression: Attribute name is a reserved keyword; reserved keyword: name'",
+   "observed": {
+    "ok": false,
+    "code": "ValidationException",
+    "msg": "Invalid FilterExpression: Attribute name is a reserved keyword; reserved keyword: name",
+    "http": 400
+   },
+   "match": true
+  },
+  "D05_empty_string_key": {
+   "expect": "ValidationException 'One or more parameter values are not valid. The AttributeValue for a key attribute cannot contain an empty string value...'",
+   "observed": {
+    "ok": false,
+    "code": "ValidationException",
+    "msg": "One or more parameter values are not valid. The AttributeValue for a key attribute cannot contain an empty string value. Key: pk",
+    "http": 400
+   },
+   "match": true
+  },
+  "D05b_empty_string_nonkey_ok": {
+   "expect": "accepted (allowed since 2020)",
+   "observed": {
+    "ok": true,
+    "resp": {}
+   },
+   "match": true
+  },
+  "D06_gsi_consistent_read": {
+   "expect": "ValidationException 'Consistent reads are not supported on global secondary indexes'",
+   "observed": {
+    "ok": false,
+    "code": "ValidationException",
+    "msg": "Consistent read cannot be true when querying a GSI",
+    "http": 400
+   },
+   "match": false
+  },
+  "D07_batchwrite_26": {
+   "expect": "ValidationException 'Too many items requested for the BatchWriteItem call'",
+   "observed": {
+    "ok": false,
+    "code": "ValidationException",
+    "msg": "Too many items requested for the BatchWriteItem call",
+    "http": 400
+   },
+   "match": true
+  },
+  "D07b_batchwrite_dup_keys": {
+   "expect": "ValidationException 'Provided list of item keys contains duplicates'",
+   "observed": {
+    "ok": false,
+    "code": "ValidationException",
+    "msg": "Provided list of item keys contains duplicates",
+    "http": 400
+   },
+   "match": true
+  },
+  "D08a_update_overlap_paths": {
+   "expect": "ValidationException 'Two document paths overlap with each other...'",
+   "observed": {
+    "ok": false,
+    "code": "ValidationException",
+    "msg": "Invalid UpdateExpression: Two document paths overlap with each other; must remove or rewrite one of these paths; path one: [a], path two: [a]",
+    "http": 400
+   },
+   "match": true
+  },
+  "D08b_update_nested_missing_parent": {
+   "expect": "ValidationException 'The document path provided in the update expression is invalid for update'",
+   "observed": {
+    "ok": false,
+    "code": "ValidationException",
+    "msg": "The document path provided in the update expression is invalid for update",
+    "http": 400
+   },
+   "match": true
+  },
+  "D08c_add_number": {
+   "expect": "a = 6 via UPDATED_NEW",
+   "observed": {
+    "ok": true,
+    "resp": {
+     "Attributes": {
+      "a": {
+       "N": "6"
+      }
+     }
+    }
+   },
+   "match": true
+  },
+  "D08d_if_not_exists_arith": {
+   "expect": "a = 11",
+   "observed": {
+    "ok": true,
+    "resp": {
+     "Attributes": {
+      "a": {
+       "N": "11"
+      }
+     }
+    }
+   },
+   "match": true
+  },
+  "D08e_list_append": {
+   "expect": "l = ['a']",
+   "observed": {
+    "ok": true,
+    "resp": {
+     "Attributes": {
+      "l": {
+       "L": [
+        {
+         "S": "a"
+        }
+       ]
+      }
+     }
+    }
+   },
+   "match": true
+  },
+  "D08f_update_creates_item": {
+   "expect": "Update on missing key creates item with only key attr",
+   "observed": {
+    "ok": true,
+    "resp": {}
+   },
+   "match": true
+  },
+  "D09a_number_38_digits_roundtrip": {
+   "expect": "38 significant digits preserved exactly",
+   "observed": "11111111111111111111111111111111111111",
+   "match": true
+  },
+  "D09b_number_39_digits": {
+   "expect": "ValidationException 'Attempting to store more than 38 significant digits in a Number field'",
+   "observed": {
+    "ok": false,
+    "code": "ValidationException",
+    "msg": "DynamoDB only supports precision up to 38 digits",
+    "http": 400
+   },
+   "match": true
+  },
+  "D09c_number_1E126_overflow": {
+   "expect": "ValidationException 'Number overflow. Attempting to store a number with magnitude larger than supported range'",
+   "observed": {
+    "ok": false,
+    "code": "ValidationException",
+    "msg": "Number overflow. Attempting to store a number with magnitude larger than supported range",
+    "http": 400
+   },
+   "match": true
+  },
+  "D09d_number_trailing_zero_normalised": {
+   "expect": "'1.5' (trailing zeros not preserved)",
+   "observed": "1.5",
+   "match": true
+  },
+  "D10_set_duplicates": {
+   "expect": "ValidationException 'Input collection [a, a] of type SS contains duplicates'",
+   "observed": {
+    "ok": false,
+    "code": "ValidationException",
+    "msg": "One or more parameter values were invalid: Input collection [a, a] contains duplicates",
+    "http": 400
+   },
+   "match": true
+  },
+  "D11_missing_table": {
+   "expect": "400 ResourceNotFoundException 'Requested resource not found'",
+   "observed": {
+    "ok": false,
+    "code": "ResourceNotFoundException",
+    "msg": "Cannot do operations on a non-existent table",
+    "http": 400
+   },
+   "match": true
+  },
+  "D12_transact_101_items": {
+   "expect": "ValidationException (limit 100 items)",
+   "observed": {
+    "ok": false,
+    "code": "ValidationException",
+    "msg": "Member must have length less than or equal to 100",
+    "http": 400
+   },
+   "match": true
+  },
+  "D12b_transact_cancel_reasons": {
+   "expect": "400 TransactionCanceledException, CancellationReasons [None, ConditionalCheckFailed], tnew NOT written",
+   "observed": {
+    "ok": false,
+    "code": "TransactionCanceledException",
+    "msg": "Transaction cancelled, please refer cancellation reasons for specific reasons [None, ConditionalCheckFailed]",
+    "http": 400,
+    "tnew_written": false
+   },
+   "match": true
+  },
+  "D13_query_1MB_page": {
+   "expect": "Count ~ 10 (1MB cap) and LastEvaluatedKey present",
+   "observed": {
+    "Count": 11,
+    "LEK": true
+   },
+   "match": true
+  },
+  "D14_consumed_capacity_1KB_put": {
+   "expect": "CapacityUnits = 1.0 (item <=1KB => 1 WCU)",
+   "observed": 1.0,
+   "match": true
+  },
+  "D14b_consumed_capacity_strong_read_1KB": {
+   "expect": "CapacityUnits = 1.0 (strongly consistent <=4KB; eventual would be 0.5)",
+   "observed": 0.5,
+   "match": true
+  },
+  "D15_query_between_count": {
+   "expect": "Count 3",
+   "observed": {
+    "ok": true,
+    "resp": {
+     "Count": 3,
+     "ScannedCount": 3
+    }
+   },
+   "match": true
+  },
+  "D16_gsi_key_type_mismatch": {
+   "expect": "ValidationException 'One or more parameter values were invalid: Type mismatch for Index Key g Expected: S Actual: N'",
+   "observed": {
+    "ok": false,
+    "code": "ValidationException",
+    "msg": "One or more parameter values were invalid: Type mismatch for Index Key",
+    "http": 400
+   },
+   "match": true
+  },
+  "D17_describe_table_has_arn_status": {
+   "expect": "TableStatus ACTIVE and TableArn present",
+   "observed": {
+    "status": "ACTIVE",
+    "arn": "arn:aws:dynamodb:us-east-1:000000000000:table/pr_ac8856"
+   },
+   "match": true
+  },
+  "D03c_item_size_boundary_bytes": {
+   "expect": "largest accepted value length = 409600 - len('pk')-len('bnd')-len('d') = 409,594 (limit 400KB=409,600 B)",
+   "observed": 409594,
+   "match": true
+  }
+ }
+}

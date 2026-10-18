@@ -1,0 +1,20 @@
+{
+ "localstack": {
+  "sqs": {
+   "SendMessage": {
+    "n": 1000,
+    "p50_ms": 3.172,
+    "p99_ms": 5.843,
+    "mean_ms": 3.341,
+    "ops_per_s": 299.3
+   },
+   "Receive+Delete(1 msg)": {
+    "n": 1000,
+    "p50_ms": 6.386,
+    "p99_ms": 11.094,
+    "mean_ms": 6.677,
+    "ops_per_s": 149.8
+   }
+  }
+ }
+}

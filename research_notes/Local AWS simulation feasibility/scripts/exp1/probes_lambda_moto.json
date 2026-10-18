@@ -1,0 +1,64 @@
+{
+ "moto": {
+  "L01_unhandled_error_shape": {
+   "expect": "HTTP 200, X-Amz-Function-Error: Unhandled, payload JSON with errorMessage 'boom', errorType 'ValueError', stackTrace",
+   "observed": {
+    "status": 200,
+    "fnerr": "Handled",
+    "body": "{\"errorType\":\"ValueError\",\"errorMessage\":\"boom\",\"stackTrace\":[\"  File \\\"/var/task/h.py\\\", line 2, in handler\\n    raise ValueError('boom')\\n\"]}",
+    "s": 14.0
+   },
+   "match": false
+  },
+  "L02_timeout_enforced": {
+   "expect": "Timeout=2s, handler sleeps 6s: 200 + FunctionError Unhandled, errorMessage '... Task timed out after 2.00 seconds', returns in ~2s",
+   "observed": {
+    "status": 200,
+    "fnerr": "Handled",
+    "body": "{\"errorMessage\":\"2026-10-18T00:46:17.776Z 2ff13fcf-cba3-1663-a361-1930b712171e Task timed out after 2.00 seconds\"}",
+    "s": 21.5
+   },
+   "match": false
+  },
+  "L03_sync_payload_over_6MB": {
+   "expect": "413 RequestEntityTooLargeException (sync invoke request payload limit 6 MB)",
+   "observed": {
+    "status": 200,
+    "fnerr": "Handled",
+    "body": "exec /var/rapid/init: argument list too long",
+    "s": 21.2
+   },
+   "match": false
+  },
+  "L04_invalid_json_payload": {
+   "expect": "400 InvalidRequestContentException 'Could not parse request body into json'",
+   "observed": {
+    "code": "500",
+    "msg": "<!doctype html>\n<html lang=en>\n<title>500 Internal Server Error</title>\n<h1>Internal Server Error</h1>\n<p>The server encountered an internal error and was unable to complete your request. Either the s",
+    "http": 500,
+    "s": 0.8
+   },
+   "match": false
+  },
+  "L05_missing_function": {
+   "expect": "404 ResourceNotFoundException 'Function not found: arn:...'",
+   "observed": {
+    "code": "ResourceNotFoundException",
+    "msg": "Function not found: arn:aws:lambda:us-east-1:123456789012:function:nonexistent-fn-zzz",
+    "http": 404,
+    "s": 0.0
+   },
+   "match": true
+  },
+  "L06_async_event_invoke": {
+   "expect": "202 status, empty payload",
+   "observed": {
+    "status": 202,
+    "fnerr": null,
+    "body": "2",
+    "s": 19.2
+   },
+   "match": true
+  }
+ }
+}

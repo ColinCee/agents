@@ -1,0 +1,299 @@
+[
+ {
+  "desc": "allow-only-no-matching-resource: Allow SendMessage on team-* ; send to other-q",
+  "policy": {
+   "Version": "2012-10-17",
+   "Statement": [
+    {
+     "Effect": "Allow",
+     "Action": [
+      "sqs:SendMessage",
+      "sqs:GetQueueUrl",
+      "sqs:CreateQueue"
+     ],
+     "Resource": "arn:aws:sqs:*:*:team-*"
+    }
+   ]
+  },
+  "queue": "other-q",
+  "op": "send",
+  "expected": false
+ },
+ {
+  "desc": "resource wildcard: Allow SendMessage on team-* ; send to team-a",
+  "policy": {
+   "Version": "2012-10-17",
+   "Statement": [
+    {
+     "Effect": "Allow",
+     "Action": [
+      "sqs:SendMessage"
+     ],
+     "Resource": "arn:aws:sqs:*:*:team-*"
+    }
+   ]
+  },
+  "queue": "team-a",
+  "op": "send",
+  "expected": true
+ },
+ {
+  "desc": "NotAction allow: Allow NotAction sqs:DeleteQueue ; send",
+  "policy": {
+   "Version": "2012-10-17",
+   "Statement": [
+    {
+     "Effect": "Allow",
+     "NotAction": "sqs:DeleteQueue",
+     "Resource": "*"
+    }
+   ]
+  },
+  "queue": "team-a",
+  "op": "send",
+  "expected": true
+ },
+ {
+  "desc": "NotAction allow: same ; delete",
+  "policy": {
+   "Version": "2012-10-17",
+   "Statement": [
+    {
+     "Effect": "Allow",
+     "NotAction": "sqs:DeleteQueue",
+     "Resource": "*"
+    }
+   ]
+  },
+  "queue": "team-a",
+  "op": "delete",
+  "expected": false
+ },
+ {
+  "desc": "Deny NotAction sqs:SendMessage + Allow * ; send",
+  "policy": {
+   "Version": "2012-10-17",
+   "Statement": [
+    {
+     "Effect": "Allow",
+     "Action": "*",
+     "Resource": "*"
+    },
+    {
+     "Effect": "Deny",
+     "NotAction": "sqs:SendMessage",
+     "Resource": "*"
+    }
+   ]
+  },
+  "queue": "team-a",
+  "op": "send",
+  "expected": true
+ },
+ {
+  "desc": "Deny NotAction sqs:SendMessage + Allow * ; purge",
+  "policy": {
+   "Version": "2012-10-17",
+   "Statement": [
+    {
+     "Effect": "Allow",
+     "Action": "*",
+     "Resource": "*"
+    },
+    {
+     "Effect": "Deny",
+     "NotAction": "sqs:SendMessage",
+     "Resource": "*"
+    }
+   ]
+  },
+  "queue": "team-a",
+  "op": "purge",
+  "expected": false
+ },
+ {
+  "desc": "Deny w/ false Condition (RequestedRegion eu-west-1) must NOT apply ; send",
+  "policy": {
+   "Version": "2012-10-17",
+   "Statement": [
+    {
+     "Effect": "Allow",
+     "Action": "*",
+     "Resource": "*"
+    },
+    {
+     "Effect": "Deny",
+     "Action": "sqs:SendMessage",
+     "Resource": "*",
+     "Condition": {
+      "StringEquals": {
+       "aws:RequestedRegion": "eu-west-1"
+      }
+     }
+    }
+   ]
+  },
+  "queue": "team-a",
+  "op": "send",
+  "expected": true
+ },
+ {
+  "desc": "Deny w/ true Condition (RequestedRegion us-east-1) applies ; send",
+  "policy": {
+   "Version": "2012-10-17",
+   "Statement": [
+    {
+     "Effect": "Allow",
+     "Action": "*",
+     "Resource": "*"
+    },
+    {
+     "Effect": "Deny",
+     "Action": "sqs:SendMessage",
+     "Resource": "*",
+     "Condition": {
+      "StringEquals": {
+       "aws:RequestedRegion": "us-east-1"
+      }
+     }
+    }
+   ]
+  },
+  "queue": "team-a",
+  "op": "send",
+  "expected": false
+ },
+ {
+  "desc": "Allow w/ false Condition gives no permission ; send",
+  "policy": {
+   "Version": "2012-10-17",
+   "Statement": [
+    {
+     "Effect": "Allow",
+     "Action": [
+      "sqs:CreateQueue",
+      "sqs:GetQueueUrl"
+     ],
+     "Resource": "*"
+    },
+    {
+     "Effect": "Allow",
+     "Action": "sqs:SendMessage",
+     "Resource": "*",
+     "Condition": {
+      "StringEquals": {
+       "aws:RequestedRegion": "eu-west-1"
+      }
+     }
+    }
+   ]
+  },
+  "queue": "team-a",
+  "op": "send",
+  "expected": false
+ },
+ {
+  "desc": "Deny on specific resource ARN only ; send to team-a",
+  "policy": {
+   "Version": "2012-10-17",
+   "Statement": [
+    {
+     "Effect": "Allow",
+     "Action": "*",
+     "Resource": "*"
+    },
+    {
+     "Effect": "Deny",
+     "Action": "sqs:SendMessage",
+     "Resource": "arn:aws:sqs:us-east-1:123456789012:team-a"
+    }
+   ]
+  },
+  "queue": "team-a",
+  "op": "send",
+  "expected": false
+ },
+ {
+  "desc": "Deny on specific resource ARN only ; send to team-b",
+  "policy": {
+   "Version": "2012-10-17",
+   "Statement": [
+    {
+     "Effect": "Allow",
+     "Action": "*",
+     "Resource": "*"
+    },
+    {
+     "Effect": "Deny",
+     "Action": "sqs:SendMessage",
+     "Resource": "arn:aws:sqs:us-east-1:123456789012:team-a"
+    }
+   ]
+  },
+  "queue": "team-b",
+  "op": "send",
+  "expected": true
+ },
+ {
+  "desc": "Deny NotResource: Deny SendMessage NotResource team-a ; send to team-a",
+  "policy": {
+   "Version": "2012-10-17",
+   "Statement": [
+    {
+     "Effect": "Allow",
+     "Action": "*",
+     "Resource": "*"
+    },
+    {
+     "Effect": "Deny",
+     "Action": "sqs:SendMessage",
+     "NotResource": "arn:aws:sqs:us-east-1:123456789012:team-a"
+    }
+   ]
+  },
+  "queue": "team-a",
+  "op": "send",
+  "expected": true
+ },
+ {
+  "desc": "Deny NotResource ; send to team-b",
+  "policy": {
+   "Version": "2012-10-17",
+   "Statement": [
+    {
+     "Effect": "Allow",
+     "Action": "*",
+     "Resource": "*"
+    },
+    {
+     "Effect": "Deny",
+     "Action": "sqs:SendMessage",
+     "NotResource": "arn:aws:sqs:us-east-1:123456789012:team-a"
+    }
+   ]
+  },
+  "queue": "team-b",
+  "op": "send",
+  "expected": false
+ },
+ {
+  "desc": "Action wildcard case-insensitivity: Allow SQS:SENDMESSAGE",
+  "policy": {
+   "Version": "2012-10-17",
+   "Statement": [
+    {
+     "Effect": "Allow",
+     "Action": [
+      "SQS:SENDMESSAGE",
+      "sqs:createqueue",
+      "sqs:getqueueurl"
+     ],
+     "Resource": "*"
+    }
+   ]
+  },
+  "queue": "team-a",
+  "op": "send",
+  "expected": true
+ }
+]

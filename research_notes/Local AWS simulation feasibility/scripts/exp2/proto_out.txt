@@ -1,0 +1,30 @@
+COLD in-JVM: construct bus + addRule + first event delivered = 317.7 ms
+COLD JVM uptime at first delivery = 396 ms (JVM boot not included in the line above)
+STEADY put->handler latency (N=50000): p50=5.5 us p99=31.8 us max=5504.0 us
+FAULTS dup=0.2 reorder=0.3: sent=1000 delivered=1124 unique=999 duplicates=125 out-of-order-adjacent-pairs=197
+FAULTS delay=50ms: observed put->handler = 52.0 ms
+FANOUT 1000 rules, 20000 events: 155056 events/sec, 0 handler calls (expected 200000)
+WALL whole process incl JVM boot + all phases: 1.303629665 s
+---
+COLD in-JVM: construct bus + addRule + first event delivered = 363.8 ms
+COLD JVM uptime at first delivery = 427 ms (JVM boot not included in the line above)
+STEADY put->handler latency (N=50000): p50=5.3 us p99=34.3 us max=12794.1 us
+FAULTS dup=0.2 reorder=0.3: sent=1000 delivered=1124 unique=999 duplicates=125 out-of-order-adjacent-pairs=197
+FAULTS delay=50ms: observed put->handler = 56.5 ms
+FANOUT 1000 rules, 20000 events: 167145 events/sec, 0 handler calls (expected 200000)
+WALL whole process incl JVM boot + all phases: 1.293769478 s
+---
+COLD in-JVM: construct bus + addRule + first event delivered = 313.9 ms
+COLD JVM uptime at first delivery = 384 ms (JVM boot not included in the line above)
+STEADY put->handler latency (N=50000): p50=7.1 us p99=39.5 us max=10610.9 us
+FAULTS dup=0.2 reorder=0.3: sent=1000 delivered=1124 unique=999 duplicates=125 out-of-order-adjacent-pairs=197
+FAULTS delay=50ms: observed put->handler = 51.7 ms
+FANOUT 1000 rules, 20000 events: 194151 events/sec, 0 handler calls (expected 200000)
+WALL whole process incl JVM boot + all phases: 1.287212173 s
+---
+COLD in-JVM: construct bus + addRule + first event delivered = 375.2 ms
+FANOUT 1000 rules, 20000 events: 95963 events/sec, 200000 handler calls (expected 200000)
+COLD in-JVM: construct bus + addRule + first event delivered = 282.0 ms
+FANOUT 1000 rules, 20000 events: 80406 events/sec, 200000 handler calls (expected 200000)
+COLD in-JVM: construct bus + addRule + first event delivered = 342.4 ms
+FANOUT 1000 rules, 20000 events: 86912 events/sec, 200000 handler calls (expected 200000)

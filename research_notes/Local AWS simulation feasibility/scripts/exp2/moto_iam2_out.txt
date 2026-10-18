@@ -1,0 +1,15 @@
+OK  expected_allowed=False moto_allowed=False :: allow-only-no-matching-resource: Allow SendMessage on team-* ; send to other-q
+OK  expected_allowed=True moto_allowed=True :: resource wildcard: Allow SendMessage on team-* ; send to team-a
+OK  expected_allowed=True moto_allowed=True :: NotAction allow: Allow NotAction sqs:DeleteQueue ; send
+OK  expected_allowed=False moto_allowed=False :: NotAction allow: same ; delete
+OK  expected_allowed=True moto_allowed=True :: Deny NotAction sqs:SendMessage + Allow * ; send
+OK  expected_allowed=False moto_allowed=False :: Deny NotAction sqs:SendMessage + Allow * ; purge
+MISMATCH expected_allowed=True moto_allowed=False :: Deny w/ false Condition (RequestedRegion eu-west-1) must NOT apply ; send
+OK  expected_allowed=False moto_allowed=False :: Deny w/ true Condition (RequestedRegion us-east-1) applies ; send
+MISMATCH expected_allowed=False moto_allowed=True :: Allow w/ false Condition gives no permission ; send
+OK  expected_allowed=False moto_allowed=False :: Deny on specific resource ARN only ; send to team-a
+OK  expected_allowed=True moto_allowed=True :: Deny on specific resource ARN only ; send to team-b
+OK  expected_allowed=True moto_allowed=True :: Deny NotResource: Deny SendMessage NotResource team-a ; send to team-a
+MISMATCH expected_allowed=False moto_allowed=True :: Deny NotResource ; send to team-b
+MISMATCH expected_allowed=True moto_allowed=False :: Action wildcard case-insensitivity: Allow SQS:SENDMESSAGE
+10/14 match documented AWS semantics

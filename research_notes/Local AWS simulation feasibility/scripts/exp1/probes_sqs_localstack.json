@@ -1,0 +1,164 @@
+{
+ "localstack": {
+  "S01_visibility_redelivery": {
+   "expect": "1st receive count=1; hidden during timeout (0 msgs); redelivered after 2s with ApproximateReceiveCount=2",
+   "observed": {
+    "first": 1,
+    "c1": "1",
+    "during": 0,
+    "after": 1,
+    "c2": "2"
+   },
+   "match": true
+  },
+  "S02_fifo_dedup": {
+   "expect": "second send accepted but same MessageId, only 1 message deliverable",
+   "observed": {
+    "same_id": true,
+    "delivered": 1
+   },
+   "match": true
+  },
+  "S02b_fifo_content_dedup": {
+   "expect": "1 message delivered",
+   "observed": 1,
+   "match": true
+  },
+  "S02c_fifo_missing_group_id": {
+   "expect": "error MissingParameter / InvalidParameterValue",
+   "observed": {
+    "ok": false,
+    "code": "MissingParameter",
+    "msg": "The request must contain the parameter MessageGroupId.",
+    "http": 400
+   },
+   "match": true
+  },
+  "S03_message_size_limit": {
+   "expect": "AWS since Aug 2025: 1 MiB accepted, 1MiB+1 rejected (pre-2025: 256KiB+1 rejected)",
+   "observed": {
+    "256KiB": "ok",
+    "256KiB+1": "ok",
+    "1MiB": "ok",
+    "1MiB+1": "InvalidParameterValue"
+   },
+   "match": true
+  },
+  "S03b_default_MaximumMessageSize_attr": {
+   "expect": "1048576 (new default) ",
+   "observed": {
+    "MaximumMessageSize": "1048576"
+   },
+   "match": true
+  },
+  "S04_dlq_after_maxReceiveCount": {
+   "expect": "message received 2x from source then moved to DLQ (not delivered 3rd time)",
+   "observed": {
+    "src_receives": 2,
+    "src_after": 0,
+    "dlq": 1
+   },
+   "match": true
+  },
+  "S04b_dlq_receive_count_attr": {
+   "expect": "INFORMATIONAL (no doc statement found): receive count on DLQ copy",
+   "observed": "3",
+   "match": null
+  },
+  "S05_delay_seconds": {
+   "expect": "0 immediately, 1 after delay",
+   "observed": {
+    "now": 0,
+    "later": 1
+   },
+   "match": true
+  },
+  "S06_long_poll_wait": {
+   "expect": "returns after ~2s when empty",
+   "observed": 2.0,
+   "match": true
+  },
+  "S07_batch_11_entries": {
+   "expect": "TooManyEntriesInBatchRequest (AWS.SimpleQueueService.TooManyEntriesInBatchRequest in query protocol)",
+   "observed": {
+    "ok": false,
+    "code": "AWS.SimpleQueueService.TooManyEntriesInBatchRequest",
+    "msg": "Maximum number of entries per request are 10. You have sent 11.",
+    "http": 400
+   },
+   "match": true
+  },
+  "S08_receive_max_11": {
+   "expect": "InvalidParameterValue (1..10)",
+   "observed": {
+    "ok": false,
+    "code": "InvalidParameterValue",
+    "msg": "Value 11 for parameter MaxNumberOfMessages is invalid. Reason: Must be between 1 and 10, if provided.",
+    "http": 400
+   },
+   "match": true
+  },
+  "S09_nonexistent_queue": {
+   "expect": "QueueDoesNotExist (JSON protocol; legacy AWS.SimpleQueueService.NonExistentQueue)",
+   "observed": {
+    "ok": false,
+    "code": "AWS.SimpleQueueService.NonExistentQueue",
+    "msg": "The specified queue does not exist.",
+    "http": 400
+   },
+   "match": true
+  },
+  "S10_fifo_group_inflight_blocking": {
+   "expect": "single receive returns a0,a1,a2 (+b0) in order per group; a second receive returns nothing for group A while in flight",
+   "observed": {
+    "first": [
+     "a0",
+     "a1",
+     "a2",
+     "b0"
+    ],
+    "second": []
+   },
+   "match": true
+  },
+  "S11_md5_of_body_and_attrs": {
+   "expect": "MD5OfMessageBody=5d41402abc4b2a76b9719d911017c592 and MD5OfMessageAttributes present",
+   "observed": {
+    "body": "5d41402abc4b2a76b9719d911017c592",
+    "attrs": "0a77b0642718c3d9dd47090567d11e0d"
+   },
+   "match": true
+  },
+  "S12a_redelivery_after_1s_vt": {
+   "expect": "message redelivered after 1s visibility timeout expires (1.5s wait)",
+   "observed": 0,
+   "match": false
+  },
+  "S12_delete_with_stale_receipt_handle": {
+   "expect": "AWS: no error is returned for delete with an old handle (message may or may not be deleted; if it is in flight with a newer handle it is NOT deleted)",
+   "observed": {
+    "stale_delete": {
+     "ok": true,
+     "resp": {}
+    },
+    "redelivered": 0
+   },
+   "match": true
+  },
+  "S13_fifo_name_without_suffix": {
+   "expect": "InvalidParameterValue (FIFO queue name must end in .fifo)",
+   "observed": {
+    "ok": false,
+    "code": "InvalidParameterValue",
+    "msg": "The name of a FIFO queue can only include alphanumeric characters, hyphens, or underscores, must end with .fifo suffix and be 1 to 80 in length",
+    "http": 400
+   },
+   "match": true
+  },
+  "S14_purge": {
+   "expect": "empty after purge",
+   "observed": 0,
+   "match": true
+  }
+ }
+}

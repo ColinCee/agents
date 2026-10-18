@@ -1,0 +1,32 @@
+{
+ "moto_inprocess": {
+  "ddb PutItem": {
+   "n": 1000,
+   "p50_ms": 0.969,
+   "p99_ms": 2.517,
+   "mean_ms": 1.05,
+   "ops_per_s": 952.6
+  },
+  "ddb GetItem": {
+   "n": 1000,
+   "p50_ms": 0.939,
+   "p99_ms": 1.274,
+   "mean_ms": 0.962,
+   "ops_per_s": 1039.0
+  },
+  "sqs SendMessage": {
+   "n": 1000,
+   "p50_ms": 5.937,
+   "p99_ms": 16.022,
+   "mean_ms": 6.158,
+   "ops_per_s": 162.4
+  },
+  "sqs Receive+Delete": {
+   "n": 1000,
+   "p50_ms": 18.059,
+   "p99_ms": 42.082,
+   "mean_ms": 18.383,
+   "ops_per_s": 54.4
+  }
+ }
+}

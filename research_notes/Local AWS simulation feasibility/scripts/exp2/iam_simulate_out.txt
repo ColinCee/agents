@@ -1,0 +1,15 @@
+OK  expected_allowed=false got=ImplicitlyDenied :: allow-only-no-matching-resource: Allow SendMessage on team-* ; send to other-q
+OK  expected_allowed=true got=Allowed :: resource wildcard: Allow SendMessage on team-* ; send to team-a
+OK  expected_allowed=true got=Allowed :: NotAction allow: Allow NotAction sqs:DeleteQueue ; send
+OK  expected_allowed=false got=ImplicitlyDenied :: NotAction allow: same ; delete
+OK  expected_allowed=true got=Allowed :: Deny NotAction sqs:SendMessage + Allow * ; send
+OK  expected_allowed=false got=ExplicitlyDenied :: Deny NotAction sqs:SendMessage + Allow * ; purge
+OK  expected_allowed=true got=Allowed :: Deny w/ false Condition (RequestedRegion eu-west-1) must NOT apply ; send
+OK  expected_allowed=false got=ExplicitlyDenied :: Deny w/ true Condition (RequestedRegion us-east-1) applies ; send
+OK  expected_allowed=false got=ImplicitlyDenied :: Allow w/ false Condition gives no permission ; send
+OK  expected_allowed=false got=ExplicitlyDenied :: Deny on specific resource ARN only ; send to team-a
+OK  expected_allowed=true got=Allowed :: Deny on specific resource ARN only ; send to team-b
+OK  expected_allowed=true got=Allowed :: Deny NotResource: Deny SendMessage NotResource team-a ; send to team-a
+OK  expected_allowed=false got=ExplicitlyDenied :: Deny NotResource ; send to team-b
+OK  expected_allowed=true got=Allowed :: Action wildcard case-insensitivity: Allow SQS:SENDMESSAGE
+14/14 match documented semantics
