@@ -18,6 +18,12 @@ npx skills add ColinCee/agents --global --skill '*' --agent claude-code
 
 Results with and without each skill: [bench/](bench/).
 
+Other people's skills I use:
+
+| Skill | Loads | What it does | Install |
+|---|---|---|---|
+| [asd-ste100](https://github.com/danyuchn/asd-ste100-skill) | by itself | Rewrites dense or ambiguous English into short, one-meaning sentences (Simplified Technical English), for text an agent must parse. | `npx skills add danyuchn/asd-ste100-skill --global --agent claude-code` |
+
 ## Instructions for agents
 
 [home/AGENTS.md](home/AGENTS.md): how every agent should work with me. Install: `npm run install-home -- --apply`.
