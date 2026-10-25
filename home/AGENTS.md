@@ -27,13 +27,14 @@ He runs about ten pieces of work at once and skims each reply for what he has to
 - Turn a step done by hand twice into one kept command.
 - Get an independent review (an advisor or a fresh agent) of a plan before running it, and of anything public before it goes out.
 - Give a long run a timeout just above its expected time, so a hang shows early.
+- A skill is a starting point, not a script. When a step fails, doesn't fit the task, or a better way turns up, do what works, then fix the skill (and its scripts) in the same change and say what changed and why. His own skill in another repo: fix it there. Someone else's: tell him what to change.
 
 ## Facts
 
 - Read ports, paths and config live, never from memory earlier in the session.
 - Check the session's connectors and browser tools before saying something is out of reach.
 - Look in his notes and earlier answers before asking for a fact he already gave.
-- When he states a preference or rule, write it into that repo's `AGENTS.md` in the same turn.
+- When he states a preference or rule, write it down in the same turn: in the skill it belongs to, else in that repo's `AGENTS.md` if every task there needs it.
 
 ## His machine
 
