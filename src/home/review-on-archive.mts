@@ -12,8 +12,8 @@ import {
   writeFileSync,
 } from "node:fs";
 import { homedir } from "node:os";
-import { basename, join } from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { basename, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 const HOME = join(homedir(), ".claude", "session-reviews");
 const QUEUE = join(HOME, "queue.jsonl");
@@ -44,8 +44,8 @@ const HELP = `Review a Claude Code session for lessons when it is archived in th
 
 Archiving fires SessionEnd, but so do quitting the app and its restarts: a queued session is reviewed only once
 the app's own record of it says archived, and waits in the queue (up to ${KEEP_DAYS} days) until then.
-Each review runs the session-review skill's scripts, then a headless Claude with read-only tools, and writes
-the report to ~/.claude/session-reviews/. It never edits a skill or an instruction file. A failed review
+Each review runs the session-review skill's scripts, then a headless Claude with read-only tools, writes the
+report to ~/.claude/session-reviews/, and opens that review as a session in the desktop app (Windows). It never edits a skill or an instruction file. A failed review
 is tried again at the next drain, ${MAX_TRIES} times in all.
 Exit codes: 0 done, 1 a review failed, 2 bad arguments.`;
 
@@ -139,6 +139,8 @@ function hook(): number {
     return 0;
   }
   if (typeof payload.session_id !== "string" || typeof payload.transcript_path !== "string") return 0;
+  // A review opened in the app runs from HOME; archiving it would review the review.
+  if (typeof payload.cwd === "string" && resolve(payload.cwd) === resolve(HOME)) return 0;
   mkdirSync(HOME, { recursive: true });
   const entry: Queued = {
     session_id: payload.session_id,
@@ -184,6 +186,8 @@ function review(transcript: string, sessionId: string): string | undefined {
   const record = appRecord(sessionId);
   const title = record?.title ?? basename(transcript, ".jsonl");
   const ask = [
+    `Session review: ${title}`, // the first line, so the session reads well in the app's sidebar
+    "",
     "Review one finished coding-agent session for lessons, following the skill below in its one-session mode.",
     "Step 1 is done: its output is below. Do steps 2 to 5, reading the user's instruction files, memory and installed skills",
     `(under ${join(homedir(), ".claude")}, ${join(homedir(), ".agents")} and the project folders the session worked in) to see where each lesson is already written.`,
@@ -224,7 +228,6 @@ function review(transcript: string, sessionId: string): string | undefined {
       // No user settings: their hooks would log the review as the user's own session.
       "--setting-sources",
       "project",
-      "--no-session-persistence",
     ],
     {
       cwd: HOME,
@@ -237,7 +240,7 @@ function review(transcript: string, sessionId: string): string | undefined {
       env: { ...process.env, SESSION_REVIEW_CHILD: "1" },
     },
   );
-  let result: { result?: string; total_cost_usd?: number; is_error?: boolean; num_turns?: number };
+  let result: { result?: string; total_cost_usd?: number; is_error?: boolean; session_id?: string };
   try {
     result = JSON.parse(done.stdout);
   } catch {
@@ -254,27 +257,24 @@ function review(transcript: string, sessionId: string): string | undefined {
     `# ${title}\n\n${date}${link}${cost} · ${promptCount} prompts, ${editCount} hand edits\n\n${result.result.trim()}\n`,
   );
   log(`reviewed ${sessionId} -> ${report}${cost}`);
-  notify(title, report);
+  if (result.session_id) openInApp(result.session_id);
   return report;
 }
 
-/** A Windows notification that opens the report; elsewhere the log and the folder are enough. */
-function notify(title: string, report: string): void {
+/**
+ * Show the review as a session in the desktop app's sidebar, where the user can reply to act on a lesson.
+ * `claude --desktop` refuses to run without a console, so it gets its own, minimised: `start /min`.
+ */
+function openInApp(reviewId: string): void {
   if (process.platform !== "win32") return;
-  const xml = `<toast activationType="protocol" launch="${pathToFileURL(report).href}"><visual><binding template="ToastGeneric"><text>Session review ready</text><text>${title.replace(/[<>&"]/g, "")}</text></binding></visual></toast>`;
-  // Windows PowerShell 5.1, which can load the WinRT notification types; its own app id shows the toast.
-  const ps = [
-    "[Windows.UI.Notifications.ToastNotificationManager,Windows.UI.Notifications,ContentType=WindowsRuntime]|Out-Null",
-    "[Windows.Data.Xml.Dom.XmlDocument,Windows.Data.Xml.Dom.XmlDocument,ContentType=WindowsRuntime]|Out-Null",
-    "$x=New-Object Windows.Data.Xml.Dom.XmlDocument;$x.LoadXml($env:REVIEW_TOAST)",
-    "$id='{1AC14E77-02E7-4E5D-B744-2EB1AE5198B7}\\WindowsPowerShell\\v1.0\\powershell.exe'",
-    "[Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier($id).Show([Windows.UI.Notifications.ToastNotification]::new($x))",
-  ].join(";");
-  spawnSync("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command", ps], {
+  const done = spawnSync("cmd.exe", ["/c", "start", '""', "/min", "claude", "--desktop", "--resume", reviewId], {
+    cwd: HOME,
     windowsHide: true,
-    timeout: 30_000,
-    env: { ...process.env, REVIEW_TOAST: xml },
+    timeout: LAUNCH_TIMEOUT_MS,
+    env: { ...process.env, SESSION_REVIEW_CHILD: "1" },
   });
+  if (done.status !== 0)
+    log(`could not open review ${reviewId} in the app: ${done.error?.message ?? `exit ${done.status}`}`);
 }
 
 async function drain(): Promise<number> {

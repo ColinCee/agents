@@ -28,7 +28,7 @@ Other people's skills I use:
 
 [home/AGENTS.md](home/AGENTS.md): how every agent should work with me. Install: `npm run install-home -- --apply`.
 
-The same command adds a review of each Claude Code session you archive in the Claude desktop app: it runs session-review on that one session with read-only tools and writes the report to `~/.claude/session-reviews/`, with a Windows notification. Source: [src/home/review-on-archive.mts](src/home/review-on-archive.mts).
+The same command adds a review of each Claude Code session you archive in the Claude desktop app: it runs session-review on that one session with read-only tools and writes the report to `~/.claude/session-reviews/` and opens the review as a new session in the desktop app, where you can reply to act on a lesson. Source: [src/home/review-on-archive.mts](src/home/review-on-archive.mts).
 
 ## Tools
 
