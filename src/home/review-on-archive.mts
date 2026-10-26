@@ -15,19 +15,6 @@ import { homedir } from "node:os";
 import { basename, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-const HELP = `Review a Claude Code session for lessons when it is archived in the Claude desktop app.
-
-  node review-on-archive.mjs             as a SessionEnd hook: queue the session from the hook's JSON on
-                                         stdin and start a drain in the background
-  node review-on-archive.mjs drain       review every queued session the app shows as archived
-  node review-on-archive.mjs review ID   review one session now, archived or not (ID or path to .jsonl)
-
-Archiving fires SessionEnd, but so do quitting the app and its restarts: a queued session is reviewed only once
-the app's own record of it says archived, and waits in the queue (up to ${14} days) until then.
-Each review runs the session-review skill's scripts, then a headless Claude with read-only tools, and writes
-the report to ~/.claude/session-reviews/. It never edits a skill or an instruction file.
-Exit codes: 0 done, 1 a review failed, 2 bad arguments.`;
-
 const HOME = join(homedir(), ".claude", "session-reviews");
 const QUEUE = join(HOME, "queue.jsonl");
 const DONE = join(HOME, "done.json");
@@ -35,7 +22,7 @@ const LOCK = join(HOME, "drain.lock");
 const LOG = join(HOME, "log.txt");
 // The installed skill; SESSION_REVIEW_SKILL points at another copy (a checkout, to try a change).
 const SKILL = process.env.SESSION_REVIEW_SKILL ?? join(homedir(), ".claude", "skills", "session-review");
-const MODEL = "sonnet"; // judgement over a few thousand lines of text; the largest models cost five times more
+const MODEL = "sonnet"; // judgement over a few thousand lines of text; a larger model costs more for little gain
 const MAX_TURNS = "30"; // reading the instruction files and skills a lesson might already be in
 const MAX_BUDGET_USD = "1"; // a stop for a runaway review; a normal one costs a few cents
 const SETTLE_MS = 20_000; // the app marks the session archived around when it ends the process
@@ -43,13 +30,31 @@ const REVIEW_TIMEOUT_MS = 10 * 60_000; // a review takes one to three minutes; a
 const STALE_LOCK_MS = 30 * 60_000; // three hung reviews: by then the drain holding the lock is gone
 const KEEP_DAYS = 14; // a session ended by an app restart waits this long to be archived
 const LAUNCH_TIMEOUT_MS = 8_000; // under the hook's own ten seconds; the launch takes about one
+const MAX_TRIES = 3; // a review that fails three times (claude down, budget hit) would fail again
 const MIN_PROMPTS = 2; // one prompt and no hand edits leaves nothing to correct
+
+const HELP = `Review a Claude Code session for lessons when it is archived in the Claude desktop app.
+
+  node review-on-archive.mjs             as a SessionEnd hook: queue the session from the hook's JSON on
+                                         stdin and start a drain in the background
+  node review-on-archive.mjs kick        as a SessionStart hook: start a drain if a queued session is archived,
+                                         in case the one its SessionEnd started never ran
+  node review-on-archive.mjs drain       review every queued session the app shows as archived
+  node review-on-archive.mjs review ID   review one session now, archived or not (ID or path to .jsonl)
+
+Archiving fires SessionEnd, but so do quitting the app and its restarts: a queued session is reviewed only once
+the app's own record of it says archived, and waits in the queue (up to ${KEEP_DAYS} days) until then.
+Each review runs the session-review skill's scripts, then a headless Claude with read-only tools, and writes
+the report to ~/.claude/session-reviews/. It never edits a skill or an instruction file. A failed review
+is tried again at the next drain, ${MAX_TRIES} times in all.
+Exit codes: 0 done, 1 a review failed, 2 bad arguments.`;
 
 interface Queued {
   session_id: string;
   transcript_path: string;
   cwd?: string;
   queued_at: string;
+  tries?: number;
 }
 
 const log = (line: string): void => {
@@ -300,11 +305,16 @@ async function drain(): Promise<number> {
           writeFileSync(DONE, JSON.stringify(done));
         } catch (e) {
           failed++;
-          log(`failed ${next.session_id}: ${(e as Error).message}`);
+          const tries = (next.tries ?? 0) + 1;
+          keep = tries < MAX_TRIES;
+          next.tries = tries;
+          log(`failed ${next.session_id} (try ${tries} of ${MAX_TRIES}): ${(e as Error).message}`);
         }
       }
       // Rewrite from a fresh read: the hook may have queued more while this one ran.
-      const rest = readQueue().filter((q) => q.session_id !== next.session_id || keep);
+      const rest = readQueue()
+        .filter((q) => q.session_id !== next.session_id || keep)
+        .map((q) => (q.session_id === next.session_id ? { ...q, tries: next.tries } : q));
       const unique = [...new Map(rest.map((q) => [q.session_id, q])).values()];
       writeFileSync(QUEUE, unique.map((q) => `${JSON.stringify(q)}\n`).join(""));
     }
@@ -322,6 +332,11 @@ async function main(): Promise<number> {
   }
   if (!mode) return hook();
   if (mode === "drain") return drain();
+  if (mode === "kick") {
+    if (process.env.SESSION_REVIEW_CHILD || existsSync(LOCK)) return 0;
+    if (readQueue().some((q) => appRecord(q.session_id)?.isArchived)) startDrain();
+    return 0;
+  }
   if (mode === "review" && arg) {
     const id = basename(arg, ".jsonl");
     try {

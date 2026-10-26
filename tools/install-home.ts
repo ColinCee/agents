@@ -20,7 +20,8 @@ it replaces is first kept as <name>.<date-time>.bak beside it. Copies, not links
 cannot make links.
 
 It also copies the session review (built from src/home/review-on-archive.mts) to
-~/.claude/session-reviews/review-on-archive.mjs and adds it as a SessionEnd hook in ~/.claude/settings.json,
+~/.claude/session-reviews/review-on-archive.mjs and adds it as a SessionEnd and a SessionStart hook in
+~/.claude/settings.json,
 keeping every other setting and hook. Reports land in ~/.claude/session-reviews/.
 
 Exit codes: 0 everything matches or was installed, 1 something differs (report only), 2 home/AGENTS.md is missing.`;
@@ -46,12 +47,16 @@ type Settings = { hooks?: Record<string, { matcher?: string; hooks: Hook[] }[]> 
 function withHook(text: string | undefined, script: string): Buffer {
   const settings: Settings = text ? JSON.parse(text) : {};
   const ours = (h: Hook): boolean => [h.command, ...(h.args ?? [])].some((p) => p.includes(REVIEW_NAME));
-  const end = (settings.hooks?.SessionEnd ?? [])
-    .map((group) => ({ ...group, hooks: group.hooks.filter((h) => !ours(h)) }))
-    .filter((group) => group.hooks.length);
-  // Ten seconds: the hook only queues the session and starts the review in the background.
-  end.push({ hooks: [{ type: "command", command: "node", args: [script], timeout: 10 }] });
-  settings.hooks = { ...settings.hooks, SessionEnd: end };
+  // SessionEnd queues the session; SessionStart restarts a drain whose launch was lost. Ten seconds: each only
+  // queues or starts the review in the background, in about a second.
+  const add = { SessionEnd: [script], SessionStart: [script, "kick"] };
+  for (const [event, args] of Object.entries(add)) {
+    const groups = (settings.hooks?.[event] ?? [])
+      .map((group) => ({ ...group, hooks: group.hooks.filter((h) => !ours(h)) }))
+      .filter((group) => group.hooks.length);
+    groups.push({ hooks: [{ type: "command", command: "node", args, timeout: 10 }] });
+    settings.hooks = { ...settings.hooks, [event]: groups };
+  }
   return Buffer.from(`${JSON.stringify(settings, null, 2)}\n`);
 }
 

@@ -35,6 +35,7 @@ skills/<name>/
 - Each skill is listed in the table in `README.md`.
 - `home/AGENTS.md` is the author's own user-level instructions, not a skill. The rules for skills do not apply to it; `npm run install-home -- --apply` installs it.
 - `src/` holds the TypeScript source of what ships; `tools/` the repository's own tools; `tests/` their tests.
+- `src/home/` is the author's own session review hook, like `home/AGENTS.md` not a skill: `npm run install-home` builds it to `dist/home/` and installs it.
 
 ## SKILL.md
 

@@ -49,7 +49,7 @@ test.skipIf(process.platform === "win32")("replaces a CLAUDE.md link without wri
   expect(readFileSync(join(home, ".claude", "CLAUDE.md"), "utf8")).toBe("@AGENTS.md\n");
 });
 
-test("adds the session review as a SessionEnd hook and keeps every other setting", () => {
+test("adds the session review as SessionEnd and SessionStart hooks and keeps every other setting", () => {
   const home = mkdtempSync(join(tmpdir(), "install-home-"));
   mkdirSync(join(home, ".claude"));
   const other = { type: "command", command: "other-tool", args: ["hook"], timeout: 10 };
@@ -61,6 +61,9 @@ test("adds the session review as a SessionEnd hook and keeps every other setting
   const script = join(home, ".claude", "session-reviews", "review-on-archive.mjs");
   expect(after.model).toBe("x");
   expect(after.hooks.Stop).toEqual(before.hooks.Stop);
+  expect(after.hooks.SessionStart).toEqual([
+    { hooks: [{ type: "command", command: "node", args: [script, "kick"], timeout: 10 }] },
+  ]);
   expect(after.hooks.SessionEnd).toEqual([
     { hooks: [other] },
     { hooks: [{ type: "command", command: "node", args: [script], timeout: 10 }] },
