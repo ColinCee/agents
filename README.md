@@ -9,7 +9,7 @@ Skills, instructions and tools for coding agents.
 | [doc-upkeep](skills/doc-upkeep/SKILL.md) | by itself | Keeps docs and comments true, short and easy to scan: stale lines fixed in place, one home per fact. |
 | [housekeeping](skills/housekeeping/SKILL.md) | `/housekeeping` | A full clean-up pass in a safe order: what could be lost, code health, unused code, docs. |
 | [ui-decluttering](skills/ui-decluttering/SKILL.md) | `/ui-decluttering` | Redesigns a busy screen: one primary action, at most four choices in view. |
-| [session-review](skills/session-review/SKILL.md) | `/session-review` | Finds corrections you keep repeating in past sessions, and where each fix belongs. |
+| [session-review](skills/session-review/SKILL.md) | `/session-review` | Finds what you keep correcting, typed or edited by hand in the agent's text, and where each fix belongs. |
 | [deciding](skills/deciding/SKILL.md) | by itself | Decides from evidence: one question, the ground truth, a fair repeated comparison. |
 
 ```bash
@@ -27,6 +27,8 @@ Other people's skills I use:
 ## Instructions for agents
 
 [home/AGENTS.md](home/AGENTS.md): how every agent should work with me. Install: `npm run install-home -- --apply`.
+
+The same command adds a review of each Claude Code session you archive in the Claude desktop app: it runs session-review on that one session with read-only tools and writes the report to `~/.claude/session-reviews/`, with a Windows notification. Source: [src/home/review-on-archive.mts](src/home/review-on-archive.mts).
 
 ## Tools
 
