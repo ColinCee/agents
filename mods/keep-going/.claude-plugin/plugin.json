@@ -1,0 +1,5 @@
+{
+  "name": "keep-going",
+  "version": "0.1.0",
+  "description": "Reminds the agent, when it stops, to keep going unless it really needs you"
+}
