@@ -3,30 +3,16 @@ name: session-review
 description: Reviews the coding-agent sessions that ended on one day for what the user corrected, in chat or by editing the agent's text, and says where each fix belongs. Use when asked what the user keeps correcting, or to learn from past sessions.
 license: MIT
 disable-model-invocation: true
-compatibility: Requires Node 22 or later, and git for hand edits.
+compatibility: Requires uv (it fetches DuckDB) and git.
 ---
 
-Every correction the user made is an instruction that lives in the wrong place, or nowhere: what they typed, and what they changed by hand in text an agent wrote. Find them and say where each belongs.
+Every correction the user made is an instruction that lives in the wrong place, or nowhere. Find them and say where each belongs.
 
-## Steps
-
-1. **List the day's sessions.** From this skill's folder:
-
-   ```
-   node scripts/sessions.mjs
-   ```
-
-   It covers the sessions whose last message was yesterday, each one once and whole: every prompt the user typed with the end of the reply before it, then their hand edits to files the session wrote. `--day YYYY-MM-DD` picks another day. It reads Claude Code's and Codex's session folders by default; pass another agent's folder as an argument.
-
-   A hand edit is a word diff of the agent's version against what came next (the next agent write in any session, or the file now). One with no command run in between is the user's. One listed with commands may be partly an agent's script or formatter: read it against them. `(a command had written: ...)` under a new line is the line an agent's command wrote there, so the pair is the user's rewording.
-
-2. **Mark the corrections.** Read every prompt with the reply before it. A correction repeats an earlier request, says no, again, wrong or why did you, restates a rule, asks "are you sure" or "did you check", or asks "what next" after the agent stopped. Not corrections: new requests, one-off product choices (a colour, a name), thanks. A prompt marked `(button)` is a reply button he clicked: the words are the agent's, and accepting the agent's own proposal means it could have gone ahead without asking. Each hand edit is a correction too: say what it changed as a rule ("under 1¢" to "< $0.01": numbers in figures are symbols and digits). Leave out edits that only change facts or content (a new number, a new paragraph); they teach nothing about how to work.
-
-3. **Group them into lessons**, one general line each, and count the sessions and the projects each came from. Keep a lesson seen once, marked "once": the user sees across days which ones come back.
-
-4. **Look for each lesson where it might already be written:** the user's own instructions (`~/.claude/AGENTS.md`, `~/.codex/AGENTS.md`, `CLAUDE.md` beside them), each project's `AGENTS.md` or `CLAUDE.md`, the agent's memory files, installed skills. **A lesson that is written down and still corrected is the most important finding:** it sits at the wrong level (a rule in one project, needed in all) or is worded so it is not followed. Name the file it is in.
-
-5. **Give each lesson one home:**
+1. **List the day's sessions** with DuckDB (Reading the sessions, below): every session with a message from the user that day, with its project and how many messages; a session that runs across days is reviewed for that day's messages. Default: yesterday. Timestamps are UTC.
+2. **Read in parallel.** Give each long session, and the short ones together, to a subagent on a smaller, cheaper model, with `references/corrections.md` (the subagents' brief) and the section below. Each returns lessons with session ids. Never pass on a token, key or password.
+3. **Merge** the lessons, counting sessions, projects and days.
+4. **Look for each lesson where it may already be written:** the user's own instructions (`~/.claude/AGENTS.md` and `CLAUDE.md` beside it), each project's `AGENTS.md` or `CLAUDE.md`, the agent's memory files, installed skills. **A lesson written down and still corrected is the most important finding:** the rule sits at the wrong level or is worded so it is not followed. Name the file, and check the agent reads it and since when.
+5. **Give each lesson one home**, and say which lower copy to delete when a rule moves up:
 
    | Seen in | Home |
    |---|---|
@@ -36,24 +22,47 @@ Every correction the user made is an instruction that lives in the wrong place, 
    | A hand edit to text a skill shaped (a post, a doc) | That skill's rules, as the rule the edit shows |
    | The same steps asked for in three or more sessions | A new skill candidate |
 
-   When moving a rule up, say which lower copy to delete.
+6. **Report, and change nothing:** these are the user's instruction files. The table below, then one line on what was left out and why. A token, key or password in a transcript: say there is one and that it should be rotated.
 
-6. **Report, and change nothing** until the user says yes: these are their instruction files.
+   | Lesson | Sessions | Projects | Already written in | Home |
+   |---|---|---|---|---|
 
-## The report
+7. **Improve this skill.** When a step misled you or a better way turned up, fix it here, in the same change, keeping it as short as it was or shorter.
 
-| Lesson | Sessions | Projects | Already written in | Home |
-|---|---|---|---|---|
+## Reading the sessions
 
-Then one line on what was left out and why. Quote the user only in a few words: transcripts are theirs. Never quote a token, key or password from a transcript; say there is one and that it should be rotated.
+Claude Code keeps each session in `~/.claude/projects/<project>/<session id>.jsonl`, one JSON entry per line. Query them with DuckDB; write the SQL to a file and run it with:
+
+```
+uv run --with duckdb --with pytz python -c "import duckdb,sys; [print(*r, sep=' | ') for r in duckdb.sql(sys.stdin.read()).fetchall()]" < query.sql
+```
+
+Read lines as raw JSON and pull out the fields you need (reading every column at once runs out of memory). Add `filename=true` to `read_ndjson_objects` for the project: the folder above the file. Cut long text with `left()` when listing, then read in full what matters. One session's messages in order:
+
+```sql
+with e as (select json j from read_ndjson_objects('<home>/.claude/projects/*/*.jsonl', ignore_errors=true, maximum_object_size=268435456)),
+m as (
+  select distinct on (j->>'uuid') j->>'sessionId' session, j->>'timestamp' ts, j->>'type' kind, j->>'turnOrigin' origin,
+    case when json_type(j->'message'->'content') = 'VARCHAR' then j->'message'->>'content'
+         else array_to_string(json_extract_string(j, '$.message.content[*].text'), chr(10)) end body
+  from e where j->>'sessionId' like '<id>%' and j->>'type' in ('user', 'assistant') and not coalesce((j->>'isMeta')::bool, false))
+select ts, kind, origin, body from m where body <> '' order by ts
+```
+
+Where things are:
+- A `user` entry whose content holds a `tool_result` is tool output. `isMeta` is a note the harness added; `isSidechain` is a subagent's.
+- `turnOrigin` says who sent a message: `human` typed it; anything else (`task_notification`, `sdk`) is the harness or another agent. `isCompactSummary` marks a compaction summary.
+- A message sent while the agent was working is an `attachment` entry with `attachment.type = 'queued_command'` and the text in `attachment.prompt`; it can appear again later as an ordinary message.
+- The desktop app's closing box is a `tool_use` whose name ends in `wrap_up`: `input.recap`, `input.ask`, and `input.actions[].message`, which a button click sends as if typed.
+- A continued session copies its parent's entries with the same `uuid`: count each `uuid` once, under the session whose file was created first.
+- Tool calls are `tool_use` blocks in an assistant entry: `$.message.content[*].name` and `.input` (a Bash `command`, an edit's file). A path with `[*]` returns a list: wrap it in `array_to_string`. Put `j->'a'->>'b'` in brackets before comparing it.
+- File writes: `toolUseResult` on a `user` entry has `filePath`, then `content` (a new or rewritten file) or `originalFile` with `oldString` and `newString` (an edit).
+
+**Hand edits.** Find the sessions that wrote a file the user may have changed (a post, a doc) by `filePath`, not by day. The agent's version after a write is `content`, or `originalFile` with `oldString` replaced by `newString`; the next edit's `originalFile` (or the file now) is what it found there. Write both to temporary files and `git diff --no-index --word-diff` them: what differs and no command in between explains (`sed`, a script, a formatter) is the user's. The agent's own `git diff` output in the session often shows these edits too.
 
 ## Gotchas
 
-From real use:
-
-- A rule saved in one project's memory or instructions did not stop the same correction in another project: 20 of 85 lessons in one review had been written down already.
-- "Shall I…?" at the end of a turn, followed by the user's "just do it" or "what next", is a correction even though the user never says "wrong".
-- Rules in the user's own file were ignored for weeks because the agent never loaded that file (Claude Code reads `~/.claude/CLAUDE.md`, not `~/.claude/AGENTS.md`). Before blaming a rule's wording, check that the file it is in is one the agent reads.
-- The user's hand edits never appear in what they typed: in one session they reworded a post's figures ("under 1¢" to "< $0.01", "about 200 ms" to "~ 200 ms", "against" to "vs") without a word in chat.
-- An agent that edits through shell scripts leaves no edit record, so its own text can look like the user's. The script drops changed lines whose text is in a command run in between; check what is left against the listed commands before calling it the user's.
-- A session's first prompt may be another agent's brief (a side session, a scheduled task, this review), not the user's words.
+- A rule saved in one project did not stop the same correction in another: 20 of 85 lessons in one review were written down already.
+- Rules in `~/.claude/AGENTS.md` went unread for weeks: Claude Code reads `~/.claude/CLAUDE.md`, which must import it.
+- Hand edits never show in chat: one user reworded a post's figures ("under 1¢" to "< $0.01") without a word.
+- An agent that edits through shell scripts leaves no edit record, so its text can look like a hand edit.
