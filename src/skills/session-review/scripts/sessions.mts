@@ -86,8 +86,25 @@ const keyOf = (path: string): string => {
   return process.platform === "win32" || process.platform === "darwin" ? full.toLowerCase() : full;
 };
 const lf = (text: string): string => text.replace(/\r\n/g, "\n");
+// Tokens and keys a transcript or a file can hold; masked in everything printed, so a review never copies one.
+const SECRETS = new RegExp(
+  [
+    String.raw`gh[pousr]_[A-Za-z0-9]{20,}`,
+    String.raw`github_pat_[A-Za-z0-9_]{20,}`,
+    String.raw`sk-[A-Za-z0-9_-]{20,}`,
+    String.raw`xox[abprs]-[A-Za-z0-9-]{10,}`,
+    String.raw`AKIA[0-9A-Z]{16}`,
+    String.raw`AIza[0-9A-Za-z_-]{30,}`,
+    String.raw`-----BEGIN [A-Z ]*PRIVATE KEY-----[\s\S]*?-----END [A-Z ]*PRIVATE KEY-----`,
+    String.raw`\b[A-Za-z0-9+/_-]{40,}\b`,
+  ].join("|"),
+  "g",
+);
+const mask = (text: string): string => text.replace(SECRETS, "[secret removed]");
+// Files that hold secrets by name: never diffed.
+const SECRET_FILES = /(^|[\\/])(\.env[^\\/]*|[^\\/]*\.(pem|key)|[^\\/]*credential[^\\/]*)$/i;
 const clean = (text: string): string =>
-  text
+  mask(text)
     .replace(/<system-reminder>[\s\S]*?<\/system-reminder>/g, "")
     .replace(/\s+/g, " ")
     .trim();
@@ -147,13 +164,18 @@ function textOf(content: unknown): string {
     .join(" ");
 }
 
+// A resumed or forked session repeats earlier entries in a second file: each prompt is listed once.
+const seenPrompts = new Set<string>();
+
 /** What the user typed in one transcript, in Claude Code's or Codex's format, each with the reply before it. */
 function prompts(session: string, list: Entry[]): Prompt[] {
   const out: Prompt[] = [];
   let before = "";
+  let buttons: string[] = []; // the reply buttons the agent last offered: a click sends one as if typed
   for (const e of list) {
-    // isSidechain: a subagent's, prompted by the agent; isMeta: text the harness added in the user's place
-    if (e.isSidechain || e.isMeta) continue;
+    // isSidechain: a subagent's, prompted by the agent; isMeta: text the harness added in the user's place;
+    // isCompactSummary: the summary a compaction writes; turnOrigin "sdk": a prompt another agent sent
+    if (e.isSidechain || e.isMeta || e.isCompactSummary || e.turnOrigin === "sdk") continue;
     const payload = (typeof e.payload === "object" && e.payload !== null ? e.payload : {}) as Entry;
     let role: unknown;
     let content: unknown;
@@ -165,23 +187,34 @@ function prompts(session: string, list: Entry[]): Prompt[] {
       role = payload.role;
       content = payload.content;
     } else continue;
+    if (role === "assistant" && Array.isArray(content))
+      for (const p of content as Entry[])
+        if (p?.type === "tool_use" && String(p.name ?? "").endsWith("wrap_up")) {
+          const actions = ((p.input as Entry | undefined)?.actions ?? []) as Entry[];
+          buttons = actions.map((a) => String(a.message ?? a.label ?? ""));
+        }
     const text = textOf(content);
     if (!text.trim()) continue;
     if (role === "assistant") {
       before = text;
       continue;
     }
-    if (role !== "user" || text.trimStart().startsWith("<")) continue;
+    if (role !== "user" || text.trimStart().startsWith("<") || text.startsWith("[Request interrupted")) continue;
     const prompt = clean(text);
+    const key = typeof e.uuid === "string" ? e.uuid : `${session} ${prompt}`;
+    if (!prompt || seenPrompts.has(key) || seenPrompts.has(`${session} ${prompt}`)) continue;
+    seenPrompts.add(key).add(`${session} ${prompt}`);
     const cwd = String(e.cwd ?? payload.cwd ?? "");
-    if (prompt)
-      out.push({
-        type: "prompt",
-        session,
-        project: cwd ? basename(cwd) : "",
-        prompt: prompt.slice(0, PROMPT_CHARS),
-        before: clean(before).slice(-CONTEXT),
-      });
+    const clicked = buttons.some((b) => clean(b) === prompt);
+    const more = prompt.length - PROMPT_CHARS;
+    out.push({
+      type: "prompt",
+      session,
+      project: cwd ? basename(cwd) : "",
+      // A clicked reply button reads like typing, but its words are the agent's.
+      prompt: `${clicked ? "(button) " : ""}${prompt.slice(0, PROMPT_CHARS)}${more > 0 ? ` … (${more} more characters)` : ""}`,
+      before: clean(before).slice(-CONTEXT),
+    });
   }
   return out;
 }
@@ -357,7 +390,7 @@ function handEdits(
   for (const { session, list } of picked) {
     const s = sessionWrites(session, list);
     // Not the agent's own scratch files in the temp folder: the user never edits those, but its scripts do.
-    writes.push(...s.writes.filter((w) => !w.file.startsWith(scratch)));
+    writes.push(...s.writes.filter((w) => !w.file.startsWith(scratch) && !SECRET_FILES.test(w.path)));
     commands.push(...s.commands);
     edits.push(...s.accepted);
     skills.set(session, [...s.skills]);
@@ -521,7 +554,7 @@ function main(): number {
     editsLeft -= shownEdits.length;
     if (json) {
       for (const p of shownPrompts) console.log(JSON.stringify(p));
-      for (const { blob: _, ...e } of shownEdits) console.log(JSON.stringify(e));
+      for (const { blob: _, ...e } of shownEdits) console.log(JSON.stringify({ ...e, diff: mask(e.diff) }));
       continue;
     }
     const project = s.prompts.find((p) => p.project)?.project ?? "";
@@ -534,7 +567,7 @@ function main(): number {
         console.log(
           `${e.commands.length} commands in between may have changed it, so some of this may be an agent's: ${e.commands.slice(0, COMMANDS_SHOWN).join(" | ")}`,
         );
-      console.log(e.diff);
+      console.log(mask(e.diff).replace(/^/gm, "    "));
     }
   }
   if (typed.length > PROMPT_LIMIT) console.error(`... ${typed.length - PROMPT_LIMIT} more prompts not shown`);
