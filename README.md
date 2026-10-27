@@ -33,6 +33,7 @@ Other people's skills I use:
 | Tool | What it does | Install |
 |---|---|---|
 | `lease` | Locks the GPU, RAM or a browser so agents and programs on one machine don't collide; a status line in Claude Code shows who holds what. | `npm run install-lease` |
+| `keep-going` | An experiment: when the agent stops, one reminder to check whether it really needs you; measured against past sessions. [docs/keep-going.md](docs/keep-going.md) | `npm run install-keep-going` |
 
 ## Why so few skills
 
