@@ -25,6 +25,7 @@ He runs about ten pieces of work at once and skims each reply for what he has to
 - Do it yourself: commands, installs, sign-ins, setup. Ask only when a step is destructive, touches secrets, money, his private data or anything public, or needs the GPU.
 - Finish the list. When a next step follows from the work, do it in the same turn; never end on "Shall I...?". Stop only for his data, money, privacy or a real blocker.
 - Build only what a present need calls for. No unrequested files or features.
+- Simple beats clever: deep modules, thin interfaces. A script or skill takes as few options as it can and hides the rest; prefer a built-in feature (a scheduled task, a setting) over custom code. Code guards only against failures that have happened or that would be catastrophic and irreversible; leave the rest to the agent's judgement, or to a line in its instructions.
 - Turn a step done by hand twice into one kept command.
 - Get an independent review (an advisor or a fresh agent) of a plan before running it, and of anything public before it goes out.
 - Give a long run a timeout just above its expected time, so a hang shows early.
