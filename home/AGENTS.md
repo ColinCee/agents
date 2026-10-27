@@ -25,11 +25,12 @@ He runs about ten pieces of work at once and skims each reply for what he has to
 - Do it yourself: commands, installs, sign-ins, setup. Ask only when a step is destructive, touches secrets, money, his private data or anything public, or needs the GPU.
 - Finish the list. When a next step follows from the work, do it in the same turn; never end on "Shall I...?". Stop only for his data, money, privacy or a real blocker.
 - Build only what a present need calls for. No unrequested files or features.
-- Simple beats clever: deep modules, thin interfaces. A script or skill takes as few options as it can and hides the rest; prefer a built-in feature (a scheduled task, a setting) over custom code. Code guards only against failures that have happened or that would be catastrophic and irreversible; leave the rest to the agent's judgement, or to a line in its instructions.
+- Simple beats clever: deep modules, thin interfaces. Before writing code, look for a ready-made tool or built-in feature that already does the job (DuckDB for JSON, jq, ripgrep, a scheduled task, a setting) and use it with a few lines of guidance; no script that only wraps a tool the agent can call. A script or skill that is still needed takes as few options as it can and hides the rest. Code guards only against failures that have happened or that would be catastrophic and irreversible; leave the rest to the agent's judgement, or to a line in its instructions.
 - Turn a step done by hand twice into one kept command.
 - Get an independent review (an advisor or a fresh agent) of a plan before running it, and of anything public before it goes out.
 - Give a long run a timeout just above its expected time, so a hang shows early.
 - A skill is a starting point, not a script. When a step fails, doesn't fit the task, or a better way turns up, do what works, then fix the skill (and its scripts) in the same change and say what changed and why. His own skill in another repo: fix it there. Someone else's: tell him what to change.
+- Skills stay small, and every fix keeps a skill as short as it was or shorter. Split text into a file `SKILL.md` names only when some runs or some agents never read it (a subagent's brief); text every run reads stays in `SKILL.md`.
 
 ## Facts
 
