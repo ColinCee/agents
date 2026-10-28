@@ -15,7 +15,7 @@ In 1,418 past stops (30 Sep to 26 Oct 2026, labelled by a model reading what the
 
 ## What decides it
 
-Past sessions are the comparison: no rule (30 Sep to 15 Oct) as the baseline, and the old AGENTS.md rule (16 to 26 Oct). From 28 Oct the reworded rule and the reminder run together, so the result is the two combined. They stay if needless stops fall by at least a third against the old rule; what reminded agents went on to do is read by hand in the daily review. The cost is one extra agent turn per reminder, reading the conversation from the prompt cache.
+Past sessions are the comparison. Each rule version is a row of `~/.claude/keep-going/versions.csv` (version, from, to, what, link): v0 no rule (30 Sep to 15 Oct) is the baseline, v1 the old AGENTS.md rule (16 to 26 Oct). A new rule is a new row. From 28 Oct the reworded rule and the reminder run together, so the result is the two combined. They stay if needless stops fall by at least a third against the old rule; what reminded agents went on to do is read by hand in the daily review. The cost is one extra agent turn per reminder, reading the conversation from the prompt cache.
 
 ## Findings
 
