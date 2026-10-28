@@ -29,8 +29,8 @@ const round1 = (x: number) => Math.round(x * 10) / 10;
 
 const MIN_STOPS = 50; // below this one nudge moves the rate by 2 per 100 or more, more than the effects measured
 
-/** One chart: each setup's needless stops per 100, as a change from no rule; the stop count is in the tooltip. */
-function chartPage(base: Row, rows: Row[]): string {
+/** One chart: each version's needless stops per 100, as a change from the first; the stop count is in the tooltip. */
+function chartPage(base: Row, rows: Row[], key: Version[]): string {
   const collecting = rows.filter((r) => r.stops < MIN_STOPS).map((r) => r.name);
   const bars = rows
     .filter((r) => r.stops >= MIN_STOPS)
@@ -40,8 +40,9 @@ function chartPage(base: Row, rows: Row[]): string {
 <style>body{font:14px system-ui,sans-serif;margin:24px;max-width:760px;color:#0b0b0b;background:#fcfcfb}
 h1{font-size:16px;font-weight:500;margin:0 0 12px}p{color:#52514e;margin:12px 0 0;font-size:13px}
 @media (prefers-color-scheme:dark){body{color:#f0efec;background:#1a1a19}p{color:#c3c2b7}}</style>
-<h1>Needless stops, vs no AGENTS.md rule (${base.needlessPer100} per 100)</h1>
+<h1>Needless stops, vs ${base.name.split(" ")[0]} (${base.needlessPer100} per 100)</h1>
 <div style="position:relative;height:${height}px"><canvas id="d"></canvas></div>
+<p>${key.map((v) => `${v.version}: ${v.what}`).join("<br>")}</p>
 ${collecting.length ? `<p>Waiting for ${MIN_STOPS} stops: ${collecting.join(", ")}</p>` : ""}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
@@ -61,7 +62,22 @@ new Chart(document.getElementById('d'),{type:'bar',data:{labels:rows.map(r=>r.la
 </script>`;
 }
 
-/** Every setup against no rule, from the labelled stops, and how many reminders the hook gave. */
+type Version = { version: string; from: string; to: string; what: string; link: string };
+
+/** The rule versions, oldest first; the first is the baseline the others are drawn against. */
+function versions(): Version[] {
+  const path = join(DATA, "versions.csv");
+  if (!existsSync(path)) return [];
+  const [head, ...lines] = readFileSync(path, "utf8").replace(/^﻿/, "").trim().split(/\r?\n/);
+  const cells = (l: string) =>
+    [...l.matchAll(/(?:^|,)("(?:[^"]|"")*"|[^,]*)/g)].map((m) =>
+      (m[1] ?? "").replace(/^"|"$/g, "").replace(/""/g, '"'),
+    );
+  const keys = cells(head ?? "");
+  return lines.map((l) => Object.fromEntries(cells(l).map((c, i) => [keys[i], c])) as Version);
+}
+
+/** Every rule version against the first, from the labelled stops, and how many reminders the hook gave. */
 function main(): number {
   const labelDir = join(DATA, "labels");
   const judged = (existsSync(labelDir) ? readdirSync(labelDir) : [])
@@ -76,22 +92,20 @@ function main(): number {
     stops: part.length,
     needlessPer100: round1((100 * part.filter((l) => l.verdict === "wrong").length) / (part.length || 1)),
   });
-  // Claude Code began loading the user-level rules on 16 Oct 2026. The reworded rule and the reminder went in on 27 Oct
-  // and are read when a session starts, so their stops count from 28 Oct.
-  const base = row(
-    "No rule",
-    judged.filter((l) => l.day < "2026-10-16"),
+  // Each rule version and the days it covers are rows of versions.csv, so a new rule is a new row, not a code change.
+  // A day between two versions (the day a change went in) belongs to neither.
+  const [base, ...rows] = versions().map((v) =>
+    row(
+      `${v.version} · from ${v.from.slice(5)}`,
+      judged.filter((l) => l.day >= v.from && (!v.to || l.day <= v.to)),
+    ),
   );
-  const rows = [
-    row(
-      "AGENTS.md rule",
-      judged.filter((l) => l.day >= "2026-10-16" && l.day < "2026-10-27"),
-    ),
-    row(
-      "Reworded rule + reminder",
-      judged.filter((l) => l.day >= "2026-10-28"),
-    ),
-  ];
+  if (!base) {
+    console.error(
+      `No versions in ${join(DATA, "versions.csv")}: one row per rule version (version,from,to,what,link).`,
+    );
+    return 1;
+  }
   for (const r of [base, ...rows]) console.log(`${r.name}: ${r.stops} stops, ${r.needlessPer100} needless per 100`);
   // What the reminder costs: one extra agent turn each, over the session's cached conversation.
   const logDir = join(DATA, "log");
@@ -102,7 +116,7 @@ function main(): number {
   );
   if (days.length) console.log(`Reminders: ${Math.round(reminders / days.length)} a day, one extra agent turn each`);
   const page = join(DATA, "results.html");
-  writeFileSync(page, chartPage(base, rows));
+  writeFileSync(page, chartPage(base, rows, versions()));
   console.log(`\nChart: ${page}`);
   return 0;
 }
