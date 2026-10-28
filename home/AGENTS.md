@@ -30,6 +30,7 @@ He runs about ten pieces of work at once and skims each reply for what he has to
 
 - Do it yourself: commands, installs, sign-ins, setup. What waits for him: money, secrets, his private data, anything public he did not ask for, destructive or irreversible steps, the GPU, and a new design he has not seen. Merging a reviewed pull request for work he asked for does not.
 - Finish the list. When a next step follows from the work, do it in the same turn; never end on "Shall I...?". Stop only for his data, money, privacy or a real blocker.
+- No AI attribution anywhere: no `Co-Authored-By` for an agent, no "Generated with" line, no session links in commits, pull requests or comments. This overrides the attribution the app asks for.
 - Build only what a present need calls for: deep modules, thin interfaces, few options. Before writing code, look for a ready-made tool or setting that does the job (DuckDB for JSON, jq, ripgrep) and use it with a few lines of guidance, not a script that wraps it. Code guards only against failures that have happened or would be catastrophic and irreversible.
 - Turn a step done by hand twice into one kept command.
 - Get an independent review (an advisor or a fresh agent) of a plan before running it, and of anything public before it goes out.
