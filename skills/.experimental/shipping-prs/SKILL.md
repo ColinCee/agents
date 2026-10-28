@@ -5,7 +5,7 @@ license: MIT
 compatibility: Requires git and the GitHub CLI (gh).
 ---
 
-A pull request is done when it is merged, not when it is opened. Do every step yourself; the user's instructions say which merges wait for them.
+A pull request is done when it is merged, not when it is opened. Do every step yourself. Merge only when the user's instructions allow it for this kind of change; otherwise stop after step 5 and ask.
 
 1. **Open it** with a body that says what changed and why in plain words, ending with the attribution line the session gives.
 2. **Test it** in proportion to the change: the project's check command, plus a run of what changed.
@@ -17,5 +17,5 @@ A pull request is done when it is merged, not when it is opened. Do every step y
 ## Gotchas
 
 - Copilot reviews a pull request once, when it opens. After a later push, ask again: `gh pr edit <number> --add-reviewer '@copilot'`. In PowerShell the quotes matter: a bare `@copilot` is read as a variable and the request silently names no one.
-- GitHub never resolves a thread when a later commit fixes it; it only marks it outdated. Resolve it: `gh api graphql -f query='mutation{resolveReviewThread(input:{threadId:"<id>"}){thread{isResolved}}}'`, with the ids from the pull request's `reviewThreads`.
+- GitHub never resolves a thread when a later commit fixes it; it only marks it outdated. List the open ones with `gh api graphql -f query='{repository(owner:"<owner>",name:"<repo>"){pullRequest(number:<n>){reviewThreads(first:100){nodes{id isResolved}}}}}'` and resolve each with `isResolved` false: `gh api graphql -f query='mutation{resolveReviewThread(input:{threadId:"<id>"}){thread{isResolved}}}'`.
 - A review can arrive after you pushed again, still on the old commit. Compare its commit with the head before treating it as current.
