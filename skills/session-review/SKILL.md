@@ -8,10 +8,10 @@ compatibility: Requires uv (it fetches DuckDB) and git.
 
 Every correction the user made, and every rule the agent broke unnoticed, is an instruction misplaced, misworded or missing. Find them; say where each belongs.
 
-1. **List the day's sessions** with DuckDB (Reading the sessions, below): every session with a message from the user that day, with its project and how many messages; a session across days is reviewed for that day only. Default: yesterday, in UTC.
-2. **Read in parallel.** Give each long session, and the short ones together, to two subagents on a cheaper model, each with the section below and one brief, `references/corrections.md` or `references/broken-rules.md`, so each has one job. Each returns lessons with session ids. Never pass on a token, key or password.
+1. **List the day's sessions** with DuckDB (Reading the sessions, below): every session with a message from the user that day, with project and message count; a session across days is reviewed for that day only. Default: yesterday, in UTC.
+2. **Read in parallel.** Give each long session, and the short ones together, to two subagents on a cheaper model, each with the section below and one brief, `references/corrections.md` or `references/broken-rules.md`, so each has one job. Never pass on a token, key or password.
 3. **Check, then merge.** For each broken rule, look up its quoted words in the session's copy before that turn, and the turn itself; drop it if either is missing (one in seven was). Merge, counting sessions, projects and days; a lesson from both briefs is kind `both`, else `correction` or `broken rule`.
-4. **Look for each lesson where it may already be written:** the user's own instructions (`~/.claude/AGENTS.md` and `CLAUDE.md` beside it), each project's `AGENTS.md` or `CLAUDE.md`, the agent's memory files, installed skills. **A lesson written down and still corrected, or broken, is the most important finding**: the rule sits at the wrong level or is worded so it is not followed. Name the file, and check the agent reads it and since when. Read earlier reviews (the last message of each earlier session that ran this skill): a lesson back after its fix landed means the fix failed, so propose a different one; back after a fix was proposed and never made, say so.
+4. **Look for each lesson where it may already be written:** the user's own instructions (`~/.claude/AGENTS.md` and `CLAUDE.md` beside it), each project's `AGENTS.md` or `CLAUDE.md`, the agent's memory files, installed skills. **A lesson written down and still corrected, or broken, is the most important finding**: the rule is at the wrong level or worded so it is not followed. Name the file, and check the agent reads it and since when. Read earlier reviews (the last message of each earlier session that ran this skill): a lesson back after its fix landed means the fix failed, so propose a different one; back after a fix was proposed and never made, say so.
 5. **Give each lesson one home**, and say which lower copy to delete when a rule moves up:
 
    | Seen in | Home |
@@ -38,7 +38,7 @@ Claude Code keeps each session in `~/.claude/projects/<project>/<session id>.jso
 uv run --with duckdb --with pytz python -c "import duckdb,sys; [print(*r, sep=' | ') for r in duckdb.sql(sys.stdin.read()).fetchall()]" < query.sql
 ```
 
-Read lines as raw JSON and pull out the fields you need (reading every column at once runs out of memory). Add `filename=true` to `read_ndjson_objects` for the project: the folder above the file. Cut long text with `left()` when listing, then read in full what matters. One session's messages in order:
+Read lines as raw JSON and pull out the fields you need (all columns at once runs out of memory). Add `filename=true` to `read_ndjson_objects` for the project: the folder above the file. Cut long text with `left()` when listing, then read what matters in full. One session's messages in order:
 
 ```sql
 with e as (select json j from read_ndjson_objects('<home>/.claude/projects/*/*.jsonl', ignore_errors=true, maximum_object_size=268435456)),
@@ -55,7 +55,7 @@ Where things are:
 - A `user` entry holding a `tool_result` is tool output; `isMeta` is a harness note, `isSidechain` a subagent's, `isCompactSummary` a compaction summary, even with `turnOrigin = 'human'`.
 - Only `turnOrigin = 'human'` is the user typing; anything else is the harness or another agent.
 - A message typed while the agent worked is only an `attachment` with `attachment.type = 'queued_command'` (the query above includes it); ones starting `<agent-message` or `<task-notification` are not the user.
-- The rules the session had: `attachment.type = 'instructions'`, with `files[].path` and `.content`, repeated when a file changes. Skills it loaded: `Skill` tool calls, `input.skill`.
+- The rules the session had: `attachment.type = 'instructions'`, with `files[].path` and `.content`, repeated when a file changes. A loaded skill's text is the `isMeta` entry after its `Skill` call, starting `Base directory for this skill:`.
 - The desktop app's closing box is a `tool_use` whose name ends in `wrap_up`: `input.recap`, `input.ask` (where a "Shall I…?" ending hides), and `input.actions[].message`, which a button click sends as if typed.
 - A continued session copies its parent's entries with the same `uuid`: count each `uuid` once, under the session whose file was created first.
 - Tool calls are `tool_use` blocks in an assistant entry: `$.message.content[*].name` and `.input` (a Bash `command`, an edit's file). A path with `[*]` returns a list: wrap it in `array_to_string`. Put `j->'a'->>'b'` in brackets before comparing it (else `json_extract(JSON, BOOLEAN)`).
