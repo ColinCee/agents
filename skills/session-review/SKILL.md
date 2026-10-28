@@ -10,7 +10,7 @@ Every correction the user made, and every rule the agent broke unnoticed, is an 
 
 1. **List the day's sessions** with DuckDB (Reading the sessions, below): every session with a message from the user that day, with project and message count; a session across days is reviewed for that day only. Default: yesterday, in UTC.
 2. **Read in parallel.** Give each long session, and the short ones together, to two subagents on a cheaper model, each with the section below and one brief, `references/corrections.md` or `references/broken-rules.md`, so each has one job. Never pass on a token, key or password.
-3. **Check, then merge.** For each broken rule, look up its quoted words in an `instructions` copy or skill text sent before that turn (or a rule the agent wrote itself), and the turn itself; drop it if either is missing (3 of 40 were). Merge, counting sessions, projects and days; a lesson from both briefs is kind `both`, else `correction` or `broken rule`.
+3. **Check, then merge.** For each broken rule, look up its quoted words in the last `instructions` copy or skill text sent before that turn (or a rule the agent wrote itself earlier), and the turn itself; drop it if either is missing (3 of 40 were). Merge, counting sessions, projects and days; a lesson from both briefs is kind `both`, else `correction` or `broken rule`.
 4. **Look for each lesson where it may already be written:** the user's own instructions (`~/.claude/AGENTS.md` and `CLAUDE.md` beside it), each project's `AGENTS.md` or `CLAUDE.md`, the agent's memory files, installed skills. **A lesson written down and still corrected, or broken, is the most important finding**: the rule is at the wrong level or worded so it is not followed. Name the file, and check the agent reads it and since when. Read earlier reviews (the last message of each earlier session that ran this skill): a lesson back after its fix landed means the fix failed, so propose a different one; back after a fix was proposed and never made, say so.
 5. **Give each lesson one home**, and say which lower copy to delete when a rule moves up:
 
@@ -53,9 +53,9 @@ select ts, kind, origin, body from m where body <> '' order by ts
 
 Where things are:
 - A `user` entry holding a `tool_result` is tool output; `isMeta` is a harness note, `isSidechain` a subagent's, `isCompactSummary` a compaction summary, even with `turnOrigin = 'human'`.
-- The user typing is `turnOrigin = 'human'`, or a message typed while the agent worked: an `attachment` with `attachment.type = 'queued_command'` and `commandMode = 'prompt'` (the query above includes it), not starting with `<`, which is another agent.
+- The user typing is `turnOrigin = 'human'`, or a message typed while the agent worked: an `attachment` with `attachment.type = 'queued_command'` and `commandMode = 'prompt'` whose text does not start with `<` (the query above includes it); text starting with `<` is another agent.
 - The rules the session had: `attachment.type = 'instructions'`, with `files[].path` and `.content`, repeated when a file changes. A loaded skill's text is the `isMeta` entry after its `Skill` call, starting `Base directory for this skill:`.
-- The desktop app's closing box is a `tool_use` whose name ends in `wrap_up`: `input.recap`, `input.ask` (where a "Shall I…?" ending hides), and `input.actions[].message`, which a button click sends as if typed.
+- The desktop app's closing box is a `tool_use` whose name ends in `wrap_up`: `input.recap`, `input.ask`, and `input.actions[].message`, which a button click sends as if typed.
 - A continued session copies its parent's entries with the same `uuid`: count each `uuid` once, under the session whose file was created first.
 - Tool calls are `tool_use` blocks in an assistant entry: `$.message.content[*].name` and `.input` (a Bash `command`, an edit's file). A path with `[*]` returns a list: wrap it in `array_to_string`. Put `j->'a'->>'b'` in brackets before comparing it (else `json_extract(JSON, BOOLEAN)`).
 - File writes: `toolUseResult` on a `user` entry has `filePath`, then `content` (a new or rewritten file) or `originalFile` with `oldString` and `newString` (an edit).
