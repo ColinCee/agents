@@ -5,12 +5,12 @@ license: MIT
 compatibility: Requires git and the GitHub CLI (gh).
 ---
 
-A pull request is done when it is merged, not when it is opened. Asked only to review a pull request: report what you find and stop. Otherwise do every step yourself. Merge only when the user's instructions allow it for this kind of change; otherwise stop after step 4 and ask.
+A pull request is done when it is merged, not when it is opened. Asked only to review a pull request: report what you find and stop. Otherwise do every step yourself. Merge yourself unless the user's instructions say this kind of change waits for them; then stop after step 4 and ask.
 
 1. **Open it** with a body that says what changed and why in plain words, ending with the attribution line the session gives.
 2. **Test it** in proportion to the change: the project's check command, plus a run of what changed.
-3. **Get both reviews in one round.** Start a fresh agent on the diff (not your conclusion) while the automated reviewer (Copilot, or whatever the repository runs) reviews the opened PR; wait for both.
-4. **Sort every comment once.** A real bug: fix it. A nit, or a failure that has not happened and would not be catastrophic: a one-line reply. Then resolve every thread, and push all the fixes together. Ask for a second automated review only when that push changed what the code does; wording fixes don't need one.
+3. **Get both reviews in one round.** Start a fresh agent on the diff (not your conclusion) while the automated reviewer (Copilot, or whatever the repository runs) reviews the opened PR. Wait for both, up to about 10 minutes for the automated one; past that, go on without it.
+4. **Sort every comment once.** A real bug: fix it. A nit, or a failure that has not happened and would not be catastrophic: a one-line reply. Then resolve every thread, and push all the fixes together after re-running the checks. Ask for a second automated review only when that push changed what the code does; wording fixes don't need one. Its comments are sorted the same way, once; no third round.
 5. **Merge** once the checks pass and nothing is left open, then delete the branch and its worktree, and update any checkout that runs the merged code.
 
 ## Gotchas

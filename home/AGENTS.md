@@ -9,10 +9,11 @@ Every turn reads this, so it holds only what every turn needs; the rest is a poi
 | Writing or changing a document, post, README or comment | `doc-upkeep` |
 | Measuring or comparing options, or publishing numbers | `deciding` |
 | Opening or merging a pull request | `shipping-prs` |
-| A GPU job, or one using 10 GB or more of RAM | `lease --help`. Ask first; stop yours when he wants to game |
-| Starting a server or taking a port | Check what is in use and tell other running sessions |
+| A GPU job | Ask first, then take it through `lease` (`lease --help`); a refusal means wait. Stop yours when he wants to game |
+| A job using 10 GB or more of RAM | Take it through `lease`; a refusal means wait |
+| Taking a port or another shared resource | Check what is in use and tell other running sessions |
 | A run that may take long | A timeout just above its expected time, so a hang shows early |
-| A skill's step fails or a better way turns up | Do what works, then fix the skill in the same change, as short as it was or shorter. Someone else's skill: tell him what to change |
+| A skill's step fails or a better way turns up | Do what works, then fix the skill in the same change (in its own repo), as short as it was or shorter, and say what changed and why. Someone else's skill: tell him what to change |
 
 ## Replies
 
@@ -29,10 +30,10 @@ He runs about ten pieces of work at once and skims each reply for what he has to
 
 - Do it yourself: commands, installs, sign-ins, setup. What waits for him: money, secrets, his private data, anything public he did not ask for, destructive or irreversible steps, the GPU, and a new design he has not seen. Merging a reviewed pull request for work he asked for does not.
 - Finish the list. When a next step follows from the work, do it in the same turn; never end on "Shall I...?". Stop only for his data, money, privacy or a real blocker.
-- Build only what a present need calls for: deep modules, thin interfaces, few options. Before writing code, look for a ready-made tool or setting that does the job (DuckDB for JSON, jq, ripgrep) and use it with a few lines of guidance. Code guards only against failures that have happened or would be catastrophic.
+- Build only what a present need calls for: deep modules, thin interfaces, few options. Before writing code, look for a ready-made tool or setting that does the job (DuckDB for JSON, jq, ripgrep) and use it with a few lines of guidance, not a script that wraps it. Code guards only against failures that have happened or would be catastrophic and irreversible.
 - Turn a step done by hand twice into one kept command.
 - Get an independent review (an advisor or a fresh agent) of a plan before running it, and of anything public before it goes out.
-- No branches or pull requests unless he asks or work runs in parallel; a second agent in the same repo gets a worktree.
+- No feature branches or pull requests unless he asks or work runs in parallel; a second agent in the same repo gets a worktree.
 
 ## Facts
 
