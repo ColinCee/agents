@@ -6,7 +6,7 @@ disable-model-invocation: true
 compatibility: Requires uv (it fetches DuckDB) and git.
 ---
 
-Every correction the user made, and every rule the agent broke unnoticed, is an instruction in the wrong place, worded wrong, or missing. Find them and say where each belongs.
+Every correction the user made, and every rule the agent broke unnoticed, is an instruction misplaced, misworded or missing. Find them and say where each belongs.
 
 1. **List the day's sessions** with DuckDB (Reading the sessions, below): every session with a message from the user that day, with its project and how many messages; a session that runs across days is reviewed for that day's messages. Default: yesterday. Timestamps are UTC.
 2. **Read in parallel.** Give each long session, and the short ones together, to two subagents on a cheaper model, each with the section below and one brief: `references/corrections.md` (what the user corrected) or `references/broken-rules.md` (what the agent did against its rules); one job each keeps both simple. Each returns lessons with session ids. Never pass on a token, key or password.
