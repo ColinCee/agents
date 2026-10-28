@@ -9,7 +9,7 @@ A pull request is done when it is merged, not when it is opened. Asked only to r
 
 1. **Open it** with a body that says what changed and why in plain words, ending with the attribution line the session gives.
 2. **Test it** in proportion to the change: the project's check command, plus a run of what changed.
-3. **Get both reviews in one round.** Start a fresh agent on the diff (not your conclusion) while the automated reviewer (Copilot, or whatever the repository runs) reviews the opened PR. Wait for both, up to about 10 minutes for the automated one; past that, go on without it.
+3. **Get both reviews in one round.** Start a fresh agent on the diff (not your conclusion) while the repository's automated reviewer reviews the opened PR; in someone else's repository, run the agent before step 1, since opening publishes it. Wait up to about 10 minutes for the automated one; past that, go on without it.
 4. **Sort every comment once.** A real bug: fix it. A nit, or a failure that has not happened and would not be catastrophic: a one-line reply. Then resolve every thread, and push all the fixes together after re-running the checks. Ask for a second automated review only when that push changed what the code does; wording fixes don't need one. Its comments are sorted the same way, once; no third round.
 5. **Merge** once the checks pass and nothing is left open, then delete the branch and its worktree, and update any checkout that runs the merged code.
 
