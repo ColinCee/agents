@@ -11,6 +11,7 @@ Skills, instructions and tools for coding agents.
 | [ui-decluttering](skills/ui-decluttering/SKILL.md) | `/ui-decluttering` | Redesigns a busy screen: one primary action, at most four choices in view. |
 | [session-review](skills/session-review/SKILL.md) | `/session-review` | Finds what you keep correcting, typed or edited by hand in the agent's text, and where each fix belongs. |
 | [deciding](skills/deciding/SKILL.md) | by itself | Decides from evidence: one question, the ground truth, a fair repeated comparison. |
+| [shipping-prs](skills/.experimental/shipping-prs/SKILL.md) | by itself | Takes a pull request from opened to merged: tests, an independent review, every automated comment answered and resolved. Not yet tried. |
 
 ```bash
 npx skills add ColinCee/agents --global --skill '*' --agent claude-code
