@@ -66,7 +66,7 @@ skills/<name>/
 
 ## Scripts
 
-First look for an existing tool that does the job (DuckDB for JSON, jq, ripgrep) and give the agent a few lines of guidance on it. Write a script only when none does, for work that is the same every time: counting, parsing, checking, surveying. Judgement stays in `SKILL.md`. A script costs no context until its output is read, and it gives the same answer on every run.
+Check first for an existing tool that does the job; write a script only when none does, for work that is the same every time: counting, parsing, checking, surveying. Judgement stays in `SKILL.md`. A script costs no context until its output is read, and it gives the same answer on every run.
 
 **Language: TypeScript, one stack for the whole repository.** `npx skills add` needs Node to install a skill, so Node is on every machine a skill reaches; the same toolchain as the author's other repositories (npm, strict `tsc`, Biome, Vitest) checks all of it.
 
