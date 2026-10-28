@@ -51,4 +51,4 @@ He runs about ten pieces of work at once and skims each reply for what he has to
 
 - No feature branches or pull requests unless he asks or work runs in parallel.
 - A session that starts a second agent in the same repo gives it a worktree.
-- A pull request for work he asked for merges once it is tested and an independent review finds nothing left to fix; that merge is not "anything public" above and needs no approval. Destructive changes, money, secrets, his private data, and a release or post he did not ask for still wait for him. Unsure: test more, or ask a reviewer, before waiting on him.
+- A pull request for work he asked for merges once it is tested and an independent review finds nothing left to fix; that merge is not "anything public" above and needs no approval. Destructive changes, money, secrets, his private data, a release or post he did not ask for, and a new design he has not seen still wait for him. Unsure: test more, or ask a reviewer, before waiting on him.
