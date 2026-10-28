@@ -10,7 +10,7 @@ Every correction the user made, and every rule the agent broke unnoticed, is an 
 
 1. **List the day's sessions** with DuckDB (Reading the sessions, below): every session with a message from the user that day, with project and message count; a session across days is reviewed for that day only. Default: yesterday, in UTC.
 2. **Read in parallel.** Give each long session, and the short ones together, to two subagents on a cheaper model, each with the section below and one brief, `references/corrections.md` or `references/broken-rules.md`, so each has one job. Never pass on a token, key or password.
-3. **Check, then merge.** For each broken rule, look up its quoted words in the session's copy before that turn, and the turn itself; drop it if either is missing (one in seven was). Merge, counting sessions, projects and days; a lesson from both briefs is kind `both`, else `correction` or `broken rule`.
+3. **Check, then merge.** For each broken rule, look up its quoted words in an `instructions` copy or skill text sent before that turn (or a rule the agent wrote itself), and the turn itself; drop it if either is missing (3 of 40 were). Merge, counting sessions, projects and days; a lesson from both briefs is kind `both`, else `correction` or `broken rule`.
 4. **Look for each lesson where it may already be written:** the user's own instructions (`~/.claude/AGENTS.md` and `CLAUDE.md` beside it), each project's `AGENTS.md` or `CLAUDE.md`, the agent's memory files, installed skills. **A lesson written down and still corrected, or broken, is the most important finding**: the rule is at the wrong level or worded so it is not followed. Name the file, and check the agent reads it and since when. Read earlier reviews (the last message of each earlier session that ran this skill): a lesson back after its fix landed means the fix failed, so propose a different one; back after a fix was proposed and never made, say so.
 5. **Give each lesson one home**, and say which lower copy to delete when a rule moves up:
 
@@ -23,7 +23,7 @@ Every correction the user made, and every rule the agent broke unnoticed, is an 
    | A rule the agent had and broke | Its file, reworded to name the thing, or moved to where the agent reads it at that step |
    | The same steps asked for in three or more sessions | A new skill candidate |
 
-6. **Report, and change nothing:** these are the user's instruction files. The table below, then one line on what was left out and why. A token, key or password in a transcript: say there is one and that it should be rotated.
+6. **Report, and change nothing:** these are the user's instruction files. The table below, then one line on what was left out and why. A token, key or password in a transcript: say there is one, to rotate.
 
    | Lesson | Kind | Sessions | Projects | Already written in | Home |
    |---|---|---|---|---|---|
@@ -53,8 +53,7 @@ select ts, kind, origin, body from m where body <> '' order by ts
 
 Where things are:
 - A `user` entry holding a `tool_result` is tool output; `isMeta` is a harness note, `isSidechain` a subagent's, `isCompactSummary` a compaction summary, even with `turnOrigin = 'human'`.
-- Only `turnOrigin = 'human'` is the user typing; anything else is the harness or another agent.
-- A message typed while the agent worked is only an `attachment` with `attachment.type = 'queued_command'` (the query above includes it); ones starting `<agent-message` or `<task-notification` are not the user.
+- The user typing is `turnOrigin = 'human'`, or a message typed while the agent worked: an `attachment` with `attachment.type = 'queued_command'` and `commandMode = 'prompt'` (the query above includes it), not starting with `<`, which is another agent.
 - The rules the session had: `attachment.type = 'instructions'`, with `files[].path` and `.content`, repeated when a file changes. A loaded skill's text is the `isMeta` entry after its `Skill` call, starting `Base directory for this skill:`.
 - The desktop app's closing box is a `tool_use` whose name ends in `wrap_up`: `input.recap`, `input.ask` (where a "Shall I…?" ending hides), and `input.actions[].message`, which a button click sends as if typed.
 - A continued session copies its parent's entries with the same `uuid`: count each `uuid` once, under the session whose file was created first.
@@ -63,4 +62,4 @@ Where things are:
 
 ## Gotchas
 
-- Rules in `~/.claude/AGENTS.md` went unread for weeks: Claude Code reads `~/.claude/CLAUDE.md`, which must import it.
+- Rules in `~/.claude/AGENTS.md` went unread: Claude Code reads `~/.claude/CLAUDE.md`, which must import it.
