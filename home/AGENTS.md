@@ -8,6 +8,7 @@ Only what applies to every task. Anything narrower lives in a skill or a project
 |---|---|
 | Writing or changing a document, post, README or comment | `doc-upkeep` |
 | Measuring, benchmarking or comparing options, or publishing numbers | `deciding` |
+| Opening, reviewing or merging a pull request | `shipping-prs` |
 
 ## Replies
 
@@ -51,4 +52,4 @@ He runs about ten pieces of work at once and skims each reply for what he has to
 
 - No feature branches or pull requests unless he asks or work runs in parallel.
 - A session that starts a second agent in the same repo gives it a worktree.
-- A pull request for work he asked for merges once it is tested and an independent review finds nothing left to fix; that merge is not "anything public" above and needs no approval. Destructive changes, money, secrets, his private data, a release or post he did not ask for, and a new design he has not seen still wait for him. Unsure: test more, or ask a reviewer, before waiting on him.
+- A pull request for work he asked for merges once the `shipping-prs` steps are done (tested, reviewed, every comment answered); that merge is not "anything public" above and needs no approval. Destructive changes, money, secrets, his private data, a release or post he did not ask for, and a new design he has not seen still wait for him. Unsure: test more, or ask a reviewer, before waiting on him.
