@@ -1,17 +1,17 @@
 ---
 name: session-review
-description: Reviews the coding-agent sessions that ended on one day for what the user corrected, in chat or by editing the agent's text, and says where each fix belongs. Use when asked what the user keeps correcting, or to learn from past sessions.
+description: Reviews one day's coding-agent sessions for what the user corrected, in chat or by hand, and rules the agent broke unnoticed, and says where each fix belongs. Use when asked what the user keeps correcting, or to learn from past sessions.
 license: MIT
 disable-model-invocation: true
 compatibility: Requires uv (it fetches DuckDB) and git.
 ---
 
-Every correction the user made is an instruction that lives in the wrong place, or nowhere; every rule the agent broke unnoticed is one that isn't working. Find both and say where each belongs.
+Every correction the user made, and every rule the agent broke unnoticed, is an instruction in the wrong place, worded wrong, or missing. Find them and say where each belongs.
 
 1. **List the day's sessions** with DuckDB (Reading the sessions, below): every session with a message from the user that day, with its project and how many messages; a session that runs across days is reviewed for that day's messages. Default: yesterday. Timestamps are UTC.
-2. **Read in parallel.** Give each long session, and the short ones together, to two subagents on a smaller, cheaper model, each with the section below and one brief: `references/corrections.md` (what the user corrected) or `references/broken-rules.md` (what the agent did against its rules); one job each keeps both simple. Each returns lessons with session ids. Never pass on a token, key or password.
-3. **Merge** the lessons, counting sessions, projects and days.
-4. **Look for each lesson where it may already be written:** the user's own instructions (`~/.claude/AGENTS.md` and `CLAUDE.md` beside it), each project's `AGENTS.md` or `CLAUDE.md`, the agent's memory files, installed skills. **A lesson written down and still corrected is the most important finding:** the rule sits at the wrong level or is worded so it is not followed. Name the file, and check the agent reads it and since when.
+2. **Read in parallel.** Give each long session, and the short ones together, to two subagents on a cheaper model, each with the section below and one brief: `references/corrections.md` (what the user corrected) or `references/broken-rules.md` (what the agent did against its rules); one job each keeps both simple. Each returns lessons with session ids. Never pass on a token, key or password.
+3. **Merge** the lessons, counting sessions, projects and days. A lesson from both briefs is one, of kind `both`; else `correction` or `broken rule`.
+4. **Look for each lesson where it may already be written:** the user's own instructions (`~/.claude/AGENTS.md` and `CLAUDE.md` beside it), each project's `AGENTS.md` or `CLAUDE.md`, the agent's memory files, installed skills. **A lesson written down and still corrected, or broken, is the most important finding**: the rule sits at the wrong level or is worded so it is not followed. Name the file, and check the agent reads it and since when.
 5. **Give each lesson one home**, and say which lower copy to delete when a rule moves up:
 
    | Seen in | Home |
@@ -20,6 +20,7 @@ Every correction the user made is an instruction that lives in the wrong place, 
    | One project | That project's `AGENTS.md` (or the instruction file it already uses) |
    | A skill the agent used, done wrong | That skill's gotchas |
    | A hand edit to text a skill shaped (a post, a doc) | That skill's rules, as the rule the edit shows |
+   | A rule the agent had and broke | Its file, reworded to name the thing, or moved to where the agent reads it at that step |
    | The same steps asked for in three or more sessions | A new skill candidate |
 
 6. **Report, and change nothing:** these are the user's instruction files. The table below, then one line on what was left out and why. A token, key or password in a transcript: say there is one and that it should be rotated.

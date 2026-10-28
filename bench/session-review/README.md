@@ -12,4 +12,4 @@
 
 The test, with what it plants, and every run are in the private `agents-bench` repository, under `skills/session-review/`: kept out of public view so no model can learn the answers.
 **Since then (Oct 2026):** the skill reviews one day's ended sessions, adds the user's hand edits, and no longer masks secrets in its script (the report rule says never to quote one). The table above predates that and has not been rerun; the secret row was measured with the masking. One run by hand on a busy day found the hand-edit rules a review of typed prompts had missed.
-**Broken rules (Oct 2026):** one 11 MB session tried on Claude Sonnet: one subagent with both briefs found 3 rules broken; a subagent with only `broken-rules.md` found 5, including the 600-line script that DuckDB replaced. So each session gets two subagents.
+**Broken rules (Oct 2026):** one 11 MB session tried on Claude Sonnet, one run each way, both briefs carrying the DuckDB example: one subagent with both briefs found 3 rules broken; a subagent with only `broken-rules.md` found 5, including the 600-line script that DuckDB replaced. So each session gets two subagents.
