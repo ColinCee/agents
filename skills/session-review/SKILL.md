@@ -6,10 +6,10 @@ disable-model-invocation: true
 compatibility: Requires uv (it fetches DuckDB) and git.
 ---
 
-Every correction the user made is an instruction that lives in the wrong place, or nowhere. Find them and say where each belongs.
+Every correction the user made is an instruction that lives in the wrong place, or nowhere; every rule the agent broke unnoticed is one that isn't working. Find both and say where each belongs.
 
 1. **List the day's sessions** with DuckDB (Reading the sessions, below): every session with a message from the user that day, with its project and how many messages; a session that runs across days is reviewed for that day's messages. Default: yesterday. Timestamps are UTC.
-2. **Read in parallel.** Give each long session, and the short ones together, to a subagent on a smaller, cheaper model, with `references/corrections.md` (the subagents' brief) and the section below. Each returns lessons with session ids. Never pass on a token, key or password.
+2. **Read in parallel.** Give each long session, and the short ones together, to two subagents on a smaller, cheaper model, each with the section below and one brief: `references/corrections.md` (what the user corrected) or `references/broken-rules.md` (what the agent did against its rules); one job each keeps both simple. Each returns lessons with session ids. Never pass on a token, key or password.
 3. **Merge** the lessons, counting sessions, projects and days.
 4. **Look for each lesson where it may already be written:** the user's own instructions (`~/.claude/AGENTS.md` and `CLAUDE.md` beside it), each project's `AGENTS.md` or `CLAUDE.md`, the agent's memory files, installed skills. **A lesson written down and still corrected is the most important finding:** the rule sits at the wrong level or is worded so it is not followed. Name the file, and check the agent reads it and since when.
 5. **Give each lesson one home**, and say which lower copy to delete when a rule moves up:
@@ -24,8 +24,8 @@ Every correction the user made is an instruction that lives in the wrong place, 
 
 6. **Report, and change nothing:** these are the user's instruction files. The table below, then one line on what was left out and why. A token, key or password in a transcript: say there is one and that it should be rotated.
 
-   | Lesson | Sessions | Projects | Already written in | Home |
-   |---|---|---|---|---|
+   | Lesson | Kind | Sessions | Projects | Already written in | Home |
+   |---|---|---|---|---|---|
 
 7. **Improve this skill.** When a step misled you or a better way turned up, fix it here, in the same change, keeping it as short as it was or shorter.
 
@@ -50,15 +50,14 @@ select ts, kind, origin, body from m where body <> '' order by ts
 ```
 
 Where things are:
-- A `user` entry whose content holds a `tool_result` is tool output. `isMeta` is a note the harness added; `isSidechain` is a subagent's.
-- `turnOrigin` says who sent a message: `human` typed it; anything else (`task_notification`, `sdk`) is the harness or another agent. `isCompactSummary` marks a compaction summary.
-- A message sent while the agent was working is an `attachment` entry with `attachment.type = 'queued_command'` and the text in `attachment.prompt`; it can appear again later as an ordinary message.
-- The desktop app's closing box is a `tool_use` whose name ends in `wrap_up`: `input.recap`, `input.ask`, and `input.actions[].message`, which a button click sends as if typed.
+- A `user` entry holding a `tool_result` is tool output; `isMeta` is a harness note, `isSidechain` a subagent's, `isCompactSummary` a compaction summary.
+- Only `turnOrigin = 'human'` is the user typing; anything else is the harness or another agent.
+- A message typed while the agent worked is only an `attachment` with `attachment.type = 'queued_command'`, text in `attachment.prompt`: add these to the user's messages, except ones starting `<agent-message` or `<task-notification`.
+- The rules the session had: `attachment.type = 'instructions'`, with `files[].path` and `.content`, repeated when a file changes. Skills it loaded: `Skill` tool calls, `input.skill`.
+- The desktop app's closing box is a `tool_use` whose name ends in `wrap_up`: `input.recap`, `input.ask` (where a "Shall I…?" ending hides), and `input.actions[].message`, which a button click sends as if typed.
 - A continued session copies its parent's entries with the same `uuid`: count each `uuid` once, under the session whose file was created first.
 - Tool calls are `tool_use` blocks in an assistant entry: `$.message.content[*].name` and `.input` (a Bash `command`, an edit's file). A path with `[*]` returns a list: wrap it in `array_to_string`. Put `j->'a'->>'b'` in brackets before comparing it.
 - File writes: `toolUseResult` on a `user` entry has `filePath`, then `content` (a new or rewritten file) or `originalFile` with `oldString` and `newString` (an edit).
-
-**Hand edits.** Find the sessions that wrote a file the user may have changed (a post, a doc) by `filePath`, not by day. The agent's version after a write is `content`, or `originalFile` with `oldString` replaced by `newString`; the next edit's `originalFile` (or the file now) is what it found there. Write both to temporary files and `git diff --no-index --word-diff` them: what differs and no command in between explains (`sed`, a script, a formatter) is the user's. The agent's own `git diff` output in the session often shows these edits too.
 
 ## Gotchas
 
