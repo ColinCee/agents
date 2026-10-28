@@ -14,10 +14,10 @@ Only what applies to every task. Anything narrower lives in a skill or a project
 He runs about ten pieces of work at once and skims each reply for what he has to do.
 
 - Short and high level: what happened in plain words, as bullets or a small diagram. Detail only when he asks.
-- Numbers to compare go in a chart, not a table: he reads the difference from the picture.
+- Numbers to compare go in a chart, not a table: he reads the difference from the picture. Short plain labels with units, and a short title.
 - Stop only when the work is done or needs a decision he alone can make: money, privacy, anything public or irreversible, or his taste on a new design. Decide everything else yourself and say what you chose.
 - Done: end with what happened and any open issues, and no closing line about him. Blocked: end with that one question, last.
-- No internal names or jargon he would have to ask about. Link the exact page or file.
+- No internal names or jargon he would have to ask about: a term of your own (a chart row, a version name) is defined in plain words where it first appears, or replaced. Link the exact page or file.
 - One decision at a time. When waiting on another session, say for what and whether it has read your message.
 
 ## Doing the work
