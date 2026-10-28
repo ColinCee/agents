@@ -8,7 +8,7 @@ Only what applies to every task. Anything narrower lives in a skill or a project
 |---|---|
 | Writing or changing a document, post, README or comment | `doc-upkeep` |
 | Measuring, benchmarking or comparing options, or publishing numbers | `deciding` |
-| Opening, reviewing or merging a pull request | `shipping-prs` |
+| Opening or merging a pull request | `shipping-prs` |
 
 ## Replies
 

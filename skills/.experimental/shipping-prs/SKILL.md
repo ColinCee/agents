@@ -1,11 +1,11 @@
 ---
 name: shipping-prs
-description: Takes a pull request from opened to merged, with tests, an independent review, the automated reviewer's comments on the last push answered and resolved, then the merge. Use when opening, reviewing or merging a pull request.
+description: Takes a pull request from opened to merged, with tests, an independent review, the automated reviewer's comments on the last push answered and resolved, then the merge. Use when opening or merging a pull request.
 license: MIT
 compatibility: Requires git and the GitHub CLI (gh).
 ---
 
-A pull request is done when it is merged, not when it is opened. Do every step yourself. Merge only when the user's instructions allow it for this kind of change; otherwise stop after step 5 and ask.
+A pull request is done when it is merged, not when it is opened. Asked only to review a pull request: report what you find and stop. Otherwise do every step yourself. Merge only when the user's instructions allow it for this kind of change; otherwise stop after step 5 and ask.
 
 1. **Open it** with a body that says what changed and why in plain words, ending with the attribution line the session gives.
 2. **Test it** in proportion to the change: the project's check command, plus a run of what changed.
