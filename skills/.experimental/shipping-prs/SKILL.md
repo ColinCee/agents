@@ -15,5 +15,5 @@ A pull request is done when it is merged, not when it is opened. Asked only to r
 
 ## Gotchas
 
-- Copilot reviews a pull request once, when it opens. To have it review a later push: `gh pr edit <number> --add-reviewer '@copilot'`. In PowerShell the quotes matter: a bare `@copilot` is read as a variable and the request silently names no one.
+- Copilot reviews only when requested: on open if the repository is set up for it, else, and for any later push, `gh pr edit <number> --add-reviewer '@copilot'` (in PowerShell a bare `@copilot` is read as a variable). The request may not show in `reviewRequests`, so before merging wait for the review itself in `gh pr view <number> --json reviews`; it takes about five minutes.
 - GitHub never resolves a thread when a later commit fixes it; it only marks it outdated. List the open ones with `gh api graphql -f query='{repository(owner:"<owner>",name:"<repo>"){pullRequest(number:<n>){reviewThreads(first:100){nodes{id isResolved}}}}}'` and resolve each with `isResolved` false: `gh api graphql -f query='mutation{resolveReviewThread(input:{threadId:"<id>"}){thread{isResolved}}}'`.
