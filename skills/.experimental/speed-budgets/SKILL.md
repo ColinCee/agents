@@ -24,7 +24,7 @@ Find what LCP waits for before changing anything. Rerun with reduced motion (it 
 
 ## Gotchas
 
-- Read LCP after the first screen's animations finish (poll `document.getAnimations()` until none with a finite `getComputedTiming().endTime` is running, since one started by a script or observer joins late, capped at a few seconds; `finished` rejects when an animation is cancelled, so wait with `Promise.allSettled`), not after a fixed wait: an entrance longer than the wait leaves an earlier, smaller candidate as the result.
+- Read LCP after the first screen's animations finish (poll `document.getAnimations()` until none with a finite `getComputedTiming().endTime` is running, since one started by a script or observer joins late. Cap the wait at a few seconds and fail when something is still running at the cap, unless the test lists it as expected (a timer bar, a looping reel): reading LCP then would take an earlier candidate and let a slow page pass; `finished` rejects when an animation is cancelled, so wait with `Promise.allSettled`), not after a fixed wait: an entrance longer than the wait leaves an earlier, smaller candidate as the result.
 - A local preview server usually sends files uncompressed, over HTTP/1.1. Budget the uncompressed bytes (steadier than estimating compression) and say in the docs that production sends less.
 - A request that fails never fires the finished event, so counting only finished requests hides it. Listen for failures too.
 - A CI runner's timings differ from a laptop's (about 10% either way). Bytes should match exactly; if they don't, something on the page varies between runs.
