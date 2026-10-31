@@ -1,6 +1,6 @@
 ---
 name: shipping-prs
-description: Takes a pull request from opened to merged, with tests, fresh reviews for correctness, security, performance, docs and related repos, the automated reviewer's comments on the last push answered and resolved, then the merge. Use when opening or merging a pull request.
+description: Takes a pull request from opened to merged, with tests, reviews for correctness, security, performance, docs and related repos, automated review comments answered and resolved, then the merge. Use when opening or merging a pull request.
 license: MIT
 compatibility: Requires git and the GitHub CLI (gh).
 ---
