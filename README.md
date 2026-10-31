@@ -12,7 +12,7 @@ Skills, instructions and tools for coding agents.
 | [session-review](skills/session-review/SKILL.md) | `/session-review` | Finds what you keep correcting, typed or edited by hand in the agent's text, and where each fix belongs. |
 | [deciding](skills/deciding/SKILL.md) | by itself | Decides from evidence: one question, the ground truth, a fair repeated comparison. |
 | [speed-budgets](skills/.experimental/speed-budgets/SKILL.md) | by itself | Fails CI when a web page gets heavier or slower than its budget: bytes by type, requests, LCP. Not yet tried. |
-| [shipping-prs](skills/.experimental/shipping-prs/SKILL.md) | by itself | Takes a pull request from opened to merged: tests, an independent review, every automated comment answered and resolved. Not yet tried. |
+| [shipping-prs](skills/.experimental/shipping-prs/SKILL.md) | by itself | Takes a pull request from opened to merged: tests, fresh reviews for correctness, security, performance, docs and related repos, every automated comment answered and resolved. Not yet tried. |
 
 ```bash
 npx skills add ColinCee/agents --global --skill '*' --agent claude-code

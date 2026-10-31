@@ -1,8 +1,8 @@
 # Review angles
 
-Every pull request is reviewed from each angle below. Give each reviewer the diff, the pull request's description and the paths of the related repositories, never your own list of what to check: a reviewer handed your list finds only what is on it.
+Every pull request is reviewed from each angle below. Give each reviewer the diff, the pull request's description (its draft, before opening) and the paths of the related repositories, never your own list of what to check: a reviewer handed your list finds only what is on it.
 
-A change that touches only docs or one small file gets one fresh reviewer told to cover every angle. Any other change gets one fresh reviewer per angle, at the same time: anything that adds a dependency, a secret, a network path or a second repository certainly does.
+One fresh reviewer covers every angle. A change that adds a dependency, a secret, a network path or a second repository gets one fresh reviewer per angle instead, at the same time: those are the changes where one reviewer runs out of attention.
 
 **Related repositories** are the ones the change reaches: a service it calls or that calls it, infrastructure it runs on, notes or docs kept elsewhere that describe it. Name them in the pull request's description, so the reviewers and the next reader see them.
 
@@ -19,6 +19,7 @@ Read it as an attacker would:
 - Where does each secret live, who can read it there, and what can a stolen one do?
 - What new code runs with what reach: dependencies pinned by hash or not, network and file access beyond what the job needs?
 - Can a placeholder, a default or an empty value be abused before the real one is set?
+- In a public repository, do the diff or the description name anything private: hosts, addresses, paths, accounts, work projects or people?
 
 ## Performance and cost
 
