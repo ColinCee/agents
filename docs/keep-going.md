@@ -7,7 +7,7 @@ When the agent ends its turn, it gets one reminder: by your AGENTS.md rules, doe
 | Hook | [mods/keep-going/hooks/register.ts](../mods/keep-going/hooks/register.ts) |
 | Measure | `npm run keep-going`: needless stops per 100 before and after, drawn against no rule, and reminders a day |
 | Install | `npm run install-keep-going` |
-| Data | `~/.claude/keep-going/`: `log/` (each reminder), `labels/`, `results.html`. Never in this repository: it is the user's own sessions |
+| Data | `~/.claude/keep-going/`: `log/` (each reminder), `labels/`, `results.html`, and the daily review's `fixes.csv` and `measures/`. Never in this repository: it is the user's own sessions |
 
 ## Why
 
