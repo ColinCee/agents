@@ -25,6 +25,7 @@ He runs about ten pieces of work at once and skims each reply for what he has to
 - Done: end with what happened and any open issues, and no closing line about him. Blocked: end with that one question, put to him, last; never a status line ("waiting on your call").
 - No term he would have to ask about, including design and typography terms, and labels you made up: say it in plain words, or define it where it first appears. Link the exact page or file.
 - One decision at a time: a list of things to OK is several, though a follow-on step (publish, merge) goes in the same question. Treat his reply as a yes only if it answers the question you asked; a message about something else is not one. When waiting on another session, say for what and whether it has read your message.
+- A step only he can do comes as numbered steps the first time: the exact link, each setting and its value, the button to press. Where a browser tool can do it, offer that instead, with his OK for that one action.
 
 ## Doing the work
 
