@@ -1,17 +1,17 @@
 ---
 name: session-review
-description: Reviews one day's coding-agent sessions for what the user corrected, in chat or by hand, and rules the agent broke unnoticed, and says where each fix belongs. Use when asked what the user keeps correcting, or to learn from past sessions.
+description: Reviews one day's coding-agent sessions for what the user corrected and rules the agent broke unnoticed, fixes each where it belongs, and measures whether the fix works. Use when asked what the user keeps correcting, or to learn from past sessions.
 license: MIT
 disable-model-invocation: true
-compatibility: Requires uv (it fetches DuckDB) and git.
+compatibility: Requires uv (it fetches DuckDB) and git. Step 6 keeps its records in ~/.claude/keep-going (see docs/keep-going.md).
 ---
 
-Every correction the user made, and every rule the agent broke unnoticed, is an instruction misplaced, misworded or missing. Find them; say where each belongs.
+Every correction the user made, and every rule the agent broke unnoticed, is an instruction misplaced, misworded or missing. Find them, fix each where it belongs, and measure whether the fix works.
 
 1. **List the day's sessions** with DuckDB (below): every session with a message from the user that day, with project and message count; a session across days is reviewed for that day only. Default: yesterday, in UTC.
 2. **Read in parallel.** Give each long session, and the short ones together, to two subagents on a cheaper model, each with the section below and one brief, `references/corrections.md` or `references/broken-rules.md`, so each has one job. Never pass on a token, key or password.
 3. **Check, then merge.** For each broken rule, look up its quoted words in the last copy of the rule's file (`files[].path`) or skill text sent before that turn (or a rule the agent wrote itself earlier), and the turn itself; drop it if either is missing (3 of 40 were). Merge, counting sessions, projects and days; a lesson from both briefs is kind `both`, else `correction` or `broken rule`.
-4. **Look for each lesson where it may already be written:** the user's own instructions (`~/.claude/AGENTS.md` and `CLAUDE.md` beside it), each project's `AGENTS.md` or `CLAUDE.md`, the agent's memory files, installed skills. **A lesson written down and still corrected, or broken, is the most important finding**: the rule is at the wrong level or worded so it is not followed. Name the file, and check the agent reads it and since when. Read earlier reviews (the last message of each earlier session that ran this skill): a lesson back after its fix landed means the fix failed, so propose a different one; back after a fix was proposed and never made, say so.
+4. **Look for each lesson where it may already be written:** the user's own instructions (`~/.claude/AGENTS.md` and `CLAUDE.md` beside it), each project's `AGENTS.md` or `CLAUDE.md`, the agent's memory files, installed skills. **A lesson written down and still corrected, or broken, is the most important finding**: the rule is at the wrong level or worded so it is not followed. Name the file, and check the agent reads it and since when. Read earlier reviews (the last message of each earlier session that ran this skill): a lesson back once its fix's verdict is not working needs a different fix; back after a fix was proposed and never made, say so.
 5. **Give each lesson one home**, and say which lower copy to delete when a rule moves up:
 
    | Seen in | Home |
@@ -23,10 +23,8 @@ Every correction the user made, and every rule the agent broke unnoticed, is an 
    | A rule the agent had and broke | Its file, reworded to name the thing, or moved to where the agent reads it at that step |
    | The same steps asked for in three or more sessions | A new skill candidate |
 
-6. **Report, and change nothing:** these are the user's instruction files. The table below, then one line on what was left out and why. A token, key or password in a transcript: say there is one, to rotate.
-
-   | Lesson | Kind | Sessions | Projects | Already written in | Home |
-   |---|---|---|---|---|---|
+6. **Fix each lesson the same day, then measure it.** One reworded or added line in its home, committing only your own paths; a public repository gets a pull request with a fresh-agent review. Leave only what the user's rules say waits for them, and a rule whose measure has no verdict yet. Each fix gets a row in `~/.claude/keep-going/fixes.csv` and a measure: a query in `measures/measures.sql` counting, per day over every session, chances to break the rule and misses, so earlier days are its baseline; else `review`, and each review adds the day's sightings to `measures/review.csv`. A change to when agents stop is its own pull request and a new row of `versions.csv` (`docs/keep-going.md`). Before is up to the day the fix was installed, after is from the day after. Verdict at 30 chances after (7 days for `review`): working if misses fell by a third or more.
+   Report one line per lesson (what went wrong → the file and the change), each new verdict with its rate before and after, and one line on what was left out. A token, key or password in a transcript: say there is one, to rotate.
 
 7. **Improve this skill.** When a step misled you or a better way turned up, fix it here, in the same change, keeping it as short as it was or shorter.
 

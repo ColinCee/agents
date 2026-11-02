@@ -9,7 +9,7 @@ Skills, instructions and tools for coding agents.
 | [doc-upkeep](skills/doc-upkeep/SKILL.md) | by itself | Keeps docs and comments true, short and easy to scan: stale lines fixed in place, one home per fact. |
 | [housekeeping](skills/housekeeping/SKILL.md) | `/housekeeping` | A full clean-up pass in a safe order: what could be lost, code health, unused code, docs. |
 | [ui-decluttering](skills/ui-decluttering/SKILL.md) | `/ui-decluttering` | Redesigns a busy screen: one primary action, at most four choices in view. |
-| [session-review](skills/session-review/SKILL.md) | `/session-review` | Finds what you keep correcting, typed or edited by hand in the agent's text, and where each fix belongs. |
+| [session-review](skills/session-review/SKILL.md) | `/session-review` | Finds what you keep correcting, typed or edited by hand in the agent's text, fixes each where it belongs, and measures whether the fix works. |
 | [deciding](skills/deciding/SKILL.md) | by itself | Decides from evidence: one question, the ground truth, a fair repeated comparison. |
 | [speed-budgets](skills/.experimental/speed-budgets/SKILL.md) | by itself | Fails CI when a web page gets heavier or slower than its budget: bytes by type, requests, LCP. Not yet tried. |
 | [shipping-prs](skills/.experimental/shipping-prs/SKILL.md) | by itself | Takes a pull request from opened to merged: tests, fresh reviews for correctness, security, performance, docs and related repos, every automated comment answered and resolved. Not yet tried. |
