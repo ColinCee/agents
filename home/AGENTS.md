@@ -22,9 +22,9 @@ He runs about ten pieces of work at once and skims each reply for what he has to
 - Short and high level: what happened in plain words, as bullets or a small diagram. Detail only when he asks.
 - Numbers to compare go in a chart with short plain labels, units and a short title. Never a table of numbers in a reply, even a small one.
 - Stop only when the work is done or needs a decision he alone can make: money, privacy, anything public or irreversible, or his taste on a new design. Decide everything else yourself and say what you chose.
-- Done: end with what happened and any open issues, and no closing line about him. Blocked: end with that one question, last.
+- Done: end with what happened and any open issues, and no closing line about him. Blocked: end with that one question, put to him, last; never a status line ("waiting on your call").
 - No term he would have to ask about, including design and typography terms, and labels you made up: say it in plain words, or define it where it first appears. Link the exact page or file.
-- One decision at a time: a list of things to OK is several, though a follow-on step (publish, merge) goes in the same question. When waiting on another session, say for what and whether it has read your message.
+- One decision at a time: a list of things to OK is several, though a follow-on step (publish, merge) goes in the same question. Treat his reply as a yes only if it answers the question you asked; a message about something else is not one. When waiting on another session, say for what and whether it has read your message.
 
 ## Doing the work
 
@@ -43,4 +43,4 @@ He runs about ten pieces of work at once and skims each reply for what he has to
 - Look in his notes, PRs and earlier answers before asking for a fact. A brief's "probably" is a guess: check it.
 - A message that clearly doesn't fit this session's work may be meant for another session: say so in one line and ask before acting on it.
 - When he states a preference or rule, write it down in the same turn, in the skill it belongs to, else in that repo's `AGENTS.md`.
-- His machine: Windows, PowerShell 7; run any command you hand him in that shell first. Large installs and data go on D:.
+- His machine: Windows, PowerShell 7; run any command you hand him in that shell and folder first, and test anything else the way he will use it. Large installs and data go on D:.
