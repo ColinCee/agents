@@ -12,7 +12,8 @@ const HELP = `Install home/AGENTS.md as every agent's user-level instructions. R
 
 home/AGENTS.md is the author's own instructions. Read it before installing it as yours.
 
-With --apply, copies it to ~/.claude/AGENTS.md and ~/.codex/AGENTS.md (Codex), and writes ~/.claude/CLAUDE.md as
+With --apply, copies it to ~/.claude/AGENTS.md and ~/.codex/AGENTS.md (Codex), home/hooks/require-skill.mjs to
+~/.claude/hooks/ (listed under PreToolUse in ~/.claude/settings.json, which this does not edit), and writes ~/.claude/CLAUDE.md as
 one line, @AGENTS.md: Claude Code reads only CLAUDE.md at user level, and the import pulls AGENTS.md in. Any file
 it replaces is first kept as <name>.<date-time>.bak beside it. Copies, not links: Windows without Developer Mode
 cannot make links.
@@ -20,6 +21,8 @@ cannot make links.
 Exit codes: 0 everything matches or was installed, 1 something differs (report only), 2 home/AGENTS.md is missing.`;
 
 const SOURCE = resolve(dirname(fileURLToPath(import.meta.url)), "..", "home", "AGENTS.md");
+// The hook that refuses `gh pr create` and `gh pr merge` until shipping-prs is loaded; settings.json points at it.
+const HOOK = resolve(dirname(SOURCE), "hooks", "require-skill.mjs");
 // Claude Code reads ~/.claude/CLAUDE.md, never ~/.claude/AGENTS.md; a relative import resolves beside the file.
 const IMPORT = Buffer.from("@AGENTS.md\n");
 
@@ -54,6 +57,7 @@ function main(): number {
     [join(homedir(), ".claude", "AGENTS.md"), text],
     [join(homedir(), ".claude", "CLAUDE.md"), IMPORT],
     [join(homedir(), ".codex", "AGENTS.md"), text],
+    [join(homedir(), ".claude", "hooks", "require-skill.mjs"), readFileSync(HOOK)],
   ];
   const stale = targets.filter(([path, want]) => !existsSync(path) || !readFileSync(path).equals(want));
 
