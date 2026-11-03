@@ -1,10 +1,10 @@
 # Rules for this repository
 
-Checks: `npm run check`
+Checks: `npm ci && npm run check`
 
 Skills here are in the open [Agent Skills](https://agentskills.io/specification) format and are installed with `npx skills add`. Any agent may load them, on any operating system, on a machine that is not the author's. Every rule below follows from that.
 
-`npm run validate` checks the rules that a program can check; `npm run check` runs it with the type-check, lint, tests and build. Run it before every commit; CI runs it too.
+`npm run validate` checks the rules that a program can check; `npm run check` runs it with the type-check, lint, tests and build. Run the Checks line before every commit (`npm ci` first, so a fresh clone has its tools); CI runs the same steps.
 
 ## What earns a place
 
@@ -110,7 +110,7 @@ Installing a skill lets its scripts run on someone's machine, with their files.
 ## Before committing
 
 ```bash
-npm run check
+npm ci && npm run check
 ```
 
 Commit messages say what changed and why, in a plain sentence. On Windows, start long runs hidden (`npm run hidden`), so no console window flashes up.
