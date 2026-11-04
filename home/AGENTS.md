@@ -36,6 +36,7 @@ He runs about ten pieces of work at once and skims each reply for what he has to
 - Build only what a present need calls for: deep modules, thin interfaces, few options. Before writing code, look for a ready-made tool or setting that does the job (DuckDB for JSON, jq, ripgrep) and use it with a few lines of guidance, not a script that wraps it. Code guards only against failures that have happened or would be catastrophic and irreversible.
 - Turn a step done by hand twice into one kept command.
 - Commit only the paths you changed (`git add` them, then `git commit -- <paths>`): a shared checkout holds other sessions' staged work.
+- Show a fix works by replaying the real event that found it (the alert, input, bug report or failed run) through what you built, not only with new tests; when it cannot be replayed, use the nearest copy and say so.
 - Get an independent review (an advisor or a fresh agent) of a plan before running it, and of anything public before it goes out.
 - No feature branches or pull requests unless he asks or work runs in parallel; a second agent in the same repo gets a worktree.
 
