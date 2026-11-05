@@ -1,6 +1,6 @@
 import { spawnSync } from "node:child_process";
 import { mkdtempSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { homedir, tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -40,6 +40,15 @@ describe("require-skill hook", () => {
     expect(run("Bash", { command: "git checkout -b fix-commit" })).toBe(0);
     expect(run("Bash", { command: "git push -u origin fix-commit-paths" }, loaded)).toBe(0);
     expect(run("Bash", { command: 'git -C "my repo" -c user.name=x commit -m y' })).toBe(2);
+  });
+
+  it("refuses edits to installed copies, which the next install overwrites", () => {
+    const home = (p: string) => join(homedir(), p);
+    expect(run("Edit", { file_path: home(".claude/skills/shipping-prs/SKILL.md") }, loaded)).toBe(2);
+    expect(run("Write", { file_path: home(".claude/AGENTS.md") }, loaded)).toBe(2);
+    expect(run("Edit", { file_path: home(".claude/hooks/require-skill.mjs") })).toBe(2);
+    expect(run("Edit", { file_path: home(".claude/projects/p/memory/m.md") })).toBe(0);
+    expect(run("Edit", { file_path: "D:\\repo\\.claude\\skills\\writing-posts\\SKILL.md" }, loaded)).toBe(0);
   });
 
   it("never traps an agent whose transcript can't be read", () => {
