@@ -43,6 +43,9 @@ describe("require-skill hook", () => {
     expect(run("Bash", { command: 'rg "git commit" docs' })).toBe(0);
     expect(run("Bash", { command: "git commit --no-edit" })).toBe(0);
     expect(run("Bash", { command: 'git commit -m "a -- b"' })).toBe(2);
+    // A search pattern is data: this one blocked a reviewer's read on 5 Nov.
+    expect(run("Bash", { command: 'git show HEAD:build.yml | grep -n "x | git commit -m y"' })).toBe(0);
+    expect(run("Bash", { command: "rg 'gh pr create|git push -u' docs" })).toBe(0);
   });
 
   it("reads git's subcommand, not a word in a branch name", () => {

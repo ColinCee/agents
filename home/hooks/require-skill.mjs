@@ -59,20 +59,17 @@ function needs(skill, why) {
 }
 
 if (tool === "Bash" || tool === "PowerShell") {
-  // The paths may follow a quoted message holding ; or &&, so look for `-- <path>` anywhere after `commit`. Amends,
-  // empty commits and merge or cherry-pick conclusions (--no-edit) take no paths.
-  if (
-    commit.test(command) &&
-    !/\s--\s+[^\s-]|--(amend|allow-empty|no-edit)\b/.test(
-      command.slice(command.search(commit)).replace(/"[^"]*"|'[^']*'/g, '""'),
-    )
-  )
+  // Quoted text is data (a commit message, a search pattern like "| git commit"), never a command to check.
+  const bare = command.replace(/"[^"]*"|'[^']*'/g, '""');
+  // The paths may follow a message holding ; or &&, so look for `-- <path>` anywhere after `commit`. Amends, empty
+  // commits and merge or cherry-pick conclusions (--no-edit) take no paths.
+  if (commit.test(bare) && !/\s--\s+[^\s-]|--(amend|allow-empty|no-edit)\b/.test(bare.slice(bare.search(commit))))
     refuse(
       "Commit only the paths you changed: `git commit -m <message> -- <paths>`. A shared checkout holds other sessions' staged work.",
     );
-  if (prCommand.test(command) || mergeApi.test(command) || firstPush.test(command))
+  if (prCommand.test(bare) || mergeApi.test(bare) || firstPush.test(bare))
     needs("shipping-prs", "pushing a new branch or opening or merging a pull request (its reviews come before the push)");
-  if (measuring.test(command)) needs("deciding", "measuring or comparing options");
+  if (measuring.test(bare)) needs("deciding", "measuring or comparing options");
 } else if (installed)
   refuse(
     "This file is an installed copy and the next install overwrites it. Change it in its repo (skills, rules and hooks: the agents repo, https://github.com/ColinCee/agents), merge, then run `npm run install-home -- --apply` there.",
