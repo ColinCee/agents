@@ -6,8 +6,9 @@ import { describe, expect, it } from "vitest";
 
 const HOOK = resolve(__dirname, "..", "home", "hooks", "require-skill.mjs");
 const dir = mkdtempSync(join(tmpdir(), "require-skill-"));
+// A session that has loaded no skill yet.
 const empty = join(dir, "empty.jsonl");
-writeFileSync(empty, "");
+writeFileSync(empty, '{"type":"user","message":{"content":"hi"}}\n');
 const loaded = join(dir, "loaded.jsonl");
 writeFileSync(
   loaded,
@@ -31,6 +32,18 @@ describe("require-skill hook", () => {
     expect(run("Bash", { command: 'git commit -m "a; b && c" -- docs/a.md' })).toBe(0);
     expect(run("Bash", { command: "git commit --amend --no-edit" })).toBe(0);
     expect(run("Bash", { command: 'rg "git commit" docs' })).toBe(0);
+    expect(run("Bash", { command: "git commit --no-edit" })).toBe(0);
+    expect(run("Bash", { command: 'git commit -m "a -- b"' })).toBe(2);
+  });
+
+  it("reads git's subcommand, not a word in a branch name", () => {
+    expect(run("Bash", { command: "git checkout -b fix-commit" })).toBe(0);
+    expect(run("Bash", { command: "git push -u origin fix-commit-paths" }, loaded)).toBe(0);
+    expect(run("Bash", { command: 'git -C "my repo" -c user.name=x commit -m y' })).toBe(2);
+  });
+
+  it("never traps an agent whose transcript can't be read", () => {
+    expect(run("Bash", { command: "gh pr create --fill" }, join(dir, "missing.jsonl"))).toBe(0);
   });
 
   it("needs shipping-prs before a first push or a pull request", () => {

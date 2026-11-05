@@ -10,10 +10,13 @@ const file = String(input.tool_input?.file_path ?? "").replaceAll("\\", "/");
 
 // A command at the start of a line or after a separator, in any spelling (git, git.exe, flags before the subcommand).
 const at = (name, rest) => new RegExp(`(^|[;&|(\\n]\\s*)${name}(\\.exe)?\\b[^;&|\\n]*?\\b${rest}`);
+// git's own subcommand, after its global flags, so a branch named fix-commit is not a commit.
+const git = (sub) =>
+  new RegExp(`(^|[;&|(\\n]\\s*)git(\\.exe)?(\\s+(-[cC]\\s+("[^"]*"|'[^']*'|\\S+)|--[\\w-]+(=\\S+)?))*\\s+${sub}`);
 const prCommand = at("gh", "pr\\s+(create|merge)\\b");
 const mergeApi = at("gh", "api\\b[^;&|\\n]*\\/pulls\\/\\d+\\/merge\\b");
-const firstPush = at("git", "push\\b[^;&|\\n]*\\s(-u|--set-upstream)\\b");
-const commit = at("git", "commit\\b");
+const firstPush = git("push\\b[^;&|\\n]*\\s(-u|--set-upstream)\\b");
+const commit = git("commit\\b");
 const measuring = /(^|[;&|(\n]\s*)(hyperfine\b|(npm|pnpm) run bench\b)/;
 // Docs in a project; not the app's memory, plans or scratch files.
 const isDoc =
@@ -26,17 +29,26 @@ function refuse(message) {
 
 function needs(skill, why) {
   let transcript = "";
-  try {
-    transcript = readFileSync(input.transcript_path, "utf8");
-  } catch {}
+  for (const path of [input.transcript_path, input.agent_transcript_path].filter(Boolean)) {
+    try {
+      transcript += readFileSync(path, "utf8");
+    } catch {}
+  }
+  if (!transcript) return; // nothing to check against: never trap an agent
   // The Skill tool call itself, not any text that merely mentions the skill.
   if (!transcript.includes(`"name":"Skill","input":{"skill":"${skill}"`))
-    refuse(`Load the ${skill} skill (Skill tool) before ${why}, and follow it.`);
+    refuse(`Load the ${skill} skill with the Skill tool (a slash command does not count) before ${why}, and follow it.`);
 }
 
 if (tool === "Bash" || tool === "PowerShell") {
-  // The paths may follow a quoted message holding ; or &&, so look for `--` anywhere after `commit`.
-  if (commit.test(command) && !/\s--(\s|$)|--amend\b/.test(command.slice(command.search(commit))))
+  // The paths may follow a quoted message holding ; or &&, so look for `-- <path>` anywhere after `commit`. Amends,
+  // empty commits and merge or cherry-pick conclusions (--no-edit) take no paths.
+  if (
+    commit.test(command) &&
+    !/\s--\s+[^\s-]|--(amend|allow-empty|no-edit)\b/.test(
+      command.slice(command.search(commit)).replace(/"[^"]*"|'[^']*'/g, '""'),
+    )
+  )
     refuse(
       "Commit only the paths you changed: `git commit -m <message> -- <paths>`. A shared checkout holds other sessions' staged work.",
     );
