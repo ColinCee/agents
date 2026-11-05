@@ -23,6 +23,7 @@ Readers scan; shape every document for that. These are the defaults; the project
 - **One line on what it is, at the top.** No introduction paragraph.
 - **What readers use most comes first;** the reasons why come last.
 - **Long documents disclose in layers.** A picture and a few lines first; detail behind tabs, collapsible sections or links, kept for whoever needs it.
+- **Draw diagrams by hand.** An SVG with its layout set on a grid, saved beside the document as its source and linked from it; only the arrows the point turns on. A diagram laid out automatically (mermaid) is fine for a few boxes and tangles past that.
 - **Items of the same shape go in a table** (name, what it does, how to get it). Steps are a numbered list; anything else is bullets. Prose only for a reason that needs a sentence.
 - **Headings are short nouns** ("Skills", "Tools"), and no heading stands over a single unexplained item.
 - **Link to details; do not retell them.** A README points to the file that explains.
@@ -70,4 +71,5 @@ From real corrections:
 - A record of what was deleted, when and how big, is something no later reader acts on. Leave it out.
 - A design doc grew to ten sections of tables and read as a wall. The user wanted the picture and five lines first, with the detail one click away.
 - A README was rewritten twice because the content was right but the order was not: an introduction first, the main table halfway down, a heading naming a tool nobody had explained. Put the most-used table first and say what each thing is where it appears.
+- An architecture diagram in mermaid grew to twenty boxes and crossing arrows; the user called it a mess. Redrawn by hand in three layers with nine arrows, it read at a glance.
 - A results document's summary line went stale twice while its table was right, and a post quoting it updated one chart and left the others, the captions and the title on the old numbers.
