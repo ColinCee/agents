@@ -38,6 +38,25 @@ test("installs every skill, and reports an installed copy that was edited by han
   install(home);
 });
 
+test("adds the hook to settings.json and keeps every other setting and hook", () => {
+  const home = mkdtempSync(join(tmpdir(), "install-home-"));
+  mkdirSync(join(home, ".claude"));
+  const other = { matcher: "Read", hooks: [{ type: "command", command: "node other.mjs" }] };
+  writeFileSync(
+    join(home, ".claude", "settings.json"),
+    JSON.stringify({ model: "x", hooks: { PreToolUse: [other], Stop: [] } }),
+  );
+  install(home, "--apply");
+  const settings = JSON.parse(readFileSync(join(home, ".claude", "settings.json"), "utf8"));
+  expect(settings.model).toBe("x");
+  expect(settings.hooks.Stop).toEqual([]);
+  expect(settings.hooks.PreToolUse[0]).toEqual(other);
+  expect(settings.hooks.PreToolUse[1].hooks[0].command).toContain("require-skill.mjs");
+  install(home); // a second install finds it already there
+  install(home, "--apply");
+  expect(JSON.parse(readFileSync(join(home, ".claude", "settings.json"), "utf8")).hooks.PreToolUse).toHaveLength(2);
+});
+
 // Windows without Developer Mode cannot make links; CI on macOS and Linux covers it.
 test.skipIf(process.platform === "win32")("replaces a CLAUDE.md link without writing through it", () => {
   const home = mkdtempSync(join(tmpdir(), "install-home-"));

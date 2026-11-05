@@ -23,7 +23,7 @@ home/AGENTS.md is the author's own instructions. Read it before installing it as
 
 With --apply, copies it to ~/.claude/AGENTS.md and ~/.codex/AGENTS.md (Codex), every skill in skills/ to
 ~/.claude/skills/, home/hooks/require-skill.mjs to
-~/.claude/hooks/ (listed under PreToolUse for Bash|PowerShell|Edit|Write|MultiEdit in ~/.claude/settings.json, which this does not edit), and writes ~/.claude/CLAUDE.md as
+~/.claude/hooks/ with its PreToolUse entry in ~/.claude/settings.json (only that entry; the rest of the file is kept), and writes ~/.claude/CLAUDE.md as
 one line, @AGENTS.md: Claude Code reads only CLAUDE.md at user level, and the import pulls AGENTS.md in. Any file
 it replaces is first kept as <name>.<date-time>.bak beside it. Copies, not links: Windows without Developer Mode
 cannot make links.
@@ -59,6 +59,24 @@ function skillTargets(): [string, Buffer][] {
           ]),
         ),
     );
+}
+
+// The hook's PreToolUse entry in ~/.claude/settings.json, so every machine runs the same checks. Only the entry whose
+// command runs require-skill.mjs is replaced or added; every other setting and hook stays as it was.
+function settingsTarget(): [string, Buffer] {
+  const path = join(homedir(), ".claude", "settings.json");
+  const settings = existsSync(path) ? JSON.parse(readFileSync(path, "utf8")) : {};
+  const command = `node "${join(homedir(), ".claude", "hooks", "require-skill.mjs").replaceAll("\\", "/")}"`;
+  const entry = { matcher: "Bash|PowerShell|Edit|Write|MultiEdit", hooks: [{ type: "command", command }] };
+  const ours = (e: { hooks?: { command?: string }[] }) =>
+    e.hooks?.some((h) => h.command?.includes("require-skill.mjs"));
+  const pre: object[] = settings.hooks?.PreToolUse ?? [];
+  const at = pre.findIndex(ours);
+  settings.hooks = { ...settings.hooks, PreToolUse: at < 0 ? [...pre, entry] : pre.with(at, entry) };
+  const want = Buffer.from(`${JSON.stringify(settings, null, 2)}\n`);
+  // Same settings in other formatting count as matching, so a hand-formatted file is left alone.
+  const same = existsSync(path) && JSON.stringify(JSON.parse(readFileSync(path, "utf8"))) === JSON.stringify(settings);
+  return [path, same ? readFileSync(path) : want];
 }
 
 function keep(path: string): string {
@@ -100,6 +118,12 @@ function main(): number {
     [join(homedir(), ".claude", "hooks", "require-skill.mjs"), readFileSync(HOOK)],
     ...skillTargets(),
   ];
+  try {
+    targets.push(settingsTarget());
+  } catch (e) {
+    console.error(`Error: ~/.claude/settings.json is not valid JSON, so it was left alone: ${(e as Error).message}`);
+    return 2;
+  }
   const stale = targets.filter(([path, want]) => !existsSync(path) || !readFileSync(path).equals(want));
 
   if (!apply) {
