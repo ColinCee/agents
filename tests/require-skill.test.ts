@@ -1,11 +1,20 @@
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, writeFileSync } from "node:fs";
-import { homedir, tmpdir } from "node:os";
+import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const HOOK = resolve(__dirname, "..", "home", "hooks", "require-skill.mjs");
 const dir = mkdtempSync(join(tmpdir(), "require-skill-"));
+// A home folder whose installer lock says shipping-prs came from the agents repo and asd-ste100 from elsewhere.
+const fakeHome = join(dir, "home");
+mkdirSync(join(fakeHome, ".agents"), { recursive: true });
+writeFileSync(
+  join(fakeHome, ".agents", ".skill-lock.json"),
+  JSON.stringify({
+    skills: { "shipping-prs": { source: "ColinCee/agents" }, "asd-ste100": { source: "someone/else" } },
+  }),
+);
 // A session that has loaded no skill yet.
 const empty = join(dir, "empty.jsonl");
 writeFileSync(empty, '{"type":"user","message":{"content":"hi"}}\n');
@@ -19,7 +28,7 @@ writeFileSync(
 
 function run(tool_name: string, tool_input: object, transcript = empty): number | null {
   const input = JSON.stringify({ tool_name, tool_input, transcript_path: transcript });
-  return spawnSync("node", [HOOK], { input }).status;
+  return spawnSync("node", [HOOK], { input, env: { ...process.env, HOME: fakeHome, USERPROFILE: fakeHome } }).status;
 }
 
 describe("require-skill hook", () => {
@@ -43,8 +52,9 @@ describe("require-skill hook", () => {
   });
 
   it("refuses edits to installed copies, which the next install overwrites", () => {
-    const home = (p: string) => join(homedir(), p);
+    const home = (p: string) => join(fakeHome, p);
     expect(run("Edit", { file_path: home(".claude/skills/shipping-prs/SKILL.md") }, loaded)).toBe(2);
+    expect(run("Edit", { file_path: home(".claude/skills/asd-ste100/SKILL.md") }, loaded)).toBe(0);
     expect(run("Write", { file_path: home(".claude/AGENTS.md") }, loaded)).toBe(2);
     expect(run("Edit", { file_path: home(".claude/hooks/require-skill.mjs") })).toBe(2);
     expect(run("Edit", { file_path: home(".claude/projects/p/memory/m.md") })).toBe(0);
