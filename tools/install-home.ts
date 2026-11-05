@@ -13,7 +13,7 @@ const HELP = `Install home/AGENTS.md as every agent's user-level instructions. R
 home/AGENTS.md is the author's own instructions. Read it before installing it as yours.
 
 With --apply, copies it to ~/.claude/AGENTS.md and ~/.codex/AGENTS.md (Codex), home/hooks/require-skill.mjs to
-~/.claude/hooks/ (listed under PreToolUse in ~/.claude/settings.json, which this does not edit), and writes ~/.claude/CLAUDE.md as
+~/.claude/hooks/ (listed under PreToolUse for Bash|PowerShell|Edit|Write|MultiEdit in ~/.claude/settings.json, which this does not edit), and writes ~/.claude/CLAUDE.md as
 one line, @AGENTS.md: Claude Code reads only CLAUDE.md at user level, and the import pulls AGENTS.md in. Any file
 it replaces is first kept as <name>.<date-time>.bak beside it. Copies, not links: Windows without Developer Mode
 cannot make links.
