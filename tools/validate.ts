@@ -1,11 +1,11 @@
-// Check every skill in this repository against the rules in AGENTS.md. Reports only: it changes nothing.
+// Check every skill in this repository against the rules in AGENTS.md and docs/writing-skills.md. Reports only: it changes nothing.
 import { spawnSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 
-const HELP = `Check every skill in this repository against the rules in AGENTS.md. Reports only.
+const HELP = `Check every skill in this repository against the rules in AGENTS.md and docs/writing-skills.md. Reports only.
 
   npm run validate -- [--root DIR] [--json]
 

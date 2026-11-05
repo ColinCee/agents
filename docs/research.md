@@ -1,6 +1,6 @@
 # What the rules rest on
 
-The findings behind `AGENTS.md`, gathered 13 and 14 October 2026. Each line says what was found and where. Replace a line when newer work overturns it; do not add a second one beside it.
+The findings behind `AGENTS.md` and `docs/writing-skills.md`, gathered 13 and 14 October 2026. Each line says what was found and where. Replace a line when newer work overturns it; do not add a second one beside it.
 
 ## Contents
 
