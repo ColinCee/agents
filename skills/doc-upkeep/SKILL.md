@@ -29,6 +29,15 @@ Readers scan; shape every document for that. These are the defaults; the project
 - **One copyable command per job.**
 - **Plain words.** No selling ("powerful", "simple") and no hedging. No bold lead-ins on sentences or bullets, no em dashes, and titles of a few words.
 
+## Agent rules
+
+`AGENTS.md` (or `CLAUDE.md`) is read on every turn, so each line costs every task.
+
+- **It holds only what every change needs:** a line on what the project is, one short checks command, a table of when to read which skill or document, and a few rules.
+- **A rule for one kind of work goes in a project skill** (`.claude/skills/<name>/SKILL.md`) or a document, with a row in that table.
+- **A rule says what to do.** No names, dates or history, and a reason only when it changes what an agent does; git keeps the rest.
+- **Adding a rule condenses the file:** merge it with any rule it overlaps, and move out whatever no longer applies to every change.
+
 ## Comments
 
 - **Make the code say it first.** A clearer name, a smaller function or a named constant beats a comment. Delete a comment that repeats what the code says.
