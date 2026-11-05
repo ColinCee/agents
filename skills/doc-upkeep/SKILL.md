@@ -31,7 +31,7 @@ Readers scan; shape every document for that. These are the defaults; the project
 
 ## Agent rules
 
-`AGENTS.md` (or `CLAUDE.md`) is read on every turn, so each line costs every task. Aim for about 2 KB.
+`AGENTS.md` (or `CLAUDE.md`) is read on every turn, so each line costs every task. Keep it short, and never let it grow one fix at a time.
 
 - It holds a line on what the project is, one short checks command, a table of when to read which skill or document, and only the rules every change needs.
 - A rule for one kind of work goes in a project skill (for Claude Code, `.claude/skills/<name>/SKILL.md`) or a document, with a row in that table.
