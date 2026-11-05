@@ -61,3 +61,4 @@ Where things are:
 ## Gotchas
 
 - Rules in `~/.claude/AGENTS.md` went unread: Claude Code reads `~/.claude/CLAUDE.md`, which must import it.
+- Fixes made in an installed skill (`~/.claude/skills/`) were lost when another session reinstalled it with `npx skills add ColinCee/agents --global`: change the skill in the agents repo, then reinstall.
