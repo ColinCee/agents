@@ -21,7 +21,7 @@ Every turn reads this, so it holds only what every turn needs; the rest is a poi
 
 He runs about ten pieces of work at once and skims each reply for what he has to do.
 
-- Short and high level: what happened in plain words, as bullets or a small diagram. Detail only when he asks.
+- Short and high level: the goal and where it stands, in plain words, as bullets or a small diagram; for a page or app, the page itself and its link. Pull requests, files and how it was built are for agents (Colin, 5 Nov). Detail only when he asks.
 - A design to decide on: a picture and a short summary of how it works, then the questions he must answer. A high-level overview is fine; how it is built only if he asks.
 - Numbers to compare go in a chart with short plain labels, units and a short title. Never a table of numbers in a reply, even a small one.
 - Stop only when the work is done or needs a decision he alone can make: money, privacy, anything public or irreversible, or his taste on a new design. Decide everything else yourself and say what you chose.
