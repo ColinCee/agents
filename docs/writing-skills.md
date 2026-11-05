@@ -1,6 +1,6 @@
 # Writing a skill
 
-How to add, write and change a skill in this repository. `npm run validate` checks what a program can (frontmatter fields, name, folder, links, file mentions, body length, install steps, agents' tool names, your own paths, script imports, `--help`); this page holds the rest. Repository layout and checks: [AGENTS.md](../AGENTS.md).
+How to add, write and change a skill in this repository. `npm run validate` checks, among others, the frontmatter fields and limits, `license: MIT`, the name and folder, `Use when` in the description, the README listing, links, that every file is named in `SKILL.md`, body length, install steps, script imports and `--help`; this page holds the rest. Repository layout and checks: [AGENTS.md](../AGENTS.md).
 
 ## What earns a place
 
@@ -29,7 +29,8 @@ skills/<name>/
 
 **Frontmatter.** Only the fields of the specification, plus `disable-model-invocation: true` on a command (read by Claude Code; other agents skip it). Each value on one line, because some agents read frontmatter with a simple parser.
 
-- `description`: what the skill does, then `Use when ...` with the words a user would really say. Aim for 250 characters or fewer. This is the only text the agent sees when deciding to load the skill. In one large test agents loaded an installed skill on only 41% of the tasks that needed it, and the usual cause was the description.
+- `name` says the activity (`tidying`), not `helper` or `utils`.
+- `description`: what the skill does, then `Use when ...` with the words a user would really say, in the third person. Aim for 250 characters or fewer. This is the only text the agent sees when deciding to load the skill. In one large test agents loaded an installed skill on only 41% of the tasks that needed it, and the usual cause was the description.
 - `compatibility`: only what must be on the machine (`Requires git and Node 22 or later.`). Leave it out when the skill is instructions only.
 
 **Body.** Shorter is better: it is all loaded whenever the skill is used.
@@ -46,6 +47,8 @@ skills/<name>/
 - Keep a list of gotchas: the facts that are not what a careful agent would guess. When the skill fails in use, the correction goes there.
 - For output with a fixed shape, show a template.
 - No dates or versions that will go stale.
+- Name no agent's own tools: say what to do ("search the code", "ask the user"). Validate knows only some tool names.
+- Paths are relative to the skill folder and use forward slashes.
 - Move text needed only sometimes to `references/`, and say in `SKILL.md` when to read it.
 
 ## Scripts
@@ -70,8 +73,3 @@ Installing a skill lets its scripts run on someone's machine, with their files. 
 - No network use unless `compatibility` says so and the skill is about that.
 - Never read secrets, sign-in files or keys.
 - Never download and run code. No `curl | sh`.
-- No names or accounts of the author's. Validate catches paths on his machine, not names.
-
-## Where these rules come from
-
-[research.md](research.md): the findings, with their sources. When a rule here changes because of new work, change the finding there too.
