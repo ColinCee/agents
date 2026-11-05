@@ -2,11 +2,29 @@
 // the skill for it, and refuse a commit that names no paths. Rules that only point at a skill loaded it about 1 time
 // in 3; this refusal loaded shipping-prs every time (Nov 2026 session review).
 import { readFileSync } from "node:fs";
+import { homedir } from "node:os";
 
 const input = JSON.parse(readFileSync(0, "utf8"));
 const tool = String(input.tool_name ?? "");
 const command = String(input.tool_input?.command ?? "");
 const file = String(input.tool_input?.file_path ?? "").replaceAll("\\", "/");
+const home = homedir().replaceAll("\\", "/").toLowerCase();
+// Copies installed from the agents repo: an edit here is lost at the next install (two shipping-prs fixes were, 5 Nov).
+// Skills count only when the installer's lock says they came from the agents repo; other skills stay editable.
+let fromRepo = [];
+try {
+  const lock = JSON.parse(readFileSync(`${homedir()}/.agents/.skill-lock.json`, "utf8"));
+  fromRepo = Object.entries(lock.skills ?? {})
+    .filter(([, s]) => s.source === "ColinCee/agents")
+    .map(([name]) => `.claude/skills/${name.toLowerCase()}/`);
+} catch {}
+const installed = [
+  ...fromRepo,
+  ".claude/hooks/require-skill.mjs",
+  ".claude/agents.md",
+  ".claude/claude.md",
+  ".codex/agents.md",
+].some((p) => file.toLowerCase().startsWith(`${home}/${p}`));
 
 // A command at the start of a line or after a separator, in any spelling (git, git.exe, flags before the subcommand).
 const at = (name, rest) => new RegExp(`(^|[;&|(\\n]\\s*)${name}(\\.exe)?\\b[^;&|\\n]*?\\b${rest}`);
@@ -55,5 +73,9 @@ if (tool === "Bash" || tool === "PowerShell") {
   if (prCommand.test(command) || mergeApi.test(command) || firstPush.test(command))
     needs("shipping-prs", "pushing a new branch or opening or merging a pull request (its reviews come before the push)");
   if (measuring.test(command)) needs("deciding", "measuring or comparing options");
-} else if (isDoc) needs("doc-upkeep", "writing or changing a document");
+} else if (installed)
+  refuse(
+    "This file is an installed copy and the next install overwrites it. Change it in its repo (skills, rules and hooks: the agents repo, https://github.com/ColinCee/agents), merge, then run `npm run install-home -- --apply` there.",
+  );
+else if (isDoc) needs("doc-upkeep", "writing or changing a document");
 process.exit(0);

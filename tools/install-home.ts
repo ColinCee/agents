@@ -1,7 +1,16 @@
-// Install home/AGENTS.md as the user-level instructions of the coding agents on this machine.
-import { copyFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+// Install home/AGENTS.md as the user-level instructions of the coding agents on this machine, with its hook and skills.
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
 import { homedir } from "node:os";
-import { dirname, join, resolve } from "node:path";
+import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 
@@ -12,7 +21,8 @@ const HELP = `Install home/AGENTS.md as every agent's user-level instructions. R
 
 home/AGENTS.md is the author's own instructions. Read it before installing it as yours.
 
-With --apply, copies it to ~/.claude/AGENTS.md and ~/.codex/AGENTS.md (Codex), home/hooks/require-skill.mjs to
+With --apply, copies it to ~/.claude/AGENTS.md and ~/.codex/AGENTS.md (Codex), every skill in skills/ to
+~/.claude/skills/, home/hooks/require-skill.mjs to
 ~/.claude/hooks/ (listed under PreToolUse for Bash|PowerShell|Edit|Write|MultiEdit in ~/.claude/settings.json, which this does not edit), and writes ~/.claude/CLAUDE.md as
 one line, @AGENTS.md: Claude Code reads only CLAUDE.md at user level, and the import pulls AGENTS.md in. Any file
 it replaces is first kept as <name>.<date-time>.bak beside it. Copies, not links: Windows without Developer Mode
@@ -25,10 +35,40 @@ const SOURCE = resolve(dirname(fileURLToPath(import.meta.url)), "..", "home", "A
 const HOOK = resolve(dirname(SOURCE), "hooks", "require-skill.mjs");
 // Claude Code reads ~/.claude/CLAUDE.md, never ~/.claude/AGENTS.md; a relative import resolves beside the file.
 const IMPORT = Buffer.from("@AGENTS.md\n");
+// Every skill in this repo (skills/<name>, skills/.experimental/<name>), installed as ~/.claude/skills/<name>. The
+// installed copies are only ever copies: a fix made in one was lost when the skill was next installed (5 Nov 2026).
+const SKILLS = resolve(dirname(SOURCE), "..", "skills");
+
+function files(dir: string): string[] {
+  return readdirSync(dir).flatMap((name) => {
+    const path = join(dir, name);
+    return statSync(path).isDirectory() ? files(path).map((f) => join(name, f)) : [name];
+  });
+}
+
+function skillTargets(): [string, Buffer][] {
+  return [SKILLS, join(SKILLS, ".experimental")]
+    .filter((root) => existsSync(root))
+    .flatMap((root) =>
+      readdirSync(root)
+        .filter((name) => !name.startsWith(".") && existsSync(join(root, name, "SKILL.md")))
+        .flatMap((name) =>
+          files(join(root, name)).map((f): [string, Buffer] => [
+            join(homedir(), ".claude", "skills", name, f),
+            readFileSync(join(root, name, f)),
+          ]),
+        ),
+    );
+}
 
 function keep(path: string): string {
   const stamp = new Date().toISOString().replace(/[-:]/g, "").replace("T", "-").slice(0, 15);
-  const backup = `${path}.${stamp}.bak`;
+  // A backup inside a live skill folder would ship with the skill, so skills keep theirs in one folder beside them.
+  const skills = join(homedir(), ".claude", "skills");
+  const backup = path.startsWith(skills)
+    ? join(homedir(), ".claude", "skills-replaced", `${relative(skills, path)}.${stamp}.bak`)
+    : `${path}.${stamp}.bak`;
+  mkdirSync(dirname(backup), { recursive: true });
   copyFileSync(path, backup);
   return backup;
 }
@@ -58,6 +98,7 @@ function main(): number {
     [join(homedir(), ".claude", "CLAUDE.md"), IMPORT],
     [join(homedir(), ".codex", "AGENTS.md"), text],
     [join(homedir(), ".claude", "hooks", "require-skill.mjs"), readFileSync(HOOK)],
+    ...skillTargets(),
   ];
   const stale = targets.filter(([path, want]) => !existsSync(path) || !readFileSync(path).equals(want));
 

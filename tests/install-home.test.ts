@@ -25,6 +25,19 @@ test("installs the rules and a CLAUDE.md that imports them", () => {
   install(home); // exits 0 only when everything matches
 });
 
+test("installs every skill, and reports an installed copy that was edited by hand", () => {
+  const home = mkdtempSync(join(tmpdir(), "install-home-"));
+  install(home, "--apply");
+  const skill = join(home, ".claude", "skills", "shipping-prs", "SKILL.md");
+  expect(readFileSync(skill, "utf8")).toBe(
+    readFileSync(resolve(import.meta.dirname, "..", "skills", ".experimental", "shipping-prs", "SKILL.md"), "utf8"),
+  );
+  writeFileSync(skill, "a fix made in the installed copy\n");
+  expect(() => install(home)).toThrow(); // exit 1: something differs
+  install(home, "--apply");
+  install(home);
+});
+
 // Windows without Developer Mode cannot make links; CI on macOS and Linux covers it.
 test.skipIf(process.platform === "win32")("replaces a CLAUDE.md link without writing through it", () => {
   const home = mkdtempSync(join(tmpdir(), "install-home-"));
