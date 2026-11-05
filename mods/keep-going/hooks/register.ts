@@ -9,7 +9,7 @@ const VERSION = "v2"; // the reminder's wording; logged with each one, so a rewo
 // v1 said "add nothing", and agents wrote a line saying so after about half the reminders (4 Nov: 37 of 69).
 const REMINDER =
   "Keep-going check: by your AGENTS.md rules, does your next step really need the user? If not, do it now. " +
-  "If it does, end your turn now without writing any text: your last message already says it.";
+  "If it does, end your turn now without writing any more text.";
 
 async function log($: EngineInterface, session: string): Promise<void> {
   const home = (await $.env.get("USERPROFILE")) ?? (await $.env.get("HOME")) ?? "";
