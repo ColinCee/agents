@@ -10,9 +10,21 @@ const command = String(input.tool_input?.command ?? "");
 const file = String(input.tool_input?.file_path ?? "").replaceAll("\\", "/");
 const home = homedir().replaceAll("\\", "/").toLowerCase();
 // Copies installed from the agents repo: an edit here is lost at the next install (two shipping-prs fixes were, 5 Nov).
-const installed = [".claude/skills/", ".claude/hooks/", ".claude/agents.md", ".claude/claude.md", ".codex/agents.md"].some(
-  (p) => file.toLowerCase().startsWith(`${home}/${p}`),
-);
+// Skills count only when the installer's lock says they came from the agents repo; other skills stay editable.
+let fromRepo = [];
+try {
+  const lock = JSON.parse(readFileSync(`${homedir()}/.agents/.skill-lock.json`, "utf8"));
+  fromRepo = Object.entries(lock.skills ?? {})
+    .filter(([, s]) => s.source === "ColinCee/agents")
+    .map(([name]) => `.claude/skills/${name.toLowerCase()}/`);
+} catch {}
+const installed = [
+  ...fromRepo,
+  ".claude/hooks/require-skill.mjs",
+  ".claude/agents.md",
+  ".claude/claude.md",
+  ".codex/agents.md",
+].some((p) => file.toLowerCase().startsWith(`${home}/${p}`));
 
 // A command at the start of a line or after a separator, in any spelling (git, git.exe, flags before the subcommand).
 const at = (name, rest) => new RegExp(`(^|[;&|(\\n]\\s*)${name}(\\.exe)?\\b[^;&|\\n]*?\\b${rest}`);

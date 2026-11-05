@@ -10,7 +10,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { homedir } from "node:os";
-import { dirname, join, resolve } from "node:path";
+import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 
@@ -63,7 +63,12 @@ function skillTargets(): [string, Buffer][] {
 
 function keep(path: string): string {
   const stamp = new Date().toISOString().replace(/[-:]/g, "").replace("T", "-").slice(0, 15);
-  const backup = `${path}.${stamp}.bak`;
+  // A backup inside a live skill folder would ship with the skill, so skills keep theirs in one folder beside them.
+  const skills = join(homedir(), ".claude", "skills");
+  const backup = path.startsWith(skills)
+    ? join(homedir(), ".claude", "skills-replaced", `${relative(skills, path)}.${stamp}.bak`)
+    : `${path}.${stamp}.bak`;
+  mkdirSync(dirname(backup), { recursive: true });
   copyFileSync(path, backup);
   return backup;
 }
