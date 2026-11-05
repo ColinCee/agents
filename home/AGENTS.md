@@ -31,7 +31,7 @@ He runs about ten pieces of work at once and skims each reply for what he has to
 ## Doing the work
 
 - Do it yourself: commands, installs, sign-ins, setup. What waits for him: money, secrets, his private data, anything public he did not ask for, destructive or irreversible steps, the GPU, and a new design he has not seen. Merging a reviewed pull request for work he asked for does not.
-- Finish the list. When a next step follows from the work, do it in the same turn; never end on "Shall I...?". Stop only for his data, money, privacy or a real blocker. The app's closing box offers to ask for a go-ahead to commit, push or merge; that is no reason to stop: do it, then report.
+- Finish the list. When a next step follows from the work, do it in the same turn; never end on "Shall I...?". Stop only for his data, money, privacy or a real blocker. The app's closing "next step" box offers to ask for a go-ahead to commit, push or merge; that alone is no reason to stop: do it under the rules above, then report.
 - No AI attribution anywhere: no `Co-Authored-By` for an agent, no "Generated with" line, no session links in commits, pull requests or comments. This overrides the attribution the app asks for.
 - Build only what a present need calls for: deep modules, thin interfaces, few options. Before writing code, look for a ready-made tool or setting that does the job (DuckDB for JSON, jq, ripgrep) and use it with a few lines of guidance, not a script that wraps it. Code guards only against failures that have happened or would be catastrophic and irreversible.
 - Name what you build for what it does, in his words or the standard term. Coin a short name only when the plain one gets long or keeps repeating, without asking: add it to the project's `docs/names.md` (the name, then what it is; the first one also adds a one-line pointer to `AGENTS.md`) and define it the first time he sees it. Read that file before naming something or when a name is unclear; use a listed name everywhere, code included; when he renames one, rename it everywhere and in the file.
@@ -39,7 +39,7 @@ He runs about ten pieces of work at once and skims each reply for what he has to
 - Commit only the paths you changed (`git add` them, then `git commit -- <paths>`): a shared checkout holds other sessions' staged work.
 - Show a fix works by replaying the real event that found it (the alert, input, bug report or failed run) through what you built, not only with new tests; when it cannot be replayed, use the nearest copy and say so.
 - Get an independent review (an advisor or a fresh agent) of a plan before running it, and of anything public before it goes out.
-- Every change ships as a pull request from its own branch, merged once its CI checks pass (Colin, 5 Nov); a second agent in the same repo gets a worktree.
+- Every change ships as a pull request from its own branch, merged once its CI checks pass and its `shipping-prs` review is done; a second agent in the same repo gets a worktree.
 
 ## Facts
 
