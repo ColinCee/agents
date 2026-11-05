@@ -13,7 +13,7 @@ Every document and comment is a promise that has to be kept true. Make each one 
    Numbers come from their results document, not from a message about them. When a source number changes, list every number in the piece (figures, captions, ratios, titles, summaries, linked documents) and check each one.
 3. **Replace the stale line where it is.** The document should read as if it had always been right.
 4. **Delete what describes removed things.** Git already records what was removed and when; the reader needs what is there now.
-5. **Give each fact one home.** When the same text is in more than one file, keep it in the one it belongs to and turn the others into a pointer ("Checks: see `AGENTS.md`"). Rules for working on the project belong in `AGENTS.md`; how to use it, in `README.md`; anything the user's own instructions already say needs no copy in the project.
+5. **Give each fact one home.** When the same text is in more than one file, keep it in the one it belongs to and turn the others into a pointer ("Checks: see `AGENTS.md`"). Rules every change needs belong in `AGENTS.md` (see Agent rules); how to use it, in `README.md`; anything the user's own instructions already say needs no copy in the project.
 6. **Compare sizes.** The documents together should be no longer than before, unless a new feature needed a new section. Check with `git diff --stat`.
 
 ## Shape
@@ -31,12 +31,12 @@ Readers scan; shape every document for that. These are the defaults; the project
 
 ## Agent rules
 
-`AGENTS.md` (or `CLAUDE.md`) is read on every turn, so each line costs every task.
+`AGENTS.md` (or `CLAUDE.md`) is read on every turn, so each line costs every task. Aim for about 2 KB.
 
-- **It holds only what every change needs:** a line on what the project is, one short checks command, a table of when to read which skill or document, and a few rules.
-- **A rule for one kind of work goes in a project skill** (`.claude/skills/<name>/SKILL.md`) or a document, with a row in that table.
-- **A rule says what to do.** No names, dates or history, and a reason only when it changes what an agent does; git keeps the rest.
-- **Adding a rule condenses the file:** merge it with any rule it overlaps, and move out whatever no longer applies to every change.
+- It holds a line on what the project is, one short checks command, a table of when to read which skill or document, and only the rules every change needs.
+- A rule for one kind of work goes in a project skill (for Claude Code, `.claude/skills/<name>/SKILL.md`) or a document, with a row in that table.
+- A rule says what to do: no people's names, no dates of decisions, no history, and a reason only when it changes what an agent does. Git keeps the rest.
+- Adding a rule condenses the file: merge it with any rule it overlaps, and move what no longer applies to every change into a skill or document. Delete only what is wrong.
 
 ## Comments
 
