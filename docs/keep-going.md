@@ -1,6 +1,6 @@
 # Keep going: an experiment
 
-When the agent ends its turn, it gets one reminder: by your AGENTS.md rules, does the next step really need the user? If not, it carries on; if it does, it stops again and adds nothing, so its summary or question stays last. No reminder when the agent is waiting on background work, when another hook already decided, or in scripted runs (`claude -p`, the SDK). Its own rules (AGENTS.md) and the whole conversation decide; the hook adds no rules of its own.
+When the agent ends its turn, it gets one reminder: by your AGENTS.md rules, does the next step really need the user? If not, it carries on; if it does, it ends its turn without writing any text, so its summary or question stays last. No reminder when the agent is waiting on background work, when another hook already decided, or in scripted runs (`claude -p`, the SDK). Its own rules (AGENTS.md) and the whole conversation decide; the hook adds no rules of its own.
 
 | | |
 |---|---|

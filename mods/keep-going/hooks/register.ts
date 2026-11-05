@@ -4,11 +4,12 @@ import type { EngineInterface, Register } from "claude-code";
 // (AGENTS.md) and the whole conversation decide. Each reminder is logged, so their number a day is known; whether
 // they help is measured against past sessions, which had no reminder.
 
-const VERSION = "v1"; // the reminder's wording; logged with each one, so a reworded reminder is measured on its own
-// "Add nothing" keeps the agent's real last message (its summary or its question) as the last thing the user sees.
+const VERSION = "v2"; // the reminder's wording; logged with each one, so a reworded reminder is measured on its own
+// Ending with no text keeps the agent's real last message (its summary or its question) as the last thing the user sees.
+// v1 said "add nothing", and agents wrote a line saying so after about half the reminders (4 Nov: 37 of 69).
 const REMINDER =
   "Keep-going check: by your AGENTS.md rules, does your next step really need the user? If not, do it now. " +
-  "If it does, stop again and add nothing.";
+  "If it does, end your turn now without writing any text: your last message already says it.";
 
 async function log($: EngineInterface, session: string): Promise<void> {
   const home = (await $.env.get("USERPROFILE")) ?? (await $.env.get("HOME")) ?? "";
