@@ -26,6 +26,7 @@ Readers scan; shape every document for that. These are the defaults; the project
 - **Draw diagrams by hand.** An SVG laid out on a grid, in layers where the parts have levels, saved beside the document and linked from it, with only the arrows the point turns on.
 - **Items of the same shape go in a table** (name, what it does, how to get it). Steps are a numbered list; anything else is bullets. Prose only for a reason that needs a sentence.
 - **Headings are short nouns** ("Skills", "Tools"), and no heading stands over a single unexplained item.
+- **A README is for people:** what it does, a picture of how the parts fit, and links to the docs. Commands, settings, file paths and limits agents act on go in a doc that `AGENTS.md` points to.
 - **Link to details; do not retell them.** A README points to the file that explains.
 - **One copyable command per job.**
 - **Plain words.** No selling ("powerful", "simple") and no hedging. No bold lead-ins on sentences or bullets, no em dashes, and titles of a few words.
