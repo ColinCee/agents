@@ -30,15 +30,7 @@ Other people's skills I use:
 
 [home/AGENTS.md](home/AGENTS.md): how every agent should work with me. Install: `npm run install-home -- --apply`.
 
-That also installs [home/hooks/require-skill.mjs](home/hooks/require-skill.mjs), which refuses opening or merging a pull request until the shipping-prs skill is loaded. Turn it on once by adding this to `~/.claude/settings.json`:
-
-```json
-"hooks": {
-  "PreToolUse": [
-    { "matcher": "Bash|PowerShell", "hooks": [{ "type": "command", "command": "node \"C:/Users/colin/.claude/hooks/require-skill.mjs\"" }] }
-  ]
-}
-```
+That also installs [home/hooks/require-skill.mjs](home/hooks/require-skill.mjs), and its entry in `~/.claude/settings.json`. It refuses a step until the skill for it is loaded: `shipping-prs` before a first push or a pull request, `deciding` before a benchmark, `doc-upkeep` before editing a doc or code file.
 
 ## Tools
 

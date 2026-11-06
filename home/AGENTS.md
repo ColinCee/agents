@@ -6,7 +6,7 @@ Every turn reads this, so it holds only what every turn needs; the rest is a poi
 
 | When | Read or do |
 |---|---|
-| Writing or changing a document, post, README or comment, or changing code or a setting a doc describes | `doc-upkeep` |
+| Writing or changing any document, post, comment or code | `doc-upkeep` |
 | Measuring or comparing options, or publishing numbers | `deciding` |
 | Opening or merging a pull request | Load `shipping-prs` with the Skill tool before `gh pr create` or a merge |
 | A GPU job, or a game or game test | Ask first, then take it through `lease gpu` (`lease --help`), one job at a time; a refusal means wait. Stop yours when he wants to game |

@@ -76,11 +76,14 @@ describe("require-skill hook", () => {
     expect(run("Bash", { command: "gh pr view 3" })).toBe(0);
   });
 
-  it("needs deciding before a benchmark and doc-upkeep before a doc edit", () => {
+  it("needs deciding before a benchmark and doc-upkeep before a doc or code edit", () => {
     expect(run("PowerShell", { command: 'hyperfine "npm test"' })).toBe(2);
     expect(run("Edit", { file_path: "D:\\repo\\AGENTS.md" })).toBe(2);
     expect(run("Edit", { file_path: "D:\\repo\\AGENTS.md" }, loaded)).toBe(0);
     expect(run("Write", { file_path: "C:\\Users\\u\\.claude\\projects\\p\\memory\\m.md" })).toBe(0);
-    expect(run("Write", { file_path: "D:\\repo\\src\\a.ts" })).toBe(0);
+    expect(run("Write", { file_path: "D:\\repo\\src\\a.ts" })).toBe(2);
+    expect(run("Write", { file_path: "D:\\repo\\src\\a.ts" }, loaded)).toBe(0);
+    expect(run("Write", { file_path: "D:\\repo\\data.json" })).toBe(0);
+    expect(run("Write", { file_path: "D:\\repo\\pnpm-lock.yaml" })).toBe(0);
   });
 });

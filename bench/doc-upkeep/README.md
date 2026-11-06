@@ -14,3 +14,4 @@
 | Input tokens per run | 183k | 193k (x1.05) |
 
 The test, with what it plants, and every run are in the private `agents-bench` repository, under `skills/doc-upkeep/`: kept out of public view so no model can learn the answers.
+The "no history" rule and the comment lead sentence came later and are untested here; the hook now loads the skill before code edits too, since a rule that only points at a skill loaded it about 1 time in 3.
