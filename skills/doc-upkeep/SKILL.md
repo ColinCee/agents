@@ -13,7 +13,7 @@ Every document and comment is a promise that has to be kept true. Make each one 
    Numbers come from their results document, not from a message about them. When a source number changes, list every number in the piece (figures, captions, ratios, titles, summaries, linked documents) and check each one.
 3. **Replace the stale line where it is.** The document should read as if it had always been right.
 4. **Delete what describes removed things.** Git already records what was removed and when; the reader needs what is there now.
-5. **Give each fact one home.** When the same text is in more than one file, keep it in the one it belongs to and turn the others into a pointer ("Checks: see `AGENTS.md`"). Rules every change needs belong in `AGENTS.md` (see Agent rules); how to use it, in `README.md`; anything the user's own instructions already say needs no copy in the project.
+5. **Give each fact one home.** When the same text is in more than one file, keep it in the one it belongs to and turn the others into a pointer ("Checks: see `AGENTS.md`"). Rules every change needs belong in `AGENTS.md` (see Agent rules); what it is and how to start it, in `README.md`, with commands and settings agents act on in a doc `AGENTS.md` points to; anything the user's own instructions already say needs no copy in the project.
 6. **Compare sizes.** The documents together should be no longer than before, unless a new feature needed a new section. Check with `git diff --stat`.
 
 ## Shape
@@ -26,7 +26,7 @@ Readers scan; shape every document for that. These are the defaults; the project
 - **Draw diagrams by hand.** An SVG laid out on a grid, in layers where the parts have levels, saved beside the document and linked from it, with only the arrows the point turns on.
 - **Items of the same shape go in a table** (name, what it does, how to get it). Steps are a numbered list; anything else is bullets. Prose only for a reason that needs a sentence.
 - **Headings are short nouns** ("Skills", "Tools"), and no heading stands over a single unexplained item.
-- **A README is for people:** what it does, a picture of how the parts fit, and links to the docs. Commands, settings, file paths and limits agents act on go in a doc that `AGENTS.md` points to.
+- **A README is for people.** What it does, a picture of how the parts fit, a person's one start command, and links to the docs; settings, paths and limits only agents act on go in a doc `AGENTS.md` points to.
 - **Link to details; do not retell them.** A README points to the file that explains.
 - **One copyable command per job.**
 - **Plain words.** No selling ("powerful", "simple") and no hedging. No bold lead-ins on sentences or bullets, no em dashes, and titles of a few words.
