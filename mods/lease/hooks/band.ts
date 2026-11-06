@@ -16,7 +16,6 @@ const FRESH_MS = 5 * 60_000; // a measurement older than this is not shown: nobo
 const LATE_MS = 60_000; // two missed renewals, as the lease command counts it
 const GPU_BUSY_GB = 6; // as the lease command counts it: Windows' desktop alone holds 3.3 GB of the card
 const NAME_MAX = 16; // a holder's note when it is this short, else its name: the row stays one line
-const CELLS = 12; // about 5 GB a cell on a 64 GB machine
 const STATUS_MAX = 12; // a holder's status, so a long one cannot push the GPU off the row
 
 const legacy = (gb: number): Want[] => [
@@ -35,17 +34,7 @@ const PROBLEM = {
   over: "over the time it gave",
 } as const;
 
-/** ▓ what programs use outside any lease, ▒ what leases hold, ░ free. */
-export function ramBar(totalGb: number, freeGb: number, leasedGb: number): string {
-  // Rounded where the free part starts, not part by part: nearly full never draws a free cell.
-  const taken = Math.min(CELLS, Math.round((Math.max(0, totalGb - freeGb) / totalGb) * CELLS));
-  const share = Math.round((Math.max(0, leasedGb) / totalGb) * CELLS);
-  const leased = leasedGb > 0 ? Math.max(1, Math.min(share, taken)) : 0;
-  const used = Math.max(0, taken - leased);
-  return "▓".repeat(used) + "▒".repeat(leased) + "░".repeat(CELLS - used - leased);
-}
-
-/** The band for the state file's text at `now`: one row of short parts (the RAM bar, each holder, the GPU, who
+/** The band for the state file's text at `now`: one row of short parts (free and leased RAM, each holder, the GPU, who
  * waits) with anything wrong said once at its end, or null when nothing is held and the GPU is quiet (no band). */
 export function bandOf(text: string | null, now: number): Band | null {
   if (text === null) return null;
@@ -80,7 +69,7 @@ export function bandOf(text: string | null, now: number): Band | null {
             : null;
     const note = str(h.note);
     const who = note !== "" && note.length <= NAME_MAX ? note : str(h.name);
-    // RAM is in the bar; every other resource held is named before its holder: "GPU Strata", "WEB Form filler".
+    // RAM is in its own part; every other resource held is named before its holder: "GPU Strata", "WEB Form filler".
     const what = wants.filter((w) => w.resource !== "ram").map((w) => label(w.resource));
     const part: Part = {
       key: `${str(h.name)}/${num(h.pid) ?? 0}`,
@@ -96,11 +85,11 @@ export function bandOf(text: string | null, now: number): Band | null {
   const problems = [...new Set(holders.map((x) => x.problem).filter(Boolean))];
 
   const parts: Part[] = [];
-  const total = num(raw.total_gb);
   const free = num(raw.free_gb);
-  if (total !== null && total > 0 && free !== null && fresh) {
+  if (free !== null && fresh) {
     const leased = holds.reduce((sum, x) => sum + (x.wants.find((w) => w.resource === "ram")?.gb ?? 0), 0);
-    parts.push({ key: "ram", text: `RAM ${ramBar(total, free, leased)}`, tone: "ok" });
+    const text = `RAM ${Math.round(free)} GB free${leased > 0 ? `, ${Math.round(leased)} leased` : ""}`;
+    parts.push({ key: "ram", text, tone: "ok" });
   }
   parts.push(...holders.map((x) => x.part));
   // Something uses the card and nobody holds the GPU: a program that took no lock, or a game.

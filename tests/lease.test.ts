@@ -212,7 +212,6 @@ describe("the file", () => {
     const state = parseState(readFileSync(join(process.env.LEASES_HOME ?? "", "state.json"), "utf8"));
     expect(state.holds[0]?.wants).toEqual(legacyWants(40));
     expect(state.free_gb).toBe(41.2);
-    expect(state.total_gb).toBe(63.7);
   });
 
   test("a holder's status is kept from take to renew, and a renew without one leaves it", () => {

@@ -89,8 +89,6 @@ export type State = {
   cooldowns: Cooldown[];
   resources: Resource[];
   free_gb: number | null;
-  /** The machine's RAM, for the band's bar of used, leased and free. */
-  total_gb: number | null;
   /** GPU memory in use on the whole card, any program's, as the driver reports it; null where it cannot be read. */
   gpu_used_gb: number | null;
   measured: string | null;
@@ -148,8 +146,6 @@ export type View = {
   resources: Resource[];
   ram_gb: number;
   free_gb: number | null;
-  /** The machine's RAM, for the band's bar of used, leased and free. */
-  total_gb: number | null;
   /** GPU memory in use on the whole card, any program's, as the driver reports it; null where it cannot be read. */
   gpu_used_gb: number | null;
   measured: string | null;
@@ -245,7 +241,6 @@ export function emptyState(): State {
     cooldowns: [],
     resources: [],
     free_gb: null,
-    total_gb: null,
     gpu_used_gb: null,
     measured: null,
   };
@@ -385,7 +380,6 @@ export function parseState(text: string): State {
     cooldowns: list(raw.cooldowns ?? []).map(parseCooldown),
     resources,
     free_gb: free === null ? null : need(num(free), "free_gb"),
-    total_gb: num(raw.total_gb) ?? null,
     gpu_used_gb:
       raw.gpu_used_gb === null || raw.gpu_used_gb === undefined ? null : need(num(raw.gpu_used_gb), "gpu_used_gb"),
     measured: measured === null ? null : need(str(measured), "measured"),
@@ -500,7 +494,6 @@ export function withState<T>(sys: System, change: (ops: Ops) => T): T {
 export function tidy({ state, sys, log }: Ops): void {
   const now = sys.now();
   state.free_gb = Math.round(sys.freeGb() * 10) / 10;
-  state.total_gb = Math.round(sys.totalGb() * 10) / 10;
   const gpu = sys.gpuUsedGb();
   state.gpu_used_gb = gpu === null ? null : Math.round(gpu * 10) / 10;
   state.measured = iso(now);
@@ -585,7 +578,6 @@ export function view(state: State, sys: System): View {
     resources: state.resources,
     ram_gb: ramGb(sys),
     free_gb: state.free_gb,
-    total_gb: state.total_gb,
     gpu_used_gb: state.gpu_used_gb,
     measured: state.measured,
   };

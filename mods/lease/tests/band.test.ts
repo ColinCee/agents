@@ -1,5 +1,5 @@
 import { expect, test } from "claude-code/testing";
-import { bandOf, ramBar } from "../hooks/band";
+import { bandOf } from "../hooks/band";
 
 const NOW = Date.parse("2026-10-15T12:00:00Z");
 const state = (holds: object[], waiting: object[] = []) =>
@@ -10,7 +10,6 @@ const state = (holds: object[], waiting: object[] = []) =>
     cooldowns: [],
     resources: [{ name: "browser", label: "WEB", used: "2026-10-15T11:00:00Z" }],
     free_gb: 1.4,
-    total_gb: 64,
     measured: "2026-10-15T11:59:50Z",
   });
 const strata = {
@@ -39,10 +38,10 @@ const forms = {
 };
 const bench = { name: "bench", pid: 200, wants: [{ resource: "ram", gb: 10 }], note: "", since: "x", seen: "x" };
 
-test("one row: the RAM bar, each holder, the GPU, who waits; stuck ones first and said once at the end", async () => {
+test("one row: free and leased RAM, each holder, the GPU, who waits; stuck ones first and said once at the end", async () => {
   const band = bandOf(state([strata, forms], [bench]), NOW);
   expect(band?.parts).toEqual([
-    { key: "ram", text: "RAM ▓▓▓▓▒▒▒▒▒▒▒▒", tone: "ok" },
+    { key: "ram", text: "RAM 1 GB free, 40 leased", tone: "ok" },
     { key: "form-filling-agent/300", text: "WEB Form filler !", tone: "stuck" },
     { key: "cortex/100", text: "GPU Strata", tone: "ok" },
     { key: "waiting", text: "waiting: bench", tone: "ok" },
@@ -61,7 +60,7 @@ test("one row: the RAM bar, each holder, the GPU, who waits; stuck ones first an
     problem: "",
   });
   const held = JSON.stringify({ ...JSON.parse(state([strata])), gpu_used_gb: 23 });
-  expect(bandOf(held, NOW)?.parts.map((p) => p.text)).toEqual(["RAM ▓▓▓▓▒▒▒▒▒▒▒▒", "GPU Strata"]); // not "no lock"
+  expect(bandOf(held, NOW)?.parts.map((p) => p.text)).toEqual(["RAM 1 GB free, 40 leased", "GPU Strata"]); // not "no lock"
   expect(bandOf(null, NOW)).toBe(null);
   expect(bandOf("{broken", NOW)?.unreadable).toBe(true);
 });
@@ -69,14 +68,7 @@ test("one row: the RAM bar, each holder, the GPU, who waits; stuck ones first an
 test("a RAM holder shows its status after its name, and the GPU shows free", async () => {
   const builds = { ...strata, name: "kaizen-ci", note: "a VM for builds, with a long note", status: "1/2" };
   const band = bandOf(state([{ ...builds, wants: [{ resource: "ram", gb: 12 }] }]), NOW);
-  expect(band?.parts.map((p) => p.text)).toEqual(["RAM ▓▓▓▓▓▓▓▓▓▓▒▒", "kaizen-ci 1/2", "GPU ·"]);
-});
-
-test("the bar: programs' own use, then leased, then free; a lease never vanishes into rounding", async () => {
-  expect(ramBar(64, 12, 12)).toBe("▓▓▓▓▓▓▓▓▒▒░░");
-  expect(ramBar(64, 1.4, 12)).toBe("▓▓▓▓▓▓▓▓▓▓▒▒"); // nearly full draws no free cell
-  expect(ramBar(64, 60, 1)).toBe("▒░░░░░░░░░░░");
-  expect(ramBar(64, 0, 80)).toBe("▒▒▒▒▒▒▒▒▒▒▒▒");
+  expect(band?.parts.map((p) => p.text)).toEqual(["RAM 1 GB free, 12 leased", "kaizen-ci 1/2", "GPU ·"]);
 });
 
 test("two holders stuck alike say it once; a long status is cut; a stale measurement shows no GPU", async () => {
@@ -93,7 +85,7 @@ test("two holders stuck alike say it once; a long status is cut; a stale measure
 
 test("the first version's file is read too, so install order does not matter", async () => {
   const v1 = JSON.stringify({ version: 1, holder: { ...strata, wants: undefined, gb: 40 }, waiting: [], free_gb: 1 });
-  expect(bandOf(v1, NOW)?.parts.map((p) => p.text)).toEqual(["GPU Strata"]); // no total RAM: no bar
+  expect(bandOf(v1, NOW)?.parts.map((p) => p.text)).toEqual(["GPU Strata"]); // no measurement: no RAM part
 });
 
 test("the band draws the row on every surface, and nothing when nothing is held", async ($, on) => {
