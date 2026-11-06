@@ -11,9 +11,10 @@
  * is 10 GB of it); every other resource has one holder at a time. A take with `--gb` and no `--res` means
  * `gpu ram:<gb>`, what the first version of this command locked.
  *
- *   lease take --name N (--res R[:GB] ... | --gb G) [--label R=TEXT] [--note T] [--pid P] [--wait S] [--for S]
+ *   lease take --name N (--res R[:GB] ... | --gb G) [--label R=TEXT] [--note T] [--status T] [--pid P] [--wait S]
+ *     [--for S]
  *   lease run --name N (--res R[:GB] ... | --gb G) [--note T] [--wait S] [--for S] -- COMMAND [ARGS]
- *   lease renew --name N [--pid P] [--job-pid J] [--for S]
+ *   lease renew --name N [--pid P] [--job-pid J] [--for S] [--status T]
  *   lease free --name N [--pid P]
  *   lease free --force [--name N [--pid P]] [--stop-job] [--by WHO] [--cooldown S]
  *   lease show
@@ -73,6 +74,8 @@ export type Hold = {
   until: string | null;
   wants: Want[];
   note: string;
+  /** A few words the holder keeps current on how its work goes ("1/2" runners busy), shown in the band. */
+  status: string;
   job: Job | null;
   orphaned: string | null;
 };
@@ -86,6 +89,8 @@ export type State = {
   cooldowns: Cooldown[];
   resources: Resource[];
   free_gb: number | null;
+  /** The machine's RAM, for the band's bar of used, leased and free. */
+  total_gb: number | null;
   /** GPU memory in use on the whole card, any program's, as the driver reports it; null where it cannot be read. */
   gpu_used_gb: number | null;
   measured: string | null;
@@ -131,7 +136,7 @@ export type Status = "free" | "held" | "orphaned";
  * is gone, its job runs) are stuck and want a look; none of them frees it. */
 export type Health = "ok" | "late" | "over" | "orphaned";
 /** The first version's single holder, kept in every answer for the programs that read it (Cortex). */
-export type LegacyHolder = Omit<Hold, "wants" | "until"> & { gb: number };
+export type LegacyHolder = Omit<Hold, "wants" | "until" | "status"> & { gb: number };
 export type HoldView = Hold & { health: Health; gb: number; seconds_left: number };
 export type View = {
   status: Status;
@@ -143,6 +148,8 @@ export type View = {
   resources: Resource[];
   ram_gb: number;
   free_gb: number | null;
+  /** The machine's RAM, for the band's bar of used, leased and free. */
+  total_gb: number | null;
   /** GPU memory in use on the whole card, any program's, as the driver reports it; null where it cannot be read. */
   gpu_used_gb: number | null;
   measured: string | null;
@@ -238,6 +245,7 @@ export function emptyState(): State {
     cooldowns: [],
     resources: [],
     free_gb: null,
+    total_gb: null,
     gpu_used_gb: null,
     measured: null,
   };
@@ -306,6 +314,7 @@ function parseHold(v: Json): Hold {
     until: maybe(v.until, "hold.until"),
     wants: parseWants(v.wants),
     note: need(str(v.note), "hold.note"),
+    status: str(v.status) ?? "",
     job: parseJob(v.job),
     orphaned: maybe(v.orphaned, "hold.orphaned"),
   };
@@ -352,6 +361,7 @@ function parseLegacyHolder(v: Json | undefined): Hold[] {
       until: null,
       wants: legacyWants(need(num(v.gb), "holder.gb")),
       note: need(str(v.note), "holder.note"),
+      status: "",
       job: parseJob(v.job),
       orphaned: maybe(v.orphaned, "holder.orphaned"),
     },
@@ -375,6 +385,7 @@ export function parseState(text: string): State {
     cooldowns: list(raw.cooldowns ?? []).map(parseCooldown),
     resources,
     free_gb: free === null ? null : need(num(free), "free_gb"),
+    total_gb: num(raw.total_gb) ?? null,
     gpu_used_gb:
       raw.gpu_used_gb === null || raw.gpu_used_gb === undefined ? null : need(num(raw.gpu_used_gb), "gpu_used_gb"),
     measured: measured === null ? null : need(str(measured), "measured"),
@@ -489,6 +500,7 @@ export function withState<T>(sys: System, change: (ops: Ops) => T): T {
 export function tidy({ state, sys, log }: Ops): void {
   const now = sys.now();
   state.free_gb = Math.round(sys.freeGb() * 10) / 10;
+  state.total_gb = Math.round(sys.totalGb() * 10) / 10;
   const gpu = sys.gpuUsedGb();
   state.gpu_used_gb = gpu === null ? null : Math.round(gpu * 10) / 10;
   state.measured = iso(now);
@@ -573,6 +585,7 @@ export function view(state: State, sys: System): View {
     resources: state.resources,
     ram_gb: ramGb(sys),
     free_gb: state.free_gb,
+    total_gb: state.total_gb,
     gpu_used_gb: state.gpu_used_gb,
     measured: state.measured,
   };
@@ -585,6 +598,7 @@ export type TakeArgs = Who & {
   wants: Want[];
   labels?: Record<string, string>;
   note: string;
+  status?: string;
   ttl: number;
   forSeconds?: number | null;
 };
@@ -660,6 +674,7 @@ export function takeOnce(args: TakeArgs, sys: System = realSystem): Answer {
         until: args.forSeconds == null ? null : iso(now + args.forSeconds * 1000),
         wants: args.wants,
         note: args.note,
+        status: args.status ?? "",
         job: null,
         orphaned: null,
       };
@@ -720,7 +735,7 @@ export function take(args: TakeArgs, waitSeconds: number, sys: System = realSyst
   }
 }
 
-function renewHeld(h: Hold, args: { ttl: number }, sys: System, log: Ops["log"]): Outcome {
+function renewHeld(h: Hold, args: { ttl: number; status?: string }, sys: System, log: Ops["log"]): Outcome {
   const now = sys.now();
   const gap = (now - ms(h.renewed)) / 1000;
   if (gap > LATE_SECONDS) log(holdLine(h, "renew-gap", `${Math.round(gap)} s since the last renewal`));
@@ -729,11 +744,12 @@ function renewHeld(h: Hold, args: { ttl: number }, sys: System, log: Ops["log"])
   h.renewed = iso(now);
   h.expires = iso(now + args.ttl * 1000);
   h.orphaned = null;
+  if (args.status !== undefined) h.status = args.status;
   return "renewed";
 }
 
 export function renew(
-  args: Who & { ttl: number; jobPid: number | null; forSeconds?: number | null },
+  args: Who & { ttl: number; jobPid: number | null; forSeconds?: number | null; status?: string },
   sys: System = realSystem,
 ): Answer {
   const started = args.jobPid === null ? null : sys.started(args.jobPid);
@@ -1043,14 +1059,17 @@ export function main(
       case "take": {
         const wants = wantsFrom(o, "take");
         answer = take(
-          { ...who(), wants, labels: parseLabels(o.label), note: o.note ?? "", ttl, forSeconds },
+          { ...who(), wants, labels: parseLabels(o.label), note: o.note ?? "", status: o.status, ttl, forSeconds },
           wholeNumber(o.wait, "--wait", 0) ?? 0,
           sys,
         );
         break;
       }
       case "renew":
-        answer = renew({ ...who(), ttl, jobPid: wholeNumber(o["job-pid"], "--job-pid", null), forSeconds }, sys);
+        answer = renew(
+          { ...who(), ttl, jobPid: wholeNumber(o["job-pid"], "--job-pid", null), forSeconds, status: o.status },
+          sys,
+        );
         break;
       case "free":
         answer =
@@ -1103,6 +1122,7 @@ function parseCli(args: string[]) {
       gb: { type: "string" },
       label: { type: "string", multiple: true },
       note: { type: "string" },
+      status: { type: "string" },
       wait: { type: "string" },
       for: { type: "string" },
       ttl: { type: "string" },
@@ -1119,14 +1139,15 @@ function parseCli(args: string[]) {
 
 const HELP = `lease: shared locks on this machine's resources (state and log in ${home()}).
 
-  lease take --name N --res R[:GB] [--res ...] [--label R=TEXT] [--note T] [--pid P] [--wait S] [--for S]
+  lease take --name N --res R[:GB] [--res ...] [--label R=TEXT] [--note T] [--status T] [--pid P] [--wait S] [--for S]
       Take every resource named, or none, for process P (default: the caller). ram is shared by size
       (ram:10 is 10 GB); any other name, such as gpu or browser, has one holder. --gb G alone means
       --res gpu --res ram:G. Held: wait up to S seconds (default 0), listed as a waiter. --for says how long
       the job should take; past it the lease shows as stuck, and stays held. Taking again renews it.
-  lease renew --name N [--pid P] [--job-pid J] [--for S]
+  lease renew --name N [--pid P] [--job-pid J] [--for S] [--status T]
       Keep it: every ${RENEW_SECONDS} s; it lapses ${TTL_SECONDS} s after the last renewal. --job-pid declares the
       process doing the heavy work, which "free --stop-job" may stop and whose life keeps an orphaned lease held.
+      --status (here or on take) is a few words on how the work goes, shown after the holder's name in the band.
   lease free --name N [--pid P] [--res R ...]
       Give it back; with --res, only those resources (lease free --name N --res ram), keeping the rest.
   lease free --force [--name N [--pid P]] [--stop-job] [--by WHO] [--cooldown S]

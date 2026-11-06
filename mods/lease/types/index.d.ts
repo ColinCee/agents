@@ -1,10 +1,9 @@
-/** Why a hold wants a look: its holder is gone with its job running, no renewal for a minute, or past its time. */
-export type Stuck = "orphaned" | "late" | "over" | null;
-/** How a line is drawn: fine (green), stuck (red), or something using the GPU with no lock (yellow). */
+/** How a part is drawn: fine (dim), stuck (red), or something using the GPU with no lock (yellow). */
 export type Tone = "ok" | "stuck" | "unlocked";
-/** One holder, as one line of the band: who, what, how long, and anything wrong. */
-export type Line = { key: string; tone: Tone; text: string; problem: string };
-export type Band = { lines: Line[]; unreadable: boolean };
+/** One short part of the band's row: the RAM bar, a holder and its status, the GPU, or who waits. */
+export type Part = { key: string; text: string; tone: Tone };
+/** The band's one row; `tone` is its worst part's, `problem` says what is wrong, once, at its end. */
+export type Band = { parts: Part[]; tone: Tone; problem: string; unreadable: boolean };
 
 declare module "claude-code" {
   interface PluginState {
