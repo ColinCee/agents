@@ -15,6 +15,7 @@ import {
   show,
   take,
   takeOnce,
+  words,
 } from "../src/lease/lease.mjs";
 
 type Fake = System & {
@@ -211,6 +212,14 @@ describe("the file", () => {
     const state = parseState(readFileSync(join(process.env.LEASES_HOME ?? "", "state.json"), "utf8"));
     expect(state.holds[0]?.wants).toEqual(legacyWants(40));
     expect(state.free_gb).toBe(41.2);
+  });
+
+  test("a holder's status is kept from take to renew, and a renew without one leaves it", () => {
+    takeOnce({ ...cortex, status: "loading" }, sys);
+    renew({ name: "cortex", pid: 100, ttl: 120, jobPid: null, status: "1/2" }, sys);
+    renew({ name: "cortex", pid: 100, ttl: 120, jobPid: null }, sys);
+    expect(show(sys).view.holds[0]?.status).toBe("1/2");
+    expect(words(show(sys).view)).toContain("cortex (pid 100), Strata, 1/2");
   });
 });
 

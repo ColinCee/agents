@@ -53,14 +53,22 @@ export const register: Register = (on) => {
     const { Box, Text } = $.ui.resolve(e);
     if (shown.unreadable) return <Text color="error">lease: the state file cannot be read; run lease show</Text>;
     return (
-      <Box flexDirection="column">
-        {shown.lines.map((line) => (
-          <Text key={line.key} wrap="truncate-end">
-            <Text color={TONE[line.tone]}>● </Text>
-            <Text dimColor={line.tone === "ok"}>{line.text}</Text>
-            {line.problem ? <Text color={TONE[line.tone]}> · {line.problem}</Text> : null}
-          </Text>
-        ))}
+      <Box>
+        <Text wrap="truncate-end">
+          <Text color={TONE[shown.tone]}>● </Text>
+          {shown.parts.map((part, i) => (
+            <Text key={part.key} dimColor={part.tone === "ok"} color={part.tone === "ok" ? undefined : TONE[part.tone]}>
+              {i === 0 ? "" : "  "}
+              {part.text}
+            </Text>
+          ))}
+          {shown.problem ? (
+            <Text color={TONE[shown.tone]}>
+              {"  "}
+              {shown.problem}
+            </Text>
+          ) : null}
+        </Text>
       </Box>
     );
   });
