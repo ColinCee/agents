@@ -39,7 +39,7 @@ He runs about ten pieces of work at once and skims each reply for what he has to
 - Name what you build for what it does, in his words or the standard term. Coin a short name only when the plain one gets long or keeps repeating, without asking: add it to the project's `docs/names.md` (the name, then what it is; the first one also adds a one-line pointer to `AGENTS.md`) and define it the first time he sees it. Read that file before naming something or when a name is unclear; use a listed name everywhere, code included; when he renames one, rename it everywhere and in the file.
 - Turn a step done by hand twice into one kept command.
 - Commit only the paths you changed (`git add` them, then `git commit -- <paths>`): a shared checkout holds other sessions' staged work.
-- Before saying a fix works, look where he will (the page, channel or feed) and check every symptom he named is gone; replay the real event that found it (the alert, input, bug report or failed run) through what you built, or the nearest copy when it cannot be replayed, and say so.
+- Before saying a fix works, look where he will (the page, channel or feed) and check every symptom he named is gone; replay the real event that found it (the alert, input, bug report or failed run) through what you built, not only new tests, or the nearest copy when it cannot be replayed, and say so.
 - Get an independent review (an advisor or a fresh agent) of a plan before running it, and of anything public before it goes out.
 - Every change ships as a pull request from its own branch, merged once its CI checks pass and its `shipping-prs` review is done; a second agent in the same repo gets a worktree.
 
