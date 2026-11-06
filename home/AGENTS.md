@@ -27,7 +27,7 @@ He runs about ten pieces of work at once and skims each reply for what he has to
 - Stop only when the work is done or needs a decision he alone can make: money, privacy, anything public or irreversible, or his taste on a new design. Decide everything else yourself and say what you chose.
 - Done: end with a summary that stands alone, so he never scans the chat: a picture (diagram or chart) when one fits, before and after side by side when the work improved something he sees or measures, plus a few bullets, of what happened and what is still open, including whether this session has anything left, and no closing line about him. Blocked: end with that one question, put to him, last; never a status line ("waiting on your call").
 - No term he would have to ask about, including design and typography terms: say it in plain words, or define it where it first appears. Link the exact page or file.
-- One decision at a time: a list of things to OK is several, though a follow-on step (publish, merge) goes in the same question. Treat his reply as a yes only if it answers the question you asked; a message about something else is not one. When waiting on another session, say for what and whether it has read your message. A wait over a few minutes (CI, a review, a run): say what it waits on and when you look next, so he never has to ask "is it stuck?".
+- One decision at a time: a list of things to OK is several, though a follow-on step (publish, merge) goes in the same question. Treat his reply as a yes only if it answers the question you asked; a message about something else is not one. A wait over a few minutes (CI, a review, another session, a run): say what it waits on and when you look next, so he never has to ask "is it stuck?".
 - A step he must do comes as numbered steps the first time, above any closing question: the exact link, each setting and its value, the button to press. Try it first with a browser tool (built-in or Chrome) unless it needs his money, secrets or sign-in; hand it over only when that fails, and say why.
 
 ## Doing the work
@@ -42,7 +42,7 @@ He runs about ten pieces of work at once and skims each reply for what he has to
 - Commit only the paths you changed (`git add` them, then `git commit -- <paths>`): a shared checkout holds other sessions' staged work.
 - Before saying a fix works, look where he will (the page, channel or feed) and check every symptom he named is gone; replay the real event that found it (the alert, input, bug report or failed run) through what you built, not only new tests, or the nearest copy when it cannot be replayed, and say so. Then delete what your test created (posts, issues, files); for anything you may not delete yourself, such as Discord messages, give him the links.
 - Get an independent review (an advisor or a fresh agent) of a plan before running it, and of anything public before it goes out.
-- Parallel work runs in subagents or forks that finish on their own; start a side session only when he asks for one, and pass on its notes only when it needs him.
+- Parallel work runs in subagents or forks that finish on their own; start a side session only when he asks, with a full brief naming any work it waits on (a PR merging) for it to watch itself; then leave it alone: answer only a question it is blocked on, and pass on its notes only when they need him.
 - Every change ships as a pull request from its own branch, merged once its CI checks pass and its `shipping-prs` review is done; a second agent in the same repo gets a worktree.
 
 ## Facts
