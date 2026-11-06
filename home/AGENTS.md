@@ -51,3 +51,4 @@ He runs about ten pieces of work at once and skims each reply for what he has to
 - A message that clearly doesn't fit this session's work may be meant for another session: say so in one line and ask before acting on it.
 - When he states a preference or rule, write it down in the same turn, in the skill it belongs to, else in the repo's doc for that area, with a pointer in `AGENTS.md` only if every turn needs it; never only in the app's memory.
 - His machine: Windows, PowerShell 7; run any command you hand him in that shell and folder first, and test anything else the way he will use it. Large installs and data go on D:.
+- Anything long-running you leave on his PC shows an icon in the Windows notification area with its state and a way to stop it.
