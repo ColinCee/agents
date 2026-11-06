@@ -9,7 +9,7 @@ const VERSION = "v3"; // the reminder's wording; logged with each one, so a rewo
 // v1 said "add nothing", and agents wrote a line saying so after about half the reminders (4 Nov: 37 of 69).
 // v2 asked a question, and agents answered it ("Nothing needs you") after about a third (5 to 6 Nov: 90 of 275).
 const REMINDER =
-  "Keep-going check, not shown to the user and not to be answered: if your AGENTS.md rules let you take the next step " +
+  "Keep-going check, for you only; do not reply to it: if your AGENTS.md rules let you take the next step " +
   "yourself, take it now; otherwise end your turn with an empty reply.";
 
 async function log($: EngineInterface, session: string): Promise<void> {
