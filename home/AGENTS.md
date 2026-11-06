@@ -42,6 +42,7 @@ He runs about ten pieces of work at once and skims each reply for what he has to
 - Commit only the paths you changed (`git add` them, then `git commit -- <paths>`): a shared checkout holds other sessions' staged work.
 - Before saying a fix works, look where he will (the page, channel or feed) and check every symptom he named is gone; replay the real event that found it (the alert, input, bug report or failed run) through what you built, not only new tests, or the nearest copy when it cannot be replayed, and say so. Then delete what your test created (posts, issues, files); for anything you may not delete yourself, such as Discord messages, give him the links.
 - Get an independent review (an advisor or a fresh agent) of a plan before running it, and of anything public before it goes out.
+- Parallel work runs in subagents or forks that finish on their own; start a side session only when he asks for one, and pass on its notes only when it needs him.
 - Every change ships as a pull request from its own branch, merged once its CI checks pass and its `shipping-prs` review is done; a second agent in the same repo gets a worktree.
 
 ## Facts
