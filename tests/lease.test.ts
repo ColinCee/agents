@@ -15,6 +15,7 @@ import {
   show,
   take,
   takeOnce,
+  words,
 } from "../src/lease/lease.mjs";
 
 type Fake = System & {
@@ -219,6 +220,7 @@ describe("the file", () => {
     renew({ name: "cortex", pid: 100, ttl: 120, jobPid: null, status: "1/2" }, sys);
     renew({ name: "cortex", pid: 100, ttl: 120, jobPid: null }, sys);
     expect(show(sys).view.holds[0]?.status).toBe("1/2");
+    expect(words(show(sys).view)).toContain("cortex (pid 100), Strata, 1/2");
   });
 });
 

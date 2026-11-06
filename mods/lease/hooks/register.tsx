@@ -62,7 +62,12 @@ export const register: Register = (on) => {
               {part.text}
             </Text>
           ))}
-          {shown.problem ? <Text color={TONE[shown.tone]}> · {shown.problem}</Text> : null}
+          {shown.problem ? (
+            <Text color={TONE[shown.tone]}>
+              {"  "}
+              {shown.problem}
+            </Text>
+          ) : null}
         </Text>
       </Box>
     );

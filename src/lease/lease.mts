@@ -862,7 +862,7 @@ export function words(v: View): string {
     v.waiting.length > 0 ? ` · waiting: ${v.waiting.map((w) => `${w.name} (${wantWords(w.wants)})`).join(", ")}` : "";
   if (v.holds.length === 0) return `free · ${free}${waiting}`;
   const holds = v.holds.map((h) => {
-    const what = `${h.name} (pid ${h.pid})${h.note === "" ? "" : `, ${h.note}`}`;
+    const what = `${h.name} (pid ${h.pid})${[h.note, h.status].map((t) => (t === "" ? "" : `, ${t}`)).join("")}`;
     return `${wantWords(h.wants)} held by ${what} · ${minutes(h.seconds_left)} left${HEALTH_WORDS[h.health]}`;
   });
   return `${holds.join("; ")} · ${free}${waiting}`;

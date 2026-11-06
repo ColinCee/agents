@@ -69,13 +69,26 @@ test("one row: the RAM bar, each holder, the GPU, who waits; stuck ones first an
 test("a RAM holder shows its status after its name, and the GPU shows free", async () => {
   const builds = { ...strata, name: "kaizen-ci", note: "a VM for builds, with a long note", status: "1/2" };
   const band = bandOf(state([{ ...builds, wants: [{ resource: "ram", gb: 12 }] }]), NOW);
-  expect(band?.parts.map((p) => p.text)).toEqual(["RAM ▓▓▓▓▓▓▓▓▓▒▒░", "kaizen-ci 1/2", "GPU ·"]);
+  expect(band?.parts.map((p) => p.text)).toEqual(["RAM ▓▓▓▓▓▓▓▓▓▓▒▒", "kaizen-ci 1/2", "GPU ·"]);
 });
 
 test("the bar: programs' own use, then leased, then free; a lease never vanishes into rounding", async () => {
   expect(ramBar(64, 12, 12)).toBe("▓▓▓▓▓▓▓▓▒▒░░");
-  expect(ramBar(64, 60, 1)).toBe("▓▒░░░░░░░░░░");
+  expect(ramBar(64, 1.4, 12)).toBe("▓▓▓▓▓▓▓▓▓▓▒▒"); // nearly full draws no free cell
+  expect(ramBar(64, 60, 1)).toBe("▒░░░░░░░░░░░");
   expect(ramBar(64, 0, 80)).toBe("▒▒▒▒▒▒▒▒▒▒▒▒");
+});
+
+test("two holders stuck alike say it once; a long status is cut; a stale measurement shows no GPU", async () => {
+  const late = { ...strata, renewed: "2026-10-15T11:58:30Z" };
+  const band = bandOf(state([late, { ...late, name: "other", pid: 5, status: "a very long status line" }]), NOW);
+  expect(band?.problem).toBe("stuck: no check-in for over a minute");
+  expect(band?.parts.map((p) => p.text)).toContain("GPU Strata a very long !");
+  const stale = JSON.stringify({
+    ...JSON.parse(state([{ ...strata, wants: [{ resource: "ram", gb: 4 }] }])),
+    measured: "2026-10-15T11:00:00Z",
+  });
+  expect(bandOf(stale, NOW)?.parts.map((p) => p.text)).toEqual(["Strata"]);
 });
 
 test("the first version's file is read too, so install order does not matter", async () => {
