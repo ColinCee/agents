@@ -1,6 +1,6 @@
 // A Claude Code PreToolUse hook (Bash, PowerShell, Edit, Write, MultiEdit): refuse a step until the session has loaded
 // the skill for it, and refuse a commit that names no paths. Rules that only point at a skill loaded it about 1 time
-// in 3; this refusal loaded shipping-prs every time (Nov 2026 session review).
+// in 3; this refusal loaded shipping-prs every time.
 import { readFileSync } from "node:fs";
 import { homedir } from "node:os";
 
@@ -9,7 +9,7 @@ const tool = String(input.tool_name ?? "");
 const command = String(input.tool_input?.command ?? "");
 const file = String(input.tool_input?.file_path ?? "").replaceAll("\\", "/");
 const home = homedir().replaceAll("\\", "/").toLowerCase();
-// Copies installed from the agents repo: an edit here is lost at the next install (two shipping-prs fixes were, 5 Nov).
+// Copies installed from the agents repo: an edit here is lost at the next install.
 // Skills count only when the installer's lock says they came from the agents repo; other skills stay editable.
 let fromRepo = [];
 try {
@@ -36,9 +36,10 @@ const mergeApi = at("gh", "api\\b[^;&|\\n]*\\/pulls\\/\\d+\\/merge\\b");
 const firstPush = git("push\\b[^;&|\\n]*\\s(-u|--set-upstream)\\b");
 const commit = git("commit\\b");
 const measuring = /(^|[;&|(\n]\s*)(hyperfine\b|(npm|pnpm) run bench\b)/;
-// Docs in a project; not the app's memory, plans or scratch files.
+// Docs and code in a project, since code carries comments; not the app's memory, plans or scratch files.
 const isDoc =
-  /\.md$/i.test(file) && !/\/\.claude\/(projects|plans)\/|\/AppData\/Local\/Temp\/|\/scratchpad\//i.test(file);
+  /\.(md|py|[cm]?[jt]sx?|ya?ml|sh|ps1|css|html|sql|toml|go|rs|java|kt|swift|cs|c|cpp|h|rb|php)$/i.test(file) &&
+  !/\/\.claude\/(projects|plans)\/|\/AppData\/Local\/Temp\/|\/scratchpad\/|\/node_modules\/|lock\.ya?ml$|\.min\.|\.d\.ts$/i.test(file);
 
 function refuse(message) {
   console.error(message);
@@ -74,5 +75,5 @@ if (tool === "Bash" || tool === "PowerShell") {
   refuse(
     "This file is an installed copy and the next install overwrites it. Change it in its repo (skills, rules and hooks: the agents repo, https://github.com/ColinCee/agents), merge, then run `npm run install-home -- --apply` there.",
   );
-else if (isDoc) needs("doc-upkeep", "writing or changing a document");
+else if (isDoc) needs("doc-upkeep", "writing or changing a document or code (comments follow its rules)");
 process.exit(0);
