@@ -12,7 +12,7 @@ Every turn reads this, so it holds only what every turn needs; the rest is a poi
 | A GPU job, or a game or game test | Ask first, then take it through `lease gpu` (`lease --help`), one job at a time; a refusal means wait. Stop yours when he wants to game |
 | A job using 10 GB or more of RAM | Take it through `lease`; a refusal means wait |
 | Taking a port or another shared resource | Check what is in use and tell other running sessions. Before sending a link, check it serves your files; stop servers you started once nobody uses them |
-| A run that may take long | A timeout just above its expected time, so a hang shows early |
+| A run or wait loop that may take long | A timeout just above its expected time, so a hang shows early |
 | Scheduling a recurring task that takes long or uses a lot of compute | Set it to run overnight while he sleeps. A GPU job still follows the GPU row |
 | A skill's step fails or a better way turns up | Do what works, then fix the skill in the same change (in its own repo), as short as it was or shorter, and say what changed and why. Someone else's skill: tell him what to change |
 | Changing a skill, these rules or a hook | Change it only in its repo (the agents repo for his), merge, then `npm run install-home -- --apply` there; the copies in `~/.claude` are overwritten at every install, and by `npx skills add` |
@@ -25,7 +25,7 @@ He runs about ten pieces of work at once and skims each reply for what he has to
 - A design to decide on: a picture and a short summary of how it works, then the questions he must answer. A high-level overview is fine; how it is built only if he asks.
 - Numbers to compare go in a chart with short plain labels, units and a short title. Never a table of numbers in a reply, even a small one.
 - Stop only when the work is done or needs a decision he alone can make: money, privacy, anything public or irreversible, or his taste on a new design. Decide everything else yourself and say what you chose.
-- Done: end with what happened and any open issues, and no closing line about him. Blocked: end with that one question, put to him, last; never a status line ("waiting on your call").
+- Done: end with what happened and what is still open, including whether this session has anything left, and no closing line about him. Blocked: end with that one question, put to him, last; never a status line ("waiting on your call").
 - No term he would have to ask about, including design and typography terms: say it in plain words, or define it where it first appears. Link the exact page or file.
 - One decision at a time: a list of things to OK is several, though a follow-on step (publish, merge) goes in the same question. Treat his reply as a yes only if it answers the question you asked; a message about something else is not one. When waiting on another session, say for what and whether it has read your message. A wait over a few minutes (CI, a review, a run): say what it waits on and when you look next, so he never has to ask "is it stuck?".
 - A step he must do comes as numbered steps the first time, above any closing question: the exact link, each setting and its value, the button to press. Try it first with a browser tool (built-in or Chrome) unless it needs his money, secrets or sign-in; hand it over only when that fails, and say why.
@@ -39,7 +39,7 @@ He runs about ten pieces of work at once and skims each reply for what he has to
 - Name what you build for what it does, in his words or the standard term. Coin a short name only when the plain one gets long or keeps repeating, without asking: add it to the project's `docs/names.md` (the name, then what it is; the first one also adds a one-line pointer to `AGENTS.md`) and define it the first time he sees it. Read that file before naming something or when a name is unclear; use a listed name everywhere, code included; when he renames one, rename it everywhere and in the file.
 - Turn a step done by hand twice into one kept command.
 - Commit only the paths you changed (`git add` them, then `git commit -- <paths>`): a shared checkout holds other sessions' staged work.
-- Show a fix works by replaying the real event that found it (the alert, input, bug report or failed run) through what you built, not only with new tests; when it cannot be replayed, use the nearest copy and say so.
+- Before saying a fix works, look where he will (the page, channel or feed) and check every symptom he named is gone; replay the real event that found it (the alert, input, bug report or failed run) through what you built, not only new tests, or the nearest copy when it cannot be replayed, and say so.
 - Get an independent review (an advisor or a fresh agent) of a plan before running it, and of anything public before it goes out.
 - Every change ships as a pull request from its own branch, merged once its CI checks pass and its `shipping-prs` review is done; a second agent in the same repo gets a worktree.
 
