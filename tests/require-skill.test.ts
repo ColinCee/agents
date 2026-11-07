@@ -36,6 +36,8 @@ if (a === "pr" && b === "checks") {
   const c = process.env.CHECKS;
   if (c === "none") { console.error("no checks reported on the 'x' branch"); process.exit(1); }
   if (c === "fail") { console.log("check\\tfail\\t1m\\thttps://x"); process.exit(1); }
+  if (c === "pending") { console.log("check\\tpending\\t0\\thttps://x"); process.exit(8); }
+  if (c === "broken") { console.error("gh: To get started with GitHub CLI, please run: gh auth login"); process.exit(4); }
   process.exit(0);
 }
 if (a === "pr" && b === "list") { console.log(process.env.PR ?? ""); process.exit(0); }
@@ -101,6 +103,17 @@ describe("require-skill hook", () => {
     expect(merge("gh pr merge 7 --squash", { CHECKS: "none" })).toBe(0);
     expect(merge("gh api -X PUT repos/o/r/pulls/9/merge", { CHECKS: "fail" })).toBe(2);
     expect(merge("gh pr view 664", { CHECKS: "fail" })).toBe(0);
+    // The number after flags, in quotes, or with an env prefix; every merge in the command.
+    expect(merge('gh pr merge --squash "664" -R "o/r"', { CHECKS: "fail" })).toBe(2);
+    expect(merge("GH_TOKEN=x gh pr merge 664", { CHECKS: "fail" })).toBe(2);
+    expect(merge("gh pr view 1 && gh pr merge 664", { CHECKS: "fail" })).toBe(2);
+    // --auto waits for the checks itself: pending is fine, a failure is not.
+    expect(merge("gh pr merge 664 --auto", { CHECKS: "pending" })).toBe(0);
+    expect(merge("gh pr merge 664", { CHECKS: "pending" })).toBe(2);
+    expect(merge("gh pr merge 664 --auto", { CHECKS: "fail" })).toBe(2);
+    // gh that cannot answer merges nothing.
+    expect(merge("gh pr merge 664", { CHECKS: "broken" })).toBe(2);
+    expect(merge('gh api graphql -f query="mutation{mergePullRequest(input:{})}"', { CHECKS: "pass" })).toBe(2);
   });
 
   it("pushes to main only a passing pull request's head", () => {
@@ -110,6 +123,10 @@ describe("require-skill hook", () => {
     expect(push("git push origin HEAD:main", { PR: "12", CHECKS: "pass" })).toBe(0);
     expect(push("git push origin main-docs", { PR: "", CHECKS: "fail" })).toBe(0);
     expect(push("git push origin feature:refs/heads/main", { PR: "", CHECKS: "pass" })).toBe(2);
+    expect(push("git push origin 'HEAD:main'", { PR: "", CHECKS: "pass" })).toBe(2);
+    expect(push("git push --force origin +HEAD:main", { PR: "", CHECKS: "pass" })).toBe(2);
+    expect(push("git push --mirror origin", { PR: "", CHECKS: "pass" })).toBe(2);
+    expect(push("git push -u origin feature-main", { PR: "", CHECKS: "pass" })).toBe(0);
   });
 
   it("needs deciding before a benchmark and doc-upkeep before a doc or code edit", () => {
