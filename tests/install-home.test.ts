@@ -7,11 +7,12 @@ import { expect, test } from "vitest";
 const TOOL = resolve(import.meta.dirname, "..", "tools", "install-home.ts");
 const HOME = resolve(import.meta.dirname, "..", "home");
 const RULES = ["core.md", "desktop.md"].map((f) => readFileSync(join(HOME, f), "utf8")).join("");
-// Every turn reads them; a cap a little above today's size, so growth is a choice someone makes, not drift.
-const RULES_MAX = 8.5 * 1024;
+// Every turn reads them, and Anthropic advises keeping such files under about 200 lines. Growth below that is the
+// reviewers' to question (shipping-prs, review-angles.md), not this test's.
+const RULES_MAX_LINES = 200;
 
-test("the rules stay under their cap", () => {
-  expect(Buffer.byteLength(RULES)).toBeLessThanOrEqual(RULES_MAX);
+test("the rules stay under the line limit", () => {
+  expect(RULES.split("\n").length).toBeLessThanOrEqual(RULES_MAX_LINES);
 });
 
 // homedir() reads HOME on macOS and Linux and USERPROFILE on Windows; set both to an empty folder.
