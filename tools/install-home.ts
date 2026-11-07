@@ -1,4 +1,5 @@
-// Install home/AGENTS.md as the user-level instructions of the coding agents on this machine, with its hook and skills.
+// Install home/core.md and home/desktop.md as the user-level instructions of the coding agents on this machine, with
+// the hook and skills.
 import {
   copyFileSync,
   existsSync,
@@ -14,30 +15,32 @@ import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 
-const HELP = `Install home/AGENTS.md as every agent's user-level instructions. Reports only unless --apply.
+const HELP = `Install home/core.md and home/desktop.md as every agent's user-level instructions. Reports only unless --apply.
 
   npm run install-home             # what would change
   npm run install-home -- --apply  # write it
 
-home/AGENTS.md is the author's own instructions. Read it before installing it as yours.
+They are the author's own instructions. Read them before installing them as yours.
 
-With --apply, copies it to ~/.claude/AGENTS.md and ~/.codex/AGENTS.md (Codex), every skill in skills/ to
+With --apply, joins them into ~/.claude/AGENTS.md and ~/.codex/AGENTS.md (Codex), copies every skill in skills/ to
 ~/.claude/skills/, home/hooks/require-skill.mjs to
 ~/.claude/hooks/ with its PreToolUse entry in ~/.claude/settings.json (only that entry; the rest of the file is kept), and writes ~/.claude/CLAUDE.md as
 one line, @AGENTS.md: Claude Code reads only CLAUDE.md at user level, and the import pulls AGENTS.md in. Any file
 it replaces is first kept as <name>.<date-time>.bak beside it. Copies, not links: Windows without Developer Mode
 cannot make links.
 
-Exit codes: 0 everything matches or was installed, 1 something differs (report only), 2 home/AGENTS.md is missing.`;
+Exit codes: 0 everything matches or was installed, 1 something differs (report only), 2 home/core.md or home/desktop.md is missing.`;
 
-const SOURCE = resolve(dirname(fileURLToPath(import.meta.url)), "..", "home", "AGENTS.md");
+const HOME = resolve(dirname(fileURLToPath(import.meta.url)), "..", "home");
+// core.md is what unattended agents also read (they take it alone); desktop.md is for sessions with the author present.
+const SOURCES = [join(HOME, "core.md"), join(HOME, "desktop.md")];
 // The hook that refuses `gh pr create` and `gh pr merge` until shipping-prs is loaded; settings.json points at it.
-const HOOK = resolve(dirname(SOURCE), "hooks", "require-skill.mjs");
+const HOOK = join(HOME, "hooks", "require-skill.mjs");
 // Claude Code reads ~/.claude/CLAUDE.md, never ~/.claude/AGENTS.md; a relative import resolves beside the file.
 const IMPORT = Buffer.from("@AGENTS.md\n");
 // Every skill in this repo (skills/<name>, skills/.experimental/<name>), installed as ~/.claude/skills/<name>. The
 // installed copies are only ever copies: a fix made in one was lost when the skill was next installed (5 Nov 2026).
-const SKILLS = resolve(dirname(SOURCE), "..", "skills");
+const SKILLS = resolve(HOME, "..", "skills");
 
 function files(dir: string): string[] {
   return readdirSync(dir).flatMap((name) => {
@@ -106,11 +109,12 @@ function main(): number {
     console.error(`${(e as Error).message}\n\n${HELP}`);
     return 2;
   }
-  if (!existsSync(SOURCE)) {
-    console.error(`Error: ${SOURCE} is missing.`);
+  const missing = SOURCES.find((p) => !existsSync(p));
+  if (missing) {
+    console.error(`Error: ${missing} is missing.`);
     return 2;
   }
-  const text = readFileSync(SOURCE);
+  const text = Buffer.concat(SOURCES.map((p) => readFileSync(p)));
   const targets: [string, Buffer][] = [
     [join(homedir(), ".claude", "AGENTS.md"), text],
     [join(homedir(), ".claude", "CLAUDE.md"), IMPORT],

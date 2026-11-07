@@ -41,6 +41,11 @@ beforeEach(() => {
 });
 afterEach(() => rmSync(root, { recursive: true, force: true }));
 
+test("a skill body over 8 KB fails", () => {
+  write(join(root, "skills/sample/SKILL.md"), SKILL + "Sample it again.\n".repeat(600));
+  expect(errors().join("\n")).toMatch(/bytes; the limit is 8192/);
+});
+
 test("a skill that keeps the rules passes", () => {
   expect(errors()).toEqual([]);
 });
