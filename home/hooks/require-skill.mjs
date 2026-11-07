@@ -1,6 +1,8 @@
 // A Claude Code PreToolUse hook (Bash, PowerShell, Edit, Write, MultiEdit): refuse a step until the session has loaded
-// the skill for it, and refuse a commit that names no paths. Rules that only point at a skill loaded it about 1 time
+// the skill for it, refuse a commit that names no paths, and refuse a merge (or a push to main) whose checks have not
+// passed: GitHub's free plan cannot require checks on a private repository, so this is the required check. Rules that only point at a skill loaded it about 1 time
 // in 3; this refusal loaded shipping-prs every time.
+import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { homedir } from "node:os";
 
@@ -34,6 +36,9 @@ const git = (sub) =>
 const prCommand = at("gh", "pr\\s+(create|merge)\\b");
 const mergeApi = at("gh", "api\\b[^;&|\\n]*\\/pulls\\/\\d+\\/merge\\b");
 const firstPush = git("push\\b[^;&|\\n]*\\s(-u|--set-upstream)\\b");
+const prMerge = at("gh", "pr\\s+merge\\b");
+// A push whose destination is main or master: `main`, `HEAD:main`, `x:refs/heads/main`.
+const pushToMain = git("push\\b[^;&|\\n]*\\s([^\\s:]*:)?(refs\\/heads\\/)?(main|master)(\\s|$)");
 const commit = git("commit\\b");
 const measuring = /(^|[;&|(\n]\s*)(hyperfine\b|(npm|pnpm) run bench\b)/;
 // Docs and code in a project, since code carries comments; not the app's memory, plans or scratch files.
@@ -44,6 +49,28 @@ const isDoc =
 function refuse(message) {
   console.error(message);
   process.exit(2);
+}
+
+// gh, run where the agent runs it; a test names a stand-in script.
+function gh(args) {
+  const [file, pre] = process.env.REQUIRE_SKILL_GH ? [process.execPath, [process.env.REQUIRE_SKILL_GH]] : ["gh", []];
+  const done = spawnSync(file, [...pre, ...args], { cwd: input.cwd, encoding: "utf8", timeout: 60_000 });
+  return { status: done.status, out: `${done.stdout ?? ""}${done.stderr ?? ""}` };
+}
+
+// The pull request's checks must all have passed; a repository with no checks at all has nothing to wait for.
+function green(number, repo) {
+  const where = repo ? ["--repo", repo] : [];
+  const checks = gh(["pr", "checks", ...number, ...where]);
+  if (checks.status === 0 || /no checks reported/i.test(checks.out)) return;
+  const open = checks.out
+    .split("\n")
+    .filter((l) => /\t(fail|pending|cancel)/i.test(l))
+    .map((l) => l.split("\t").slice(0, 2).join(": "))
+    .slice(0, 5);
+  refuse(
+    `Merge only once the checks pass (\`gh pr checks <number> --watch\` exits 0): ${open.join(", ") || "they have not passed"}. Fix a failure first.`,
+  );
 }
 
 function needs(skill, why) {
@@ -70,6 +97,18 @@ if (tool === "Bash" || tool === "PowerShell") {
     );
   if (prCommand.test(bare) || mergeApi.test(bare) || firstPush.test(bare))
     needs("shipping-prs", "pushing a new branch or opening or merging a pull request (its reviews come before the push)");
+  const repo = bare.match(/(?:-R|--repo)[\s=]+(\S+)/)?.[1] ?? bare.match(/repos\/([\w.-]+\/[\w.-]+)\/pulls/)?.[1];
+  if (prMerge.test(bare)) green(bare.match(/pr\s+merge\s+(\d+)/)?.slice(1) ?? [], repo);
+  else if (mergeApi.test(bare)) green(bare.match(/\/pulls\/(\d+)\/merge/)?.slice(1) ?? [], repo);
+  else if (pushToMain.test(bare)) {
+    // Only the head of a pull request whose checks passed (the route when gh may not merge a workflow change).
+    const head = spawnSync("git", ["rev-parse", "HEAD"], { cwd: input.cwd, encoding: "utf8" }).stdout?.trim();
+    const pr = head ? gh(["pr", "list", "--state", "open", "--search", head, "--json", "number", "--jq", ".[0].number"]) : null;
+    const number = pr?.status === 0 ? pr.out.trim() : "";
+    if (!/^\d+$/.test(number))
+      refuse("Push to main only the head of an open pull request whose checks have passed; open one, or merge it with `gh pr merge`.");
+    green([number], undefined);
+  }
   if (measuring.test(bare)) needs("deciding", "measuring or comparing options");
 } else if (installed)
   refuse(
