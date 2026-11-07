@@ -28,7 +28,7 @@ Other people's skills I use:
 
 ## Instructions for agents
 
-[home/AGENTS.md](home/AGENTS.md): how every agent should work with me. Install: `npm run install-home -- --apply`.
+[home/core.md](home/core.md) and [home/desktop.md](home/desktop.md): how every agent should work with me, and what applies only when I am there. Install: `npm run install-home -- --apply`.
 
 That also installs [home/hooks/require-skill.mjs](home/hooks/require-skill.mjs), and its entry in `~/.claude/settings.json`. It refuses a step until the skill for it is loaded: `shipping-prs` before a first push or a pull request, `deciding` before a benchmark, `doc-upkeep` before editing a doc or code file.
 

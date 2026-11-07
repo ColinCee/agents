@@ -5,7 +5,14 @@ import { join, resolve } from "node:path";
 import { expect, test } from "vitest";
 
 const TOOL = resolve(import.meta.dirname, "..", "tools", "install-home.ts");
-const RULES = readFileSync(resolve(import.meta.dirname, "..", "home", "AGENTS.md"), "utf8");
+const HOME = resolve(import.meta.dirname, "..", "home");
+const RULES = ["core.md", "desktop.md"].map((f) => readFileSync(join(HOME, f), "utf8")).join("");
+// Every turn reads them; a cap a little above today's size, so growth is a choice someone makes, not drift.
+const RULES_MAX = 8.5 * 1024;
+
+test("the rules stay under their cap", () => {
+  expect(Buffer.byteLength(RULES)).toBeLessThanOrEqual(RULES_MAX);
+});
 
 // homedir() reads HOME on macOS and Linux and USERPROFILE on Windows; set both to an empty folder.
 function install(home: string, ...args: string[]): void {
