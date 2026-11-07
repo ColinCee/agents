@@ -29,6 +29,8 @@ Page weight, request count, startup and response time, and any quota or free-tie
 
 Search every repository named above for text that describes what changed: READMEs, runbooks, design docs, notes, code comments, the pull request's own description. Each claim the change makes false is a finding: quote the line and the file. Check them the way the `doc-upkeep` skill does; without it, check each claim against the code, not against the doc's own wording.
 
+Then size: compare the docs, rules and skills the diff touches with the base branch (`git diff --stat <base> -- <paths>`). Any net lines added are a finding unless the description says in one line why nothing could be reworded, merged or moved out instead; a new need the change serves is a reason, a fix that only adds a line is not.
+
 ## Shipping order
 
 When the change spans repositories or needs a secret, a migration or a setting: does any order of merging and deploying break something in between? Is each step that needs the user named, before the merge that depends on it?

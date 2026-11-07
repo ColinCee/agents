@@ -11,7 +11,7 @@ Every turn reads this, his own sessions and his unattended agents alike, so each
 | Opening or merging a pull request | Load `shipping-prs` with the Skill tool before `gh pr create` or a merge |
 | A run or wait loop that may take long | A timeout just above its expected time, so a hang shows early |
 | A skill's step fails or a better way turns up | Do what works, then fix the skill in its own repo in the same change, and say what changed and why. Someone else's skill: say what to change |
-| Changing a skill, these rules or a hook | Only in the agents repo, by pull request: `home/core.md` if it holds with no human present, else `home/desktop.md`. Reword, merge, delete or move detail out before adding a line: rules and skills must not grow, and its checks cap their size |
+| Changing a skill, these rules or a hook | Only in the agents repo, by pull request: `home/core.md` if it holds with no human present, else `home/desktop.md`. Reword, merge, delete or move detail out before adding a line: rules and skills must not grow without a stated reason |
 
 ## Doing the work
 

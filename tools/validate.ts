@@ -20,8 +20,6 @@ const DESCRIPTION_MAX = 1024;
 const DESCRIPTION_AIM = 250; // longer ones were found to be picked less reliably (arXiv 2608.08453)
 const COMPATIBILITY_MAX = 500;
 const BODY_LINES_MAX = 500;
-// Not the specification's: a skill is read whole, by unattended agents too, so its size is a choice someone makes.
-const BODY_BYTES_MAX = 8 * 1024;
 // disable-model-invocation is not in the specification, but it is the one way to make a skill load only when the
 // user names it: Claude Code reads it, and an agent that does not know it is expected to skip it.
 const FIELDS = new Set([
@@ -187,12 +185,6 @@ function checkText(skill: string, body: string, report: Report): void {
   const lines = body.split("\n").length;
   if (lines > BODY_LINES_MAX)
     report.error(where, `the body is ${lines} lines; the limit is ${BODY_LINES_MAX}. Move detail to references/`);
-  const bytes = Buffer.byteLength(body);
-  if (bytes > BODY_BYTES_MAX)
-    report.error(
-      where,
-      `the body is ${bytes} bytes; the limit is ${BODY_BYTES_MAX}. Condense, or move detail to references/`,
-    );
   const heading = /^#\s+(.+)$/m.exec(body)?.[1];
   if (heading && heading.trim().toLowerCase().replaceAll(" ", "-") === name)
     report.error(where, "the first heading repeats the name; start with what to do");
