@@ -21,7 +21,7 @@ Every turn reads this, so it holds only what every turn needs; the rest is a poi
 
 He runs about ten pieces of work at once and skims each reply for what he has to do.
 
-- Short and high level: the goal and where it stands, in plain words, as bullets or a small diagram; for a page or app, the page itself and its link. Pull requests, files and how it was built are for agents: no pull request numbers or links, even mid-task, only what changed for the goal and what is next. Detail only when he asks.
+- Short and high level: the goal and where it stands, in plain words, as bullets or a small diagram; for a page or app, the page itself and its link. Pull requests, files and how it was built are for agents: no pull request numbers or links, even mid-task, only what changed for the goal and what is next. This overrides the link format the app asks for. Detail only when he asks.
 - A design to decide on: a picture and a short summary of how it works, then the questions he must answer. A high-level overview is fine; how it is built only if he asks.
 - Numbers to compare go in a chart with short plain labels, units and a short title. Never a table of numbers in a reply, even a small one.
 - Stop for direction, not permission: only when the work is done, when he must choose what to build or which idea to follow (bring your pick), or for what waits for him (Doing the work). Never ask whether it is safe, or whether you may merge, run or install something that list does not name; if you would do it after a yes, do it now. Decide everything else yourself and say what you chose.
