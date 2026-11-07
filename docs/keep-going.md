@@ -1,26 +1,28 @@
-# Keep going: an experiment
+# Keep going: a trial
 
-When the agent ends its turn, it gets one reminder, for it only and not to be answered: if its AGENTS.md rules let it take the next step itself, it takes it; otherwise it ends its turn with an empty reply, so its summary or question stays last. No reminder when the agent is waiting on background work, when another hook already decided, or in scripted runs (`claude -p`, the SDK). Its own rules (AGENTS.md) and the whole conversation decide; the hook adds no rules of its own.
+When the agent ends its turn, it gets one reminder, for it only and not to be answered: if its AGENTS.md rules let it take the next step itself, it takes it; otherwise it ends its turn with an empty reply, so its summary or question stays last. No reminder when the agent is waiting on background work, when another hook already decided, or in scripted runs (`claude -p`, the SDK). Half the sessions get the reminder and half do not (an even last hex digit of the session id gets it), so the halves differ only in the reminder.
 
 | | |
 |---|---|
 | Hook | [mods/keep-going/hooks/register.ts](../mods/keep-going/hooks/register.ts) |
-| Measure | `npm run keep-going`: needless stops per 100 before and after, drawn against no rule, and reminders a day |
+| Daily score | [tools/stop-score.sql](../tools/stop-score.sql): per half, the user's replies, go-aheads ("yes, merge it", "do it", "now what?", typed or clicked), reminders and input tokens; also the day's stops for labelling |
+| Verdict | [tools/stop-trial.sql](../tools/stop-trial.sql): go-aheads per 100 replies in each half, and a 90% interval for the gap from resampling whole sessions |
+| One stop's thread | [tools/stop-thread.sql](../tools/stop-thread.sql), for the labelling page |
+| Old chart | `npm run keep-going`: needless stops per 100 by rule version, from model labels |
 | Install | `npm run install-keep-going` |
-| Data | `~/.claude/keep-going/`: `log/` (each reminder), `labels/`, `results.html`, and the daily review's `fixes.csv` and `measures/`. Never in this repository: it is the user's own sessions |
-
-## Why
-
-In 1,418 past stops (30 Sep to 26 Oct 2026, labelled by a model reading what the user typed next), 24% cost the user a nudge ("yeah", "what next"): "Shall I…?" on a step it had recommended (162), "Fixing." then stopping (47), a menu when it had a pick (41), "done" with work left (40), a command handed over (32).
+| Data | `~/.claude/keep-going/`: `log/` (each stop that could get a reminder, with its half), `measures/stop-score/`, `stops/`, `labels/`, `versions.csv` (the old chart's rule versions) and `labelling/README.md`, the daily steps. Never in this repository: it is the user's own sessions |
 
 ## What decides it
 
-Past sessions are the comparison. Each rule version is a row of `~/.claude/keep-going/versions.csv` (version, from, to, what, link): v0 no rule (30 Sep to 15 Oct) is the baseline, v1 the old AGENTS.md rule (16 to 26 Oct). A new rule version is one pull request that changes only that rule. Once it merges, its row goes in with the PR as its link: the row before it ends the day before the merge, the new row starts the day after, and the merge day counts in neither. From 28 Oct the reworded rule and the reminder run together, so the result is the two combined. They stay if needless stops fall by at least a third against the old rule; what reminded agents went on to do is read by hand in the daily review. The cost is one extra agent turn per reminder, reading the conversation from the prompt cache.
+The halves are compared on go-aheads per 100 replies: each one is a stop where the agent asked for permission it already had. A model's labels are not used for the verdict, since two labellers each matched the user's own calls on only half of the hard stops. The trial runs 14 days. The reminder stays if its half has fewer go-aheads and the 90% interval of the gap excludes zero; otherwise it goes, since it costs input tokens. Run on 8 days before the trial, when both halves had the reminder, the gap was 0.5 per 100 with an interval of −3.4 to 4.2, so a gap of about 3 per 100 or more can show.
+
+The labels still help: a labeller reads each day's stops with the user's own calls as examples, and the few it is least sure of go to the user on a private page. His answers become new examples, until the labeller matches him on 18 of his last 20; then he gets one a week.
 
 ## Findings
 
-- **The AGENTS.md rule works:** 31.3 needless stops per 100 with no rule, 18 once Claude Code loaded it (16 Oct).
-- **A separate judge model doesn't.** A Haiku judge replayed on 1,073 labelled stops caught 16% of needless stops and would have sent back 3 stops that needed the user; on top of the rule it made things worse (−11.3 vs −13.3 per 100). The agent itself, with its rules and the whole conversation, is the better judge, so the hook only reminds it.
-- **Most stops are in long sessions:** 78% of stops, and 85% of needless ones, sit on over 100k tokens of context.
+- **The AGENTS.md rule works:** needless stops fell from 31 to 18 per 100 once Claude Code loaded it.
+- **The reminder before this trial could not be judged.** Of about 830 reminders in 10 days, about 1 in 10 led the agent to do a step it had wrongly left to the user or to finish a wait; the rest added a status line or nothing, at about 4% of input tokens. The rule was reworded and the app's reply buttons arrived in the same weeks, so the old data cannot separate their effects.
+- **A separate judge model doesn't work.** A Haiku judge replayed on 1,073 labelled stops caught 16% of needless stops and sent back 3 that needed the user.
+- **Direction, not permission.** The user's own calls on hard stops: questions about what to build or which idea to follow are his; questions about whether something is safe, or whether the agent may merge or run it, are not.
 
-Labels are one model's reading, not ground truth, and the kind of work changes from week to week. Stops where the user's message arrived mid-turn, and stops sharing a session and minute, are left out. Out of scope: subagents' stops, agents other than Claude Code.
+Out of scope: subagents' stops, agents other than Claude Code.
