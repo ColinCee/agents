@@ -23,10 +23,10 @@ FROM ev WHERE coalesce(ep, '') NOT LIKE 'sdk%';
 CREATE TEMP TABLE turns AS
 SELECT e.*, s.arm,
        -- The app puts its own notes in <system-reminder> blocks inside the user's message; only his words count.
-       trim(regexp_replace(CASE WHEN json_type(msg -> 'content') = 'VARCHAR' THEN msg ->> 'content'
-                                ELSE array_to_string(json_extract_string(msg -> 'content', '$[*].text'), '
-') END,
-                           '(?s)<system-reminder>.*?</system-reminder>', '', 'g')) AS txt,
+       regexp_replace(regexp_replace(CASE WHEN json_type(msg -> 'content') = 'VARCHAR' THEN msg ->> 'content'
+                                          ELSE array_to_string(json_extract_string(msg -> 'content', '$[*].text'), chr(10)) END,
+                                     '(?s)<system-reminder>.*?</system-reminder>', '', 'g'),
+                      '^\s+|\s+$', '', 'g') AS txt, -- trim() keeps the newlines those blocks leave
        sum(CASE WHEN type = 'user' AND origin = 'human' THEN 1 ELSE 0 END) OVER (PARTITION BY e.sid ORDER BY ts) AS turn
 FROM ev e JOIN sess s USING (sid);
 
@@ -37,24 +37,25 @@ FROM (SELECT sid, turn, ts, unnest(json_extract(msg -> 'content', '$[*]')) AS b 
 WHERE b ->> 'name' = 'mcp__ccd_turn__wrap_up'
 GROUP BY ALL;
 
--- A go-ahead: the user's whole reply only lets the agent carry on, so its stop asked for permission it already had.
+-- A go-ahead: the user's whole reply, typed or a clicked reply button, only lets the agent carry on, so its stop asked
+-- for permission it already had. A reply that adds an instruction ("ok but change the colour") is not one.
 CREATE TEMP TABLE replies AS
 SELECT t.sid, t.arm, t.turn, t.ts, t.txt,
-       trim(t.txt) IN (SELECT unnest(json_extract_string(a.wrap, '$.actions[*].label'))) AS clicked,
-       trim(t.txt) = json_extract_string(a.wrap, '$.actions[0].label') AS clicked_first,
-       length(trim(t.txt)) < 60 AND (
-         (NOT contains(t.txt, '?') AND regexp_matches(lower(trim(t.txt)),
-           '^(yes|yeah|yep|y|ok|okay|sure|go|go on|go ahead|do it|do that|continue|carry on|proceed|ship it|merge it|keep going|you can do (it|that)|just do it)\b'))
-         OR regexp_matches(lower(t.txt), '(what now|what next|what.?s left|why did you stop|why stop)')) AS goahead
+       t.txt IN (SELECT unnest(json_extract_string(a.wrap, '$.actions[*].label')) UNION ALL
+                 SELECT unnest(json_extract_string(a.wrap, '$.actions[*].message'))) AS clicked, -- a click sends either
+       length(t.txt) < 60 AND (
+         (NOT contains(t.txt, '?') AND NOT regexp_matches(lower(t.txt), '\b(but|instead|except)\b') AND regexp_matches(lower(t.txt),
+           '^(yes|yeah|yep|ok|okay|sure|go ahead|go on|go$|do it|do that|continue|carry on|proceed|ship it|merge|lgtm|sounds good|i suppose so|keep going|you can do (it|that)|just do it)'))
+         OR regexp_matches(lower(t.txt), '^(now what|what now|what next|what.?s left|well\?|why did you stop|why stop)')) AS goahead
 FROM turns t LEFT JOIN asks a ON a.sid = t.sid AND a.turn = t.turn - 1
-WHERE t.type = 'user' AND t.origin = 'human';
+WHERE t.type = 'user' AND t.origin = 'human' AND t.turn > 1; -- a session's opening message answers no stop
 
 CREATE TEMP TABLE score AS
 SELECT getvariable('day') AS day, s.arm,
        count(DISTINCT s.sid) AS sessions,
        (SELECT count(*) FROM replies r WHERE r.arm = s.arm) AS replies,
-       (SELECT count(*) FROM replies r WHERE r.arm = s.arm AND r.goahead AND NOT r.clicked) AS typed_goaheads,
-       (SELECT count(*) FROM replies r WHERE r.arm = s.arm AND r.clicked_first) AS first_button_clicks,
+       (SELECT count(*) FROM replies r WHERE r.arm = s.arm AND r.goahead) AS goaheads,
+       (SELECT count(*) FROM replies r WHERE r.arm = s.arm AND r.goahead AND r.clicked) AS clicked_goaheads,
        (SELECT count(*) FROM turns t WHERE t.arm = s.arm AND t.type = 'user' AND t.txt LIKE 'Stop hook feedback:%Keep-going%') AS reminders,
        (SELECT round(sum(TRY_CAST(msg -> 'usage' ->> 'input_tokens' AS BIGINT) + TRY_CAST(msg -> 'usage' ->> 'cache_read_input_tokens' AS BIGINT)
                + TRY_CAST(msg -> 'usage' ->> 'cache_creation_input_tokens' AS BIGINT)) / 1e6, 1)
