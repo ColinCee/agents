@@ -23,7 +23,7 @@ const HELP = `Install home/core.md and home/desktop.md as every agent's user-lev
 They are the author's own instructions. Read them before installing them as yours.
 
 With --apply, joins them into ~/.claude/AGENTS.md and ~/.codex/AGENTS.md (Codex), copies every skill in skills/ to
-~/.claude/skills/, home/hooks/require-skill.mjs to
+~/.claude/skills/ (with the skills OTHER_SKILLS names from other repos, except in CI), home/hooks/require-skill.mjs to
 ~/.claude/hooks/ with its PreToolUse entry in ~/.claude/settings.json (only that entry; the rest of the file is kept), and writes ~/.claude/CLAUDE.md as
 one line, @AGENTS.md: Claude Code reads only CLAUDE.md at user level, and the import pulls AGENTS.md in. Any file
 it replaces is first kept as <name>.<date-time>.bak beside it. Copies, not links: Windows without Developer Mode
@@ -41,6 +41,26 @@ const IMPORT = Buffer.from("@AGENTS.md\n");
 // Every skill in this repo (skills/<name>, skills/.experimental/<name>), installed as ~/.claude/skills/<name>. The
 // installed copies are only ever copies: a fix made in one was lost when the skill was next installed (5 Nov 2026).
 const SKILLS = resolve(HOME, "..", "skills");
+// Skills that live in the author's other public repos, beside what they describe, so a new machine gets them from
+// this one command. Not in CI: Kaizen's runners install these rules too, and these skills are not their work.
+const OTHER_SKILLS: Record<string, string> = {
+  "homelab-network": "https://raw.githubusercontent.com/ColinCee/homelab/main/.github/skills/homelab-network/SKILL.md",
+};
+
+async function otherSkillTargets(): Promise<[string, Buffer][]> {
+  if (process.env.CI) return [];
+  const targets: [string, Buffer][] = [];
+  for (const [name, url] of Object.entries(OTHER_SKILLS)) {
+    try {
+      const res = await fetch(url, { signal: AbortSignal.timeout(15_000) });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      targets.push([join(homedir(), ".claude", "skills", name, "SKILL.md"), Buffer.from(await res.arrayBuffer())]);
+    } catch (e) {
+      console.error(`skipped ${name}: ${url} did not load (${(e as Error).message})`);
+    }
+  }
+  return targets;
+}
 
 function files(dir: string): string[] {
   return readdirSync(dir).flatMap((name) => {
@@ -94,7 +114,7 @@ function keep(path: string): string {
   return backup;
 }
 
-function main(): number {
+async function main(): Promise<number> {
   let apply: boolean;
   try {
     const { values } = parseArgs({
@@ -121,6 +141,7 @@ function main(): number {
     [join(homedir(), ".codex", "AGENTS.md"), text],
     [join(homedir(), ".claude", "hooks", "require-skill.mjs"), readFileSync(HOOK)],
     ...skillTargets(),
+    ...(await otherSkillTargets()),
   ];
   try {
     targets.push(settingsTarget());
@@ -151,4 +172,4 @@ function main(): number {
   return 0;
 }
 
-process.exitCode = main();
+process.exitCode = await main();

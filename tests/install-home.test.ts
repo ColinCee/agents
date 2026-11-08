@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { lstatSync, mkdirSync, mkdtempSync, readFileSync, symlinkSync, writeFileSync } from "node:fs";
+import { existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { expect, test } from "vitest";
@@ -15,10 +15,11 @@ test("the rules stay under the line limit", () => {
   expect(RULES.split("\n").length).toBeLessThanOrEqual(RULES_MAX_LINES);
 });
 
-// homedir() reads HOME on macOS and Linux and USERPROFILE on Windows; set both to an empty folder.
+// homedir() reads HOME on macOS and Linux and USERPROFILE on Windows; set both to an empty folder. CI is set so no
+// test fetches the skills other repos hold.
 function install(home: string, ...args: string[]): void {
   execFileSync(process.execPath, ["--import", "tsx", TOOL, ...args], {
-    env: { ...process.env, HOME: home, USERPROFILE: home },
+    env: { ...process.env, HOME: home, USERPROFILE: home, CI: "true" },
     stdio: "pipe",
     windowsHide: true,
   });
@@ -75,4 +76,10 @@ test.skipIf(process.platform === "win32")("replaces a CLAUDE.md link without wri
   expect(readFileSync(join(home, ".claude", "AGENTS.md"), "utf8")).toBe(RULES);
   expect(lstatSync(join(home, ".claude", "CLAUDE.md")).isSymbolicLink()).toBe(false);
   expect(readFileSync(join(home, ".claude", "CLAUDE.md"), "utf8")).toBe("@AGENTS.md\n");
+});
+
+test("leaves out other repos' skills in CI, where Kaizen's runners install", () => {
+  const home = mkdtempSync(join(tmpdir(), "install-home-"));
+  install(home, "--apply");
+  expect(existsSync(join(home, ".claude", "skills", "homelab-network"))).toBe(false);
 });
