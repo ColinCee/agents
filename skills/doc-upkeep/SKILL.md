@@ -44,10 +44,10 @@ Readers scan; shape every document for that. These are the defaults; the project
 
 A decision record (ADR) keeps what was decided and why, as it stood then; every other document is kept current.
 
-- **Where:** `docs/adr/NNNN-short-title.md` in the repository that owns the system the decision changes, numbered from 0001. A decision across repositories lives with the main system; the others link to it. Personal notes hold general lessons that link to it, never the record.
-- **Shape:** one page under Status, Context, Decision and Consequences. Evidence (method, results, charts) goes in `docs/adr/NNNN-short-title/` beside it; raw data and test harnesses stay out of the repository. The plan to carry it out goes in issues.
-- **Status:** proposed, accepted, rejected, deprecated, or "Superseded by NNNN" (the new record says "Supersedes NNNN").
-- **Editing:** a proposed record changes freely. Once accepted, it and its evidence folder change only in the Status line; a changed decision, or new evidence, is a new record that supersedes it. Facts that move (today's figures, how to run it) live in the operational documents the record links to.
+- Where: `docs/adr/NNNN-short-title.md` in the repository that owns the system the decision changes, numbered from 0001. A decision across repositories lives with the main system; the others link to it. Personal notes hold general lessons that link to it, never the record.
+- Shape: one page under Status, Context, Decision and Consequences. Evidence (method, results, charts) goes in `docs/adr/NNNN-short-title/` beside it; raw data and test harnesses stay out of the repository. The plan to carry it out goes in issues.
+- Status: proposed, accepted, rejected, deprecated, or "Superseded by NNNN" (the new record says "Supersedes NNNN").
+- Editing: a proposed record changes freely. Once past proposed (accepted, deprecated, superseded), it and its evidence folder change only in the Status line; a changed decision, or new evidence, is a new record that supersedes it. Facts that move (today's figures, how to run it) live in the operational documents the record links to.
 
 ## Comments
 
