@@ -1,7 +1,8 @@
 import { execFileSync } from "node:child_process";
-import { lstatSync, mkdirSync, mkdtempSync, readFileSync, symlinkSync, writeFileSync } from "node:fs";
+import { existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 import { expect, test } from "vitest";
 
 const TOOL = resolve(import.meta.dirname, "..", "tools", "install-home.ts");
@@ -15,10 +16,11 @@ test("the rules stay under the line limit", () => {
   expect(RULES.split("\n").length).toBeLessThanOrEqual(RULES_MAX_LINES);
 });
 
-// homedir() reads HOME on macOS and Linux and USERPROFILE on Windows; set both to an empty folder.
+// homedir() reads HOME on macOS and Linux and USERPROFILE on Windows; set both to an empty folder. CI is set so no
+// test fetches the skills other repos hold.
 function install(home: string, ...args: string[]): void {
   execFileSync(process.execPath, ["--import", "tsx", TOOL, ...args], {
-    env: { ...process.env, HOME: home, USERPROFILE: home },
+    env: { ...process.env, HOME: home, USERPROFILE: home, CI: "true" },
     stdio: "pipe",
     windowsHide: true,
   });
@@ -75,4 +77,54 @@ test.skipIf(process.platform === "win32")("replaces a CLAUDE.md link without wri
   expect(readFileSync(join(home, ".claude", "AGENTS.md"), "utf8")).toBe(RULES);
   expect(lstatSync(join(home, ".claude", "CLAUDE.md")).isSymbolicLink()).toBe(false);
   expect(readFileSync(join(home, ".claude", "CLAUDE.md"), "utf8")).toBe("@AGENTS.md\n");
+});
+
+test("leaves out other repos' skills in CI, where Kaizen's runners install", () => {
+  const home = mkdtempSync(join(tmpdir(), "install-home-"));
+  install(home, "--apply");
+  expect(existsSync(join(home, ".claude", "skills", "homelab-network"))).toBe(false);
+});
+
+// --import takes a URL; a bare Windows path (C:\\...) does not load.
+const FAKE_FETCH = pathToFileURL(resolve(import.meta.dirname, "fixtures", "fake-fetch.mjs")).href;
+// Like install(), outside CI, with fetch answered by fake-fetch.mjs; returns the exit code.
+function installOther(home: string, skill: string | undefined, ...args: string[]): number {
+  try {
+    execFileSync(process.execPath, ["--import", "tsx", "--import", FAKE_FETCH, TOOL, ...args], {
+      env: { ...process.env, HOME: home, USERPROFILE: home, CI: "", FAKE_SKILL: skill ?? "" },
+      stdio: "pipe",
+      windowsHide: true,
+    });
+    return 0;
+  } catch (e) {
+    return (e as { status: number }).status;
+  }
+}
+
+test("installs another repo's skill, and a failed or wrong download fails the run", () => {
+  const home = mkdtempSync(join(tmpdir(), "install-home-"));
+  const skill = join(home, ".claude", "skills", "homelab-network", "SKILL.md");
+  expect(installOther(home, undefined, "--apply")).toBe(1);
+  expect(existsSync(skill)).toBe(false);
+  expect(installOther(home, "<html>sign in</html>", "--apply")).toBe(1);
+  expect(existsSync(skill)).toBe(false);
+  const good = "---\nname: homelab-network\n---\nbody\n";
+  expect(installOther(home, good, "--apply")).toBe(0);
+  expect(readFileSync(skill, "utf8")).toBe(good);
+  expect(installOther(home, good)).toBe(0);
+});
+
+// Windows without Developer Mode cannot make links; CI on macOS and Linux covers it.
+test.skipIf(process.platform === "win32")("replaces a linked skill folder without writing through it", () => {
+  const home = mkdtempSync(join(tmpdir(), "install-home-"));
+  const store = join(home, ".agents", "skills", "homelab-network");
+  mkdirSync(store, { recursive: true });
+  writeFileSync(join(store, "SKILL.md"), "the other installer's copy\n");
+  mkdirSync(join(home, ".claude", "skills"), { recursive: true });
+  symlinkSync(store, join(home, ".claude", "skills", "homelab-network"));
+  const good = "---\nname: homelab-network\n---\nbody\n";
+  expect(installOther(home, good, "--apply")).toBe(0);
+  expect(readFileSync(join(store, "SKILL.md"), "utf8")).toBe("the other installer's copy\n");
+  expect(lstatSync(join(home, ".claude", "skills", "homelab-network")).isSymbolicLink()).toBe(false);
+  expect(readFileSync(join(home, ".claude", "skills", "homelab-network", "SKILL.md"), "utf8")).toBe(good);
 });
