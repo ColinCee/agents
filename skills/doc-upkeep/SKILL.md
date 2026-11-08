@@ -11,7 +11,7 @@ Every document and comment is a promise that has to be kept true. Make each one 
 1. **Find what changed.** `git log` since each document was last touched, and read those commits. Each one is a candidate stale line.
 2. **Check each claim against the code**, not against the document's own wording: numbers (count tests by collecting them, for example `pytest --collect-only -q`), paths, commands, names, lists of options, routes. A claim about something removed is stale; a line that restates what code does is cut to a pointer (step 5), not corrected.
    Numbers come from their results document, not from a message about them. When a source number changes, list every number in the piece (figures, captions, ratios, titles, summaries, linked documents) and check each one.
-3. **Fix the stale line where it is**, so the document reads as if it had always been right. If the line restates what code does, step 5 says what stays.
+3. **Fix the stale line where it is**, so the document reads as if it had always been right (an accepted decision record is the exception: see Decision records). If the line restates what code does, step 5 says what stays.
 4. **Delete what describes removed things.** Git already records what was removed and when; the reader needs what is there now.
 5. **Give each fact one home.** What code does inside (a flag, a limit, a condition, a module's steps) lives in the code: the document names the file, function or constant instead. A document keeps only why, where things run and how they connect, traps, steps a person follows, measured results and the user's standing rules; a list a reader picks from stays a table, its details in the code. Text in two files stays in the one it belongs to, and the other points to it ("Checks: see `AGENTS.md`"): rules every change needs in `AGENTS.md` (see Agent rules), what it is and how to start it in `README.md`, and no copy of what the user's own instructions already say.
 6. **Compare sizes.** The documents together should be no longer than before, unless a new feature needed a new section. Check with `git diff --stat`.
@@ -39,6 +39,15 @@ Readers scan; shape every document for that. These are the defaults; the project
 - A rule for one kind of work goes in a project skill (for Claude Code, `.claude/skills/<name>/SKILL.md`) or a document, with a row in that table.
 - A rule says what to do: no people's names, no dates of decisions, no history, and a reason only when it changes what an agent does. Git keeps the rest.
 - Adding a rule condenses the file: merge it with any rule it overlaps, and move what no longer applies to every change into a skill or document. Delete only what is wrong.
+
+## Decision records
+
+A decision record (ADR) keeps what was decided and why, as it stood then; every other document is kept current.
+
+- Where: `docs/adr/NNNN-short-title.md` in the repository that owns the system the decision changes, numbered from 0001. A decision across repositories lives with the main system; the others link to it. Personal notes hold general lessons that link to it, never the record.
+- Shape: one page under Status, Context, Decision and Consequences. Evidence (method, results, charts) goes in `docs/adr/NNNN-short-title/` beside it; raw data and test harnesses stay out of the repository. The plan to carry it out goes in issues.
+- Status: proposed, accepted, rejected, deprecated, or "Superseded by NNNN" (the new record says "Supersedes NNNN").
+- Editing: a proposed record changes freely. Once past proposed (accepted, deprecated, superseded), it and its evidence folder change only in the Status line; a changed decision, or new evidence, is a new record that supersedes it. Facts that move (today's figures, how to run it) live in the operational documents the record links to.
 
 ## Comments
 
@@ -76,4 +85,5 @@ From real corrections:
 - A design doc grew to ten sections of tables and read as a wall. The user wanted the picture and five lines first, with the detail one click away.
 - A README was rewritten twice because the content was right but the order was not: an introduction first, the main table halfway down, a heading naming a tool nobody had explained. Put the most-used table first and say what each thing is where it appears.
 - An architecture diagram in mermaid grew to twenty boxes and crossing arrows; the user called it a mess. Redrawn by hand in three layers with nine arrows, it read at a glance.
+- Agents reworded accepted decision records to match later changes, so a record no longer said what had been decided or why. An accepted record changes only in its Status line.
 - A results document's summary line went stale twice while its table was right, and a post quoting it updated one chart and left the others, the captions and the title on the old numbers.
