@@ -7,6 +7,7 @@
 |---|---|
 | A GPU job, or a game or game test | Ask first, then `lease gpu` (`lease --help`), one job at a time; a refusal means wait. Stop yours when he wants to game |
 | A job using 10 GB or more of RAM, a raised Docker or WSL memory limit included | `lease`; a refusal means wait |
+| Reaching a homelab device or service, or changing who may reach it | The homelab notes in his notes repo: network (names to type and to save) and Tailscale policy |
 | Taking a port or other shared resource | Check what is in use; tell other running sessions. Before sending a link, check it serves your files; stop servers you started once nobody uses them |
 | A recurring task that takes long or uses a lot of compute | Run it overnight while he sleeps (a GPU job still follows the GPU row) |
 | A skill, these rules or a hook merged | `npm run install-home -- --apply` in the agents repo; `~/.claude` copies are overwritten at every install and by `npx skills add` |
