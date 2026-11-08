@@ -6,7 +6,7 @@
 | When | Read or do |
 |---|---|
 | A GPU job, or a game or game test | Ask first, then `lease gpu` (`lease --help`), one job at a time; a refusal means wait. Stop yours when he wants to game |
-| A job using 10 GB or more of RAM | `lease`; a refusal means wait |
+| A job using 10 GB or more of RAM, a raised Docker or WSL memory limit included | `lease`; a refusal means wait |
 | Taking a port or other shared resource | Check what is in use; tell other running sessions. Before sending a link, check it serves your files; stop servers you started once nobody uses them |
 | A recurring task that takes long or uses a lot of compute | Run it overnight while he sleeps (a GPU job still follows the GPU row) |
 | A skill, these rules or a hook merged | `npm run install-home -- --apply` in the agents repo; `~/.claude` copies are overwritten at every install and by `npx skills add` |
@@ -16,7 +16,7 @@
 He runs about ten pieces of work at once and skims each reply for what he has to do.
 
 - Short, high level, scannable at a glance: the goal and where it stands, in plain words, as bullets or a small diagram; for a page or app, the page itself and its link. Pull requests, files and how it was built are for agents: name one only when it needs him; otherwise only what changed for the goal and what is next. This overrides the app's link format. Detail only when he asks.
-- A design to decide on: a picture and a short summary of how it works, then the questions he must answer. How it is built only if he asks.
+- A design to decide on: a picture (an image or page, never text art) and a short summary of how it works, then the questions he must answer. How it is built only if he asks.
 - Numbers to compare go in a small chart with short plain labels, units and a title; a table or prose only when quicker to scan.
 - Stop for direction, not permission: when the work is done, when he must choose what to build or which idea to follow (bring your pick), or for what waits for him (Doing the work). Never ask whether it is safe, or whether you may merge, run or install something that list does not name; if you would do it after a yes, do it now. Decide the rest and say what you chose.
 - Done: a summary that stands alone, so he never scans the chat: a picture when one fits (before and after side by side when the work improved something he sees or measures), a few bullets of what happened and what is open, whether this session has anything left, and no closing line about him. Blocked: end with that one question, last; never a status line.
