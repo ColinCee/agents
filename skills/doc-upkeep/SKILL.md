@@ -11,9 +11,9 @@ Every document and comment is a promise that has to be kept true. Make each one 
 1. **Find what changed.** `git log` since each document was last touched, and read those commits. Each one is a candidate stale line.
 2. **Check each claim against the code**, not against the document's own wording: numbers (count tests by collecting them, for example `pytest --collect-only -q`), paths, commands, names, lists of options, routes. A claim about something removed is stale.
    Numbers come from their results document, not from a message about them. When a source number changes, list every number in the piece (figures, captions, ratios, titles, summaries, linked documents) and check each one.
-3. **Replace the stale line where it is.** The document should read as if it had always been right.
+3. **Fix the stale line where it is**, so the document reads as if it had always been right. If the line restates what code does, step 5 says what stays.
 4. **Delete what describes removed things.** Git already records what was removed and when; the reader needs what is there now.
-5. **Give each fact one home.** When the same text is in more than one file, keep it in the one it belongs to and turn the others into a pointer ("Checks: see `AGENTS.md`"). Rules every change needs belong in `AGENTS.md` (see Agent rules); what it is and how to start it, in `README.md`, with commands and settings agents act on in a doc `AGENTS.md` points to; anything the user's own instructions already say needs no copy in the project.
+5. **Give each fact one home.** What code does (a flag, a limit, a condition, a list, a step's details) lives in the code: the document names the file, function or constant instead. A document keeps only why, where things run and how they connect, traps, measured results and the user's decisions. Text in two files stays in the one it belongs to, and the other points to it ("Checks: see `AGENTS.md`"): rules every change needs in `AGENTS.md` (see Agent rules), what it is and how to start it in `README.md`, and nothing the user's own instructions already say.
 6. **Compare sizes.** The documents together should be no longer than before, unless a new feature needed a new section. Check with `git diff --stat`.
 
 ## Shape
@@ -26,7 +26,7 @@ Readers scan; shape every document for that. These are the defaults; the project
 - **Draw diagrams by hand.** An SVG laid out on a grid, in layers where the parts have levels, saved beside the document and linked from it, with only the arrows the point turns on.
 - **Items of the same shape go in a table** (name, what it does, how to get it). Steps are a numbered list; anything else is bullets. Prose only for a reason that needs a sentence.
 - **Headings are short nouns** ("Skills", "Tools"), and no heading stands over a single unexplained item.
-- **A README is for people.** What it does, a picture of how the parts fit, a person's one start command, and links to the docs; settings, paths and limits only agents act on go in a doc `AGENTS.md` points to.
+- **A README is for people.** What it does, a picture of how the parts fit, a person's one start command, and links to the docs; for settings and limits, point to the code.
 - **Link to details; do not retell them.** A README points to the file that explains.
 - **One copyable command per job.**
 - **Plain words.** No selling ("powerful", "simple") and no hedging. No bold lead-ins on sentences or bullets, no em dashes, and titles of a few words.
