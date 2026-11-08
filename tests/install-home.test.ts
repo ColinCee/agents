@@ -83,3 +83,46 @@ test("leaves out other repos' skills in CI, where Kaizen's runners install", () 
   install(home, "--apply");
   expect(existsSync(join(home, ".claude", "skills", "homelab-network"))).toBe(false);
 });
+
+const FAKE_FETCH = resolve(import.meta.dirname, "fixtures", "fake-fetch.mjs");
+// Like install(), outside CI, with fetch answered by fake-fetch.mjs; returns the exit code.
+function installOther(home: string, skill: string | undefined, ...args: string[]): number {
+  try {
+    execFileSync(process.execPath, ["--import", "tsx", "--import", FAKE_FETCH, TOOL, ...args], {
+      env: { ...process.env, HOME: home, USERPROFILE: home, CI: "", FAKE_SKILL: skill ?? "" },
+      stdio: "pipe",
+      windowsHide: true,
+    });
+    return 0;
+  } catch (e) {
+    return (e as { status: number }).status;
+  }
+}
+
+test("installs another repo's skill, and a failed or wrong download fails the run", () => {
+  const home = mkdtempSync(join(tmpdir(), "install-home-"));
+  const skill = join(home, ".claude", "skills", "homelab-network", "SKILL.md");
+  expect(installOther(home, undefined, "--apply")).toBe(1);
+  expect(existsSync(skill)).toBe(false);
+  expect(installOther(home, "<html>sign in</html>", "--apply")).toBe(1);
+  expect(existsSync(skill)).toBe(false);
+  const good = "---\nname: homelab-network\n---\nbody\n";
+  expect(installOther(home, good, "--apply")).toBe(0);
+  expect(readFileSync(skill, "utf8")).toBe(good);
+  expect(installOther(home, good)).toBe(0);
+});
+
+// Windows without Developer Mode cannot make links; CI on macOS and Linux covers it.
+test.skipIf(process.platform === "win32")("replaces a linked skill folder without writing through it", () => {
+  const home = mkdtempSync(join(tmpdir(), "install-home-"));
+  const store = join(home, ".agents", "skills", "homelab-network");
+  mkdirSync(store, { recursive: true });
+  writeFileSync(join(store, "SKILL.md"), "the other installer's copy\n");
+  mkdirSync(join(home, ".claude", "skills"), { recursive: true });
+  symlinkSync(store, join(home, ".claude", "skills", "homelab-network"));
+  const good = "---\nname: homelab-network\n---\nbody\n";
+  expect(installOther(home, good, "--apply")).toBe(0);
+  expect(readFileSync(join(store, "SKILL.md"), "utf8")).toBe("the other installer's copy\n");
+  expect(lstatSync(join(home, ".claude", "skills", "homelab-network")).isSymbolicLink()).toBe(false);
+  expect(readFileSync(join(home, ".claude", "skills", "homelab-network", "SKILL.md"), "utf8")).toBe(good);
+});

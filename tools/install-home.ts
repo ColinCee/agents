@@ -3,6 +3,7 @@
 import {
   copyFileSync,
   existsSync,
+  lstatSync,
   mkdirSync,
   readdirSync,
   readFileSync,
@@ -23,7 +24,8 @@ const HELP = `Install home/core.md and home/desktop.md as every agent's user-lev
 They are the author's own instructions. Read them before installing them as yours.
 
 With --apply, joins them into ~/.claude/AGENTS.md and ~/.codex/AGENTS.md (Codex), copies every skill in skills/ to
-~/.claude/skills/ (with the skills OTHER_SKILLS names from other repos, except in CI), home/hooks/require-skill.mjs to
+~/.claude/skills/ (and downloads the skills kept in other repos, such as homelab-network, except where CI=true;
+one that does not load is named and the run exits 1), home/hooks/require-skill.mjs to
 ~/.claude/hooks/ with its PreToolUse entry in ~/.claude/settings.json (only that entry; the rest of the file is kept), and writes ~/.claude/CLAUDE.md as
 one line, @AGENTS.md: Claude Code reads only CLAUDE.md at user level, and the import pulls AGENTS.md in. Any file
 it replaces is first kept as <name>.<date-time>.bak beside it. Copies, not links: Windows without Developer Mode
@@ -47,19 +49,24 @@ const OTHER_SKILLS: Record<string, string> = {
   "homelab-network": "https://raw.githubusercontent.com/ColinCee/homelab/main/.github/skills/homelab-network/SKILL.md",
 };
 
-async function otherSkillTargets(): Promise<[string, Buffer][]> {
-  if (process.env.CI) return [];
+// A skill that did not load is left as it is and named, and the run exits 1, so a failed fetch never reads as success.
+async function otherSkillTargets(): Promise<{ targets: [string, Buffer][]; failed: string[] }> {
   const targets: [string, Buffer][] = [];
+  const failed: string[] = [];
+  if (process.env.CI === "true") return { targets, failed };
   for (const [name, url] of Object.entries(OTHER_SKILLS)) {
     try {
       const res = await fetch(url, { signal: AbortSignal.timeout(15_000) });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      targets.push([join(homedir(), ".claude", "skills", name, "SKILL.md"), Buffer.from(await res.arrayBuffer())]);
+      const body = Buffer.from(await res.arrayBuffer());
+      // A captive portal or error page answers 200 too.
+      if (!body.toString("utf8").startsWith(`---\nname: ${name}\n`)) throw new Error("not a SKILL.md for it");
+      targets.push([join(homedir(), ".claude", "skills", name, "SKILL.md"), body]);
     } catch (e) {
-      console.error(`skipped ${name}: ${url} did not load (${(e as Error).message})`);
+      failed.push(`${name}: ${url} did not load (${(e as Error).message})`);
     }
   }
-  return targets;
+  return { targets, failed };
 }
 
 function files(dir: string): string[] {
@@ -141,26 +148,42 @@ async function main(): Promise<number> {
     [join(homedir(), ".codex", "AGENTS.md"), text],
     [join(homedir(), ".claude", "hooks", "require-skill.mjs"), readFileSync(HOOK)],
     ...skillTargets(),
-    ...(await otherSkillTargets()),
   ];
+  const other = await otherSkillTargets();
+  targets.push(...other.targets);
+  for (const f of other.failed) console.error(`skipped ${f}`);
   try {
     targets.push(settingsTarget());
   } catch (e) {
     console.error(`Error: ~/.claude/settings.json is not valid JSON, so it was left alone: ${(e as Error).message}`);
     return 2;
   }
-  const stale = targets.filter(([path, want]) => !existsSync(path) || !readFileSync(path).equals(want));
+  const skills = join(homedir(), ".claude", "skills");
+  // A skill folder that is a link (another installer's, such as npx skills) would be written through into its store,
+  // so it becomes a real folder and every file of that skill is written.
+  const linked = (path: string): string | undefined => {
+    if (!path.startsWith(skills)) return undefined;
+    const folder = join(skills, relative(skills, path).split(/[\\/]/)[0] ?? "");
+    try {
+      return lstatSync(folder).isSymbolicLink() ? folder : undefined;
+    } catch {
+      return undefined;
+    }
+  };
+  const stale = targets.filter(([path, want]) => linked(path) || !existsSync(path) || !readFileSync(path).equals(want));
 
   if (!apply) {
     for (const [path] of targets)
       console.log(`${stale.some(([p]) => p === path) ? "would replace" : "matches"}: ${path}`);
-    if (stale.length) {
-      console.log("Run with --apply to install.");
-      return 1;
-    }
-    return 0;
+    if (stale.length) console.log("Run with --apply to install.");
+    return stale.length || other.failed.length ? 1 : 0;
   }
   for (const [path, want] of stale) {
+    const folder = linked(path);
+    if (folder) {
+      rmSync(folder);
+      console.log(`replaced the link ${folder} with a copy`);
+    }
     mkdirSync(dirname(path), { recursive: true });
     if (existsSync(path)) console.log(`kept ${keep(path)}`);
     // A link (even a dangling one) would be written through, overwriting what it points to.
@@ -168,8 +191,8 @@ async function main(): Promise<number> {
     writeFileSync(path, want);
     console.log(`installed ${path}`);
   }
-  if (!stale.length) console.log("Everything already matches.");
-  return 0;
+  if (!stale.length && !other.failed.length) console.log("Everything already matches.");
+  return other.failed.length ? 1 : 0;
 }
 
 process.exitCode = await main();
