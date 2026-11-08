@@ -2,6 +2,7 @@ import { execFileSync } from "node:child_process";
 import { existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 import { expect, test } from "vitest";
 
 const TOOL = resolve(import.meta.dirname, "..", "tools", "install-home.ts");
@@ -84,7 +85,8 @@ test("leaves out other repos' skills in CI, where Kaizen's runners install", () 
   expect(existsSync(join(home, ".claude", "skills", "homelab-network"))).toBe(false);
 });
 
-const FAKE_FETCH = resolve(import.meta.dirname, "fixtures", "fake-fetch.mjs");
+// --import takes a URL; a bare Windows path (C:\\...) does not load.
+const FAKE_FETCH = pathToFileURL(resolve(import.meta.dirname, "fixtures", "fake-fetch.mjs")).href;
 // Like install(), outside CI, with fetch answered by fake-fetch.mjs; returns the exit code.
 function installOther(home: string, skill: string | undefined, ...args: string[]): number {
   try {
