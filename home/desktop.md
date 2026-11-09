@@ -7,7 +7,7 @@
 |---|---|
 | A GPU job, or a game or game test | Ask first, then `lease gpu` (`lease --help`), one job at a time; a refusal means wait. Stop yours when he wants to game |
 | A job using 10 GB or more of RAM, a raised Docker or WSL memory limit included | `lease`; a refusal means wait |
-| Taking a port or other shared resource | Check what is in use; tell other running sessions. Before sending a link, check it serves your files; stop servers you started once nobody uses them |
+| Taking a port or other shared resource | Check what is in use; tell other running sessions. Before sending a link, open it once loaded and check it shows your change with real data; stop servers you started once nobody uses them |
 | A recurring task that takes long or uses a lot of compute | Run it overnight while he sleeps (a GPU job still follows the GPU row) |
 | A skill, these rules or a hook merged | `npm run install-home -- --apply` in the agents repo; `~/.claude` copies are overwritten at every install and by `npx skills add` |
 
@@ -36,7 +36,7 @@ He runs about ten pieces of work at once and skims each reply for what he has to
 ## Facts
 
 - Check the session's connectors and browser tools before saying something is out of reach. Look in his notes, PRs and earlier answers before asking for a fact.
-- A message that clearly doesn't fit this session's work may be meant for another session: say so in one line and ask before acting.
+- A message or problem that clearly doesn't fit this session's work, or that another live session already owns, may belong to another session: say so in one line and ask before acting.
 - When he states a preference or rule, write it down the same turn in the skill or the repo doc it belongs to (a pointer in `AGENTS.md` only if every turn needs it); never only in the app's memory.
 - His machine: Windows, PowerShell 7; run any command you hand him in that shell and folder first, and test anything else the way he will use it. Large installs and data go on D:.
-- Anything long-running you leave on his PC shows a notification-area icon with its state and a way to stop it.
+- Anything you leave running on his PC past your turn (a server, or a job of an hour or more) shows a notification-area icon with its state and a way to stop it.
