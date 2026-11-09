@@ -62,7 +62,7 @@ function green(selector, repo, auto = false) {
   if (checks.status === 0 || /no checks reported/i.test(checks.out)) return;
   const rows = checks.out.split("\n").filter((l) => /\t(fail|pending|cancel|skipping)/i.test(l));
   if (checks.status === null || (!rows.length && checks.status !== 8))
-    refuse(`gh could not tell whether the checks passed (${checks.out.trim().slice(0, 200) || "no answer"}); fix gh first.`);
+    refuse(`gh could not tell whether the checks passed (${checks.out.trim().slice(0, 200) || "no answer"}); fix gh first. This check runs gh in the session's folder, not one the command cds to: for a merge, pass --repo <owner>/<repo> or the pull request's URL.`);
   const failed = rows.filter((l) => /\t(fail|cancel)/i.test(l));
   if (auto && !failed.length) return;
   const named = (failed.length ? failed : rows).map((l) => l.split("\t").slice(0, 2).join(": ")).slice(0, 5);
