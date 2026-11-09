@@ -33,6 +33,10 @@ writeFileSync(
   fakeGh,
   `const [a, b] = process.argv.slice(2);
 if (a === "pr" && b === "checks") {
+  // IN names the folder gh must run in: elsewhere it finds no pull request, as real gh does.
+  if (process.env.IN && process.cwd().replaceAll("\\\\", "/").toLowerCase() !== process.env.IN.toLowerCase()) {
+    console.error("no pull requests found for branch main"); process.exit(1);
+  }
   const c = process.env.CHECKS;
   if (c === "none") { console.error("no checks reported on the 'x' branch"); process.exit(1); }
   if (c === "fail") { console.log("check\\tfail\\t1m\\thttps://x"); process.exit(1); }
@@ -135,6 +139,39 @@ describe("require-skill hook", () => {
     expect(merge('gh api graphql -f query="mutation{mergePullRequest(input:{})}"', { CHECKS: "pass" })).toBe(2);
   });
 
+  it("asks gh in the folder the command moves to, as merges after cd were refused on 8 and 9 Nov", () => {
+    const merge = (tool: string, command: string, env: object) => run(tool, { command }, loaded, env);
+    const spaced = join(dir, "a repo");
+    mkdirSync(spaced, { recursive: true });
+    const IN = spaced.replaceAll("\\", "/");
+    expect(merge("Bash", `cd "${IN}" && gh pr merge 5 --squash`, { CHECKS: "pass", IN })).toBe(0);
+    expect(merge("PowerShell", `Set-Location '${IN}'; gh pr merge 5`, { CHECKS: "pass", IN })).toBe(0);
+    expect(
+      merge("Bash", `cd "${dir.replaceAll("\\", "/")}" && cd "a repo" && gh pr merge 5`, { CHECKS: "pass", IN }),
+    ).toBe(0);
+    expect(merge("Bash", `cd "${IN}" && gh pr merge 5`, { CHECKS: "fail", IN })).toBe(2);
+    // Git Bash spells D:\x as /d/x.
+    if (process.platform === "win32") {
+      const bash = IN.replace(/^([A-Za-z]):/, (_m, d: string) => `/${d.toLowerCase()}`);
+      expect(merge("Bash", `cd "${bash}" && gh pr merge 5`, { CHECKS: "pass", IN })).toBe(0);
+    }
+  });
+
+  it("reads a quoted search or a help request as data, not a merge (blocked a grep on 9 Nov)", () => {
+    const check = (command: string) => run("Bash", { command }, loaded, { CHECKS: "broken" });
+    expect(check('grep -n "gh pr merge" hooks/require-skill.mjs')).toBe(0);
+    expect(check("rg 'x | gh pr merge 5' docs")).toBe(0);
+    expect(check("gh pr merge --help")).toBe(0);
+    // Code inside a shell's -c or -Command, behind an escaped quote, or in a subshell is still a merge.
+    expect(check('pwsh -NoProfile -Command "cd x; gh pr merge 5"')).toBe(2);
+    expect(check("bash -c 'true && gh pr merge 5'")).toBe(2);
+    expect(check('echo \\"; gh pr merge 5; echo \\"')).toBe(2);
+    expect(check("(gh pr merge 5)")).toBe(2);
+    expect(check('bash -c "gh pr merge 5"')).toBe(2);
+    expect(check('bash -lc "cd x; gh pr merge 5"')).toBe(2);
+    expect(check("cd 'x\\'; gh pr merge 5 --body 'ok'")).toBe(2);
+  });
+
   it("pushes to main only a passing pull request's head", () => {
     const push = (command: string, env: object) => run("Bash", { command }, loaded, env);
     expect(push("git push origin HEAD:main", { PR: "", CHECKS: "pass" })).toBe(2);
@@ -145,6 +182,7 @@ describe("require-skill hook", () => {
     expect(push("git push origin 'HEAD:main'", { PR: "", CHECKS: "pass" })).toBe(2);
     expect(push("git push --force origin +HEAD:main", { PR: "", CHECKS: "pass" })).toBe(2);
     expect(push("git push --mirror origin", { PR: "", CHECKS: "pass" })).toBe(2);
+    expect(push("git -c a=b push origin HEAD:main", { PR: "", CHECKS: "pass" })).toBe(2);
     expect(push("git push -u origin feature-main", { PR: "", CHECKS: "pass" })).toBe(0);
   });
 
