@@ -5,6 +5,7 @@
 import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { homedir } from "node:os";
+import { resolve } from "node:path";
 
 const input = JSON.parse(readFileSync(0, "utf8"));
 const tool = String(input.tool_name ?? "");
@@ -48,21 +49,49 @@ function refuse(message) {
   process.exit(2);
 }
 
-// gh, run where the agent runs it; a test names a stand-in script. Under the app's own hook time limit.
-function gh(args) {
+// The command as gh and git read it. Quoted text after `bash -c`, `pwsh -Command` or `cmd /c` is code, so it is read
+// as the command; other quoted text holding a separator is data (a message, a search pattern); a quoted word (a
+// number, a repo, a path) still counts, its spaces kept as SP so it stays one word and no pattern matches it. An
+// escaped quote (\") opens nothing.
+const SP = "\u0001";
+const runner = /\b(?:(?:ba|z)?sh|pwsh|powershell)(?:\.exe)?(?:\s+-\w+)*\s+-(?:\w*c|Command)\s*$|\bcmd(?:\.exe)?\s+\/[ck]\s*$/i;
+const plain = command
+  .replace(/\\"/g, "\u0002")
+  .replace(/"([^"]*)"|'([^']*)'/g, (_m, d, s, at, all) => {
+    const text = d ?? s;
+    if (runner.test(all.slice(0, at))) return `; ${text}`;
+    return /[;&|\n]/.test(text) ? '""' : text.replaceAll(" ", SP);
+  });
+
+// The folder a command at `index` runs in: the session's, moved by each cd, Set-Location or pushd before it.
+// Git Bash spells D:\x as /d/x.
+function folderAt(index, also) {
+  let dir = input.cwd;
+  const moves = /(?:^|[;&|(\n]\s*)(?:cd|chdir|pushd|Set-Location|sl|Push-Location)(?:\s+-(?:Literal)?Path|\s+--)?\s+([^\s;&|)]+)/gi;
+  const to = [...plain.slice(0, index).matchAll(moves)].map((m) => m[1]);
+  for (let path of [...to, also].filter((p) => p && p !== "-")) {
+    path = path.replaceAll(SP, " ").replace(/^~(?=\/|\\|$)/, homedir());
+    if (process.platform === "win32") path = path.replace(/^\/([a-zA-Z])(?=\/|$)/, "$1:");
+    dir = resolve(dir ?? ".", path);
+  }
+  return dir;
+}
+
+// gh, run in the folder the command runs it in; a test names a stand-in script. Under the app's own hook time limit.
+function gh(args, cwd) {
   const [file, pre] = process.env.REQUIRE_SKILL_GH ? [process.execPath, [process.env.REQUIRE_SKILL_GH]] : ["gh", []];
-  const done = spawnSync(file, [...pre, ...args], { cwd: input.cwd, encoding: "utf8", timeout: 20_000 });
+  const done = spawnSync(file, [...pre, ...args], { cwd, encoding: "utf8", timeout: 20_000 });
   return { status: done.status, out: `${done.stdout ?? ""}${done.stderr ?? ""}` };
 }
 
 // The pull request's checks must all have passed (or, with --auto, none failed: GitHub merges once they pass); a
 // repository with no checks at all has nothing to wait for. When gh cannot say, nothing merges.
-function green(selector, repo, auto = false) {
-  const checks = gh(["pr", "checks", ...selector, ...(repo ? ["--repo", repo] : [])]);
+function green(selector, repo, auto, cwd) {
+  const checks = gh(["pr", "checks", ...selector, ...(repo ? ["--repo", repo] : [])], cwd);
   if (checks.status === 0 || /no checks reported/i.test(checks.out)) return;
   const rows = checks.out.split("\n").filter((l) => /\t(fail|pending|cancel|skipping)/i.test(l));
   if (checks.status === null || (!rows.length && checks.status !== 8))
-    refuse(`gh could not tell whether the checks passed (${checks.out.trim().slice(0, 200) || "no answer"}); fix gh first. This check runs gh in the session's folder, not one the command cds to: for a merge, pass --repo <owner>/<repo> or the pull request's URL.`);
+    refuse(`gh could not tell whether the checks passed (${checks.out.trim().slice(0, 200) || "no answer"}), asked in ${cwd}; fix gh, or pass --repo <owner>/<repo>.`);
   const failed = rows.filter((l) => /\t(fail|cancel)/i.test(l));
   if (auto && !failed.length) return;
   const named = (failed.length ? failed : rows).map((l) => l.split("\t").slice(0, 2).join(": ")).slice(0, 5);
@@ -70,13 +99,14 @@ function green(selector, repo, auto = false) {
 }
 
 // Each `gh pr merge` in the command, with what it names (number, URL or branch; none means the current branch's) and
-// its --repo. Read with quotes taken off, so `-R "o/r"` and `"664"` count.
+// its --repo and folder. Read from `plain`, so `-R "o/r"` and `"664"` count; --help merges nothing.
 const VALUED = new Set(["-R", "--repo", "-t", "--subject", "-b", "--body", "-F", "--body-file", "-A", "--author-email", "--match-head-commit"]);
 function merges(text) {
   const found = [];
-  for (const m of text.matchAll(/(?:^|[;&|(\n]\s*)(?:\w+=\S*\s+)*gh(?:\.exe)?\s+pr\s+merge\b([^;&|\n]*)/g)) {
-    const words = m[1].trim().split(/\s+/).filter(Boolean);
-    let selector = [], repo, auto = false;
+  for (const m of text.matchAll(/(?:^|[;&|(\n]\s*)((?:\w+=\S*\s+)*)gh(?:\.exe)?\s+pr\s+merge\b([^;&|\n)]*)/g)) {
+    const words = m[2].trim().split(/\s+/).filter(Boolean);
+    if (words.includes("--help") || words.includes("-h")) continue;
+    let selector = [], repo = m[1].match(/\bGH_REPO=(\S+)/)?.[1], auto = false;
     for (let i = 0; i < words.length; i++) {
       const [flag, value] = words[i].split(/=(.*)/s);
       if (flag === "--auto") auto = true;
@@ -85,24 +115,26 @@ function merges(text) {
         if (flag === "-R" || flag === "--repo") repo = v;
       } else if (!flag.startsWith("-") && !selector.length) selector = [flag];
     }
-    found.push({ selector, repo, auto });
+    found.push({ selector, repo, auto, cwd: folderAt(m.index) });
   }
   return found;
 }
 
-// A push that lands on main or master: a refspec naming it, --all or --mirror, or a bare push while on it.
-function pushesToMain(text) {
-  for (const m of text.matchAll(/(?:^|[;&|(\n]\s*)(?:\w+=\S*\s+)*git(?:\.exe)?\s+(?:-C\s+\S+\s+)?push\b([^;&|\n]*)/g)) {
-    const words = m[1].trim().split(/\s+/).filter(Boolean);
-    if (words.some((w) => w === "--all" || w === "--mirror")) return true;
+// The folder of a push that lands on main or master (a refspec naming it, --all or --mirror, or a bare push while on
+// it), or nothing.
+function pushToMain(text) {
+  const flags = /(?:\s+(?:-[cC]\s+\S+|--[\w-]+(?:=\S+)?))*/.source;
+  for (const m of text.matchAll(new RegExp(`(?:^|[;&|(\\n]\\s*)(?:\\w+=\\S*\\s+)*git(?:\\.exe)?(${flags})\\s+push\\b([^;&|\\n]*)`, "g"))) {
+    const cwd = folderAt(m.index, m[1].match(/-C\s+(\S+)/)?.[1]);
+    const words = m[2].trim().split(/\s+/).filter(Boolean);
+    if (words.some((w) => w === "--all" || w === "--mirror")) return cwd;
     const refs = words.filter((w) => !w.startsWith("-")).slice(1); // after the remote
-    if (refs.some((r) => /^\+?([^:]*:)?(refs\/heads\/)?(main|master)$/.test(r))) return true;
+    if (refs.some((r) => /^\+?([^:]*:)?(refs\/heads\/)?(main|master)$/.test(r))) return cwd;
     if (!refs.length) {
-      const branch = spawnSync("git", ["branch", "--show-current"], { cwd: input.cwd, encoding: "utf8" }).stdout?.trim();
-      if (branch === "main" || branch === "master") return true;
+      const branch = spawnSync("git", ["branch", "--show-current"], { cwd, encoding: "utf8" }).stdout?.trim();
+      if (branch === "main" || branch === "master") return cwd;
     }
   }
-  return false;
 }
 
 function needs(skill, why) {
@@ -133,21 +165,22 @@ if (tool === "Bash" || tool === "PowerShell") {
     );
   if (prCommand.test(bare) || mergeApi.test(bare) || firstPush.test(bare))
     needs("shipping-prs", "pushing a new branch or opening or merging a pull request (its reviews come before the push)");
-  // Read with the quotes taken off: a quoted number, repo or refspec still counts.
-  const plain = command.replace(/["']/g, "");
-  for (const m of merges(plain)) green(m.selector, m.repo, m.auto);
-  const api = plain.match(/repos\/([\w.-]+\/[\w.-]+)\/pulls\/(\d+)\/merge\b/);
-  if (api && mergeApi.test(plain)) green([api[2]], api[1]);
+  for (const m of merges(plain)) green(m.selector, m.repo, m.auto, m.cwd);
+  const api = mergeApi.exec(plain);
+  const target = api && plain.slice(api.index).match(/repos\/([\w.-]+\/[\w.-]+)\/pulls\/(\d+)\/merge\b/);
+  if (target) green([target[2]], target[1], false, folderAt(api.index));
   if (/\bgh(\.exe)?\s+api\s+graphql\b/.test(plain) && /mergePullRequest/.test(plain))
     refuse("Merge with `gh pr merge <number>`, which this hook checks, not a GraphQL mutation.");
-  if (pushesToMain(plain)) {
+  const pushed = pushToMain(plain);
+  if (pushed) {
     // Only the head of a pull request whose checks passed (the route when gh may not merge a workflow change).
-    const head = spawnSync("git", ["rev-parse", "HEAD"], { cwd: input.cwd, encoding: "utf8" }).stdout?.trim();
-    const pr = head ? gh(["pr", "list", "--state", "open", "--search", head, "--json", "number", "--jq", ".[0].number"]) : null;
+    const head = spawnSync("git", ["rev-parse", "HEAD"], { cwd: pushed, encoding: "utf8" }).stdout?.trim();
+    const list = ["pr", "list", "--state", "open", "--search", head, "--json", "number", "--jq", ".[0].number"];
+    const pr = head ? gh(list, pushed) : null;
     const number = pr?.status === 0 ? pr.out.trim() : "";
     if (!/^\d+$/.test(number))
       refuse("Push to main only the head of an open pull request whose checks have passed; open one, or use `gh pr merge`.");
-    green([number], undefined);
+    green([number], undefined, false, pushed);
   }
   if (measuring.test(bare)) needs("deciding", "measuring or comparing options");
 } else if (installed)
