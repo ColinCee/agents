@@ -92,7 +92,12 @@ describe("require-skill hook", () => {
     writeFileSync(join(dir, "session", "subagents", "agent-a1.jsonl"), readFileSync(loaded, "utf8"));
     const push = (agent_id?: string) =>
       spawnSync("node", [HOOK], {
-        input: JSON.stringify({ tool_name: "Bash", tool_input: { command: "git push -u origin x" }, transcript_path: session, agent_id }),
+        input: JSON.stringify({
+          tool_name: "Bash",
+          tool_input: { command: "git push -u origin x" },
+          transcript_path: session,
+          agent_id,
+        }),
         env: { ...process.env, HOME: fakeHome, USERPROFILE: fakeHome, REQUIRE_SKILL_GH: fakeGh },
       }).status;
     expect(push("a1")).toBe(0);
