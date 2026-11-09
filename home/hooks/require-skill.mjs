@@ -107,7 +107,11 @@ function pushesToMain(text) {
 
 function needs(skill, why) {
   let transcript = "";
-  for (const path of [input.transcript_path, input.agent_transcript_path].filter(Boolean)) {
+  // A subagent's own Skill calls are in its file beside the session's, not in transcript_path.
+  const own = input.agent_id && input.transcript_path
+    ? `${String(input.transcript_path).replace(/\.jsonl$/, "")}/subagents/agent-${input.agent_id}.jsonl`
+    : "";
+  for (const path of [input.transcript_path, input.agent_transcript_path, own].filter(Boolean)) {
     try {
       transcript += readFileSync(path, "utf8");
     } catch {}

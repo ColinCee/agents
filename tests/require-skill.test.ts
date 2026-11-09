@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -83,6 +83,25 @@ describe("require-skill hook", () => {
     expect(run("Edit", { file_path: home(".claude/hooks/require-skill.mjs") })).toBe(2);
     expect(run("Edit", { file_path: home(".claude/projects/p/memory/m.md") })).toBe(0);
     expect(run("Edit", { file_path: "D:\\repo\\.claude\\skills\\writing-posts\\SKILL.md" }, loaded)).toBe(0);
+  });
+
+  it("counts a subagent's own Skill calls, kept beside the session's transcript", () => {
+    const session = join(dir, "session.jsonl");
+    writeFileSync(session, '{"type":"user","message":{"content":"hi"}}\n');
+    mkdirSync(join(dir, "session", "subagents"), { recursive: true });
+    writeFileSync(join(dir, "session", "subagents", "agent-a1.jsonl"), readFileSync(loaded, "utf8"));
+    const push = (agent_id?: string) =>
+      spawnSync("node", [HOOK], {
+        input: JSON.stringify({
+          tool_name: "Bash",
+          tool_input: { command: "git push -u origin x" },
+          transcript_path: session,
+          agent_id,
+        }),
+        env: { ...process.env, HOME: fakeHome, USERPROFILE: fakeHome, REQUIRE_SKILL_GH: fakeGh },
+      }).status;
+    expect(push("a1")).toBe(0);
+    expect(push()).toBe(2);
   });
 
   it("never traps an agent whose transcript can't be read", () => {
