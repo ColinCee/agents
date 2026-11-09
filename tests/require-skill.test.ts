@@ -1,11 +1,12 @@
 import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const HOOK = resolve(__dirname, "..", "home", "hooks", "require-skill.mjs");
-const dir = mkdtempSync(join(tmpdir(), "require-skill-"));
+// The real path: macOS's temp folder is a link, and a process in it reports the path the link points to.
+const dir = realpathSync(mkdtempSync(join(tmpdir(), "require-skill-")));
 // A home folder whose installer lock says shipping-prs came from the agents repo and asd-ste100 from elsewhere.
 const fakeHome = join(dir, "home");
 mkdirSync(join(fakeHome, ".agents"), { recursive: true });
