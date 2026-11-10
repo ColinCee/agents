@@ -37,7 +37,6 @@ That also installs the skills kept in my other repos beside what they describe (
 | Tool | What it does | Install |
 |---|---|---|
 | `lease` | Locks the GPU, RAM or a browser so agents and programs on one machine don't collide; one row above the Claude Code prompt shows RAM, holders and the GPU. | `npm run install-lease` |
-| `keep-going` | A trial: when the agent stops, one reminder to check whether it really needs you, in half the sessions. [docs/keep-going.md](docs/keep-going.md) | `npm run install-keep-going` |
 
 ## Why so few skills
 

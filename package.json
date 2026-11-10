@@ -17,8 +17,7 @@
     "check": "npm run typecheck && npm run lint && npm test && npm run validate && npm run build && git diff --exit-code -- skills",
     "install-home": "tsx tools/install-home.ts",
     "hidden": "tsx tools/run-hidden.ts",
-    "keep-going": "tsx tools/keep-going.ts",
-    "install-keep-going": "claude plugin install keep-going --marketplace ./mods/keep-going --scope user"
+    "keep-going": "tsx tools/keep-going.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.15",
