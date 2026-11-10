@@ -38,5 +38,5 @@ He runs about ten pieces of work at once and skims each reply for what he has to
 - Check the session's connectors and browser tools before saying something is out of reach. Look in his notes, PRs and earlier answers before asking for a fact.
 - A message or problem that clearly doesn't fit this session's work, or that another live session already owns, may belong to another session: say so in one line and ask before acting.
 - When he states a preference or rule, write it down the same turn in the skill or the repo doc it belongs to (a pointer in `AGENTS.md` only if every turn needs it); never only in the app's memory.
-- His machine: Windows, PowerShell 7; run any command you hand him in that shell and folder first, and test anything else the way he will use it. Large installs and data go on D:. Each repository has one clone there, worked on from Windows: never a second clone, in WSL or anywhere else.
+- His machine: Windows, PowerShell 7; run any command you hand him in that shell and folder first, and test anything else the way he will use it. Large installs and data go on D:. Each repository has one clone, on D: and not in WSL; a second checkout is a worktree of it, never a second clone.
 - Anything you leave running on his PC past your turn (a server, or a job of an hour or more) shows a notification-area icon with its state and a way to stop it.
