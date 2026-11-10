@@ -24,7 +24,7 @@ const HELP = `Install home/core.md and home/desktop.md as every agent's user-lev
 They are the author's own instructions. Read them before installing them as yours.
 
 With --apply, joins them into ~/.claude/AGENTS.md and ~/.codex/AGENTS.md (Codex), copies every skill in skills/ to
-~/.claude/skills/ (and downloads the skills kept in other repos, such as homelab-network, except where CI=true;
+~/.claude/skills/ (and downloads the skills kept in other repos, such as reaching-homelab-devices, except where CI=true;
 one that does not load is named and the run exits 1), home/hooks/require-skill.mjs to
 ~/.claude/hooks/ with its PreToolUse entry in ~/.claude/settings.json, where it also turns Claude Code's auto memory off
 (only those two; the rest of the file is kept), and writes ~/.claude/CLAUDE.md as
@@ -41,13 +41,14 @@ const SOURCES = [join(HOME, "core.md"), join(HOME, "desktop.md")];
 const HOOK = join(HOME, "hooks", "require-skill.mjs");
 // Claude Code reads ~/.claude/CLAUDE.md, never ~/.claude/AGENTS.md; a relative import resolves beside the file.
 const IMPORT = Buffer.from("@AGENTS.md\n");
-// Every skill in this repo (skills/<name>, skills/.experimental/<name>), installed as ~/.claude/skills/<name>. The
+// Every skill in this repo (skills/<name>), installed as ~/.claude/skills/<name>. The
 // installed copies are only ever copies: a fix made in one was lost when the skill was next installed (5 Nov 2026).
 const SKILLS = resolve(HOME, "..", "skills");
 // Skills that live in the author's other public repos, beside what they describe, so a new machine gets them from
 // this one command. Not in CI: Kaizen's runners install these rules too, and these skills are not their work.
 const OTHER_SKILLS: Record<string, string> = {
-  "homelab-network": "https://raw.githubusercontent.com/ColinCee/homelab/main/.github/skills/homelab-network/SKILL.md",
+  "reaching-homelab-devices":
+    "https://raw.githubusercontent.com/ColinCee/homelab/main/.github/skills/reaching-homelab-devices/SKILL.md",
 };
 
 // A skill that did not load is left as it is and named, and the run exits 1, so a failed fetch never reads as success.
@@ -78,23 +79,19 @@ function files(dir: string): string[] {
 }
 
 function skillTargets(): [string, Buffer][] {
-  return [SKILLS, join(SKILLS, ".experimental")]
-    .filter((root) => existsSync(root))
-    .flatMap((root) =>
-      readdirSync(root)
-        .filter((name) => !name.startsWith(".") && existsSync(join(root, name, "SKILL.md")))
-        .flatMap((name) =>
-          files(join(root, name)).map((f): [string, Buffer] => [
-            join(homedir(), ".claude", "skills", name, f),
-            readFileSync(join(root, name, f)),
-          ]),
-        ),
+  return readdirSync(SKILLS)
+    .filter((name) => !name.startsWith(".") && existsSync(join(SKILLS, name, "SKILL.md")))
+    .flatMap((name) =>
+      files(join(SKILLS, name)).map((f): [string, Buffer] => [
+        join(homedir(), ".claude", "skills", name, f),
+        readFileSync(join(SKILLS, name, f)),
+      ]),
     );
 }
 
 // The hook's PreToolUse entry in ~/.claude/settings.json, so every machine runs the same checks. Only the entry whose
 // command runs require-skill.mjs is replaced or added; every other setting and hook stays as it was, but one: the
-// auto memory is turned off, since it stays on one machine and what an agent learns belongs in git (doc-upkeep, Homes).
+// auto memory is turned off, since it stays on one machine and what an agent learns belongs in git (recording-learnings).
 function settingsTarget(): [string, Buffer] {
   const path = join(homedir(), ".claude", "settings.json");
   const settings = existsSync(path) ? JSON.parse(readFileSync(path, "utf8")) : {};

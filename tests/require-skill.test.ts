@@ -19,13 +19,19 @@ writeFileSync(
 // A session that has loaded no skill yet.
 const empty = join(dir, "empty.jsonl");
 writeFileSync(empty, '{"type":"user","message":{"content":"hi"}}\n');
-const loaded = join(dir, "loaded.jsonl");
-writeFileSync(
-  loaded,
-  ["shipping-prs", "deciding", "doc-upkeep"]
-    .map((s) => `{"message":{"content":[{"type":"tool_use","name":"Skill","input":{"skill":"${s}"}}]}}`)
-    .join("\n"),
-);
+// A session that has loaded these skills.
+function loading(...skills: string[]): string {
+  const path = join(dir, `${skills.join("+")}.jsonl`);
+  writeFileSync(
+    path,
+    skills
+      .map((s) => `{"message":{"content":[{"type":"tool_use","name":"Skill","input":{"skill":"${s}"}}]}}`)
+      .join("\n"),
+  );
+  return path;
+}
+const ALL = ["shipping-prs", "comparing-options", "updating-docs", "writing-comments", "recording-learnings"];
+const loaded = loading(...ALL);
 
 // A stand-in for gh: `pr checks` exits as CHECKS says ("pass" 0, "fail" 1 with a failing line, "none": no checks),
 // `pr list` prints the pull request PR names (empty: none).
@@ -49,12 +55,20 @@ if (a === "pr" && b === "list") { console.log(process.env.PR ?? ""); process.exi
 process.exit(0);`,
 );
 
-function run(tool_name: string, tool_input: object, transcript = empty, env: object = {}): number | null {
+function hook(tool_name: string, tool_input: object, transcript = empty, env: object = {}) {
   const input = JSON.stringify({ tool_name, tool_input, transcript_path: transcript, cwd: resolve(__dirname, "..") });
   return spawnSync("node", [HOOK], {
     input,
+    encoding: "utf8",
     env: { ...process.env, HOME: fakeHome, USERPROFILE: fakeHome, REQUIRE_SKILL_GH: fakeGh, ...env },
-  }).status;
+  });
+}
+const run = (...args: Parameters<typeof hook>): number | null => hook(...args).status;
+// Why a session with no skill loaded is refused: the message names the skill to load.
+function refusal(tool_name: string, tool_input: object): string {
+  const done = hook(tool_name, tool_input);
+  expect(done.status).toBe(2);
+  return done.stderr;
 }
 
 describe("require-skill hook", () => {
@@ -187,13 +201,35 @@ describe("require-skill hook", () => {
     expect(push("git push -u origin feature-main", { PR: "", CHECKS: "pass" })).toBe(0);
   });
 
-  it("needs deciding before a benchmark and doc-upkeep before a doc or code edit", () => {
-    expect(run("PowerShell", { command: 'hyperfine "npm test"' })).toBe(2);
-    expect(run("Edit", { file_path: "D:\\repo\\AGENTS.md" })).toBe(2);
-    expect(run("Edit", { file_path: "D:\\repo\\AGENTS.md" }, loaded)).toBe(0);
+  it("needs comparing-options before a benchmark", () => {
+    expect(refusal("PowerShell", { command: 'hyperfine "npm test"' })).toMatch(/comparing-options/);
+    expect(run("PowerShell", { command: 'hyperfine "npm test"' }, loaded)).toBe(0);
+  });
+
+  it("routes each edit to the one skill it needs: a doc, code, or agent rules", () => {
+    const routes: [string, string][] = [
+      ["D:\\repo\\README.md", "updating-docs"],
+      ["D:\\repo\\docs\\plan.md", "updating-docs"],
+      ["D:\\repo\\src\\a.ts", "writing-comments"],
+      ["D:\\repo\\deploy.yml", "writing-comments"],
+      ["/home/u/repo/src/a.py", "writing-comments"],
+      ["/home/u/repo/notes.md", "updating-docs"],
+      ["D:\\repo\\AGENTS.md", "recording-learnings"],
+      ["D:\\repo\\CLAUDE.md", "recording-learnings"],
+      ["D:\\repo\\.claude\\skills\\x\\SKILL.md", "recording-learnings"],
+      ["D:\\repo\\docs\\adr\\0001-x.md", "recording-learnings"],
+      ["D:\\agents\\home\\core.md", "recording-learnings"],
+      ["D:\\agents\\home\\hooks\\require-skill.mjs", "recording-learnings"],
+    ];
+    for (const [file_path, skill] of routes) {
+      expect(refusal("Edit", { file_path }), file_path).toMatch(new RegExp(`Load the ${skill} skill`));
+      expect(run("Edit", { file_path }, loading(skill)), file_path).toBe(0);
+      expect(run("Edit", { file_path }, loading(...ALL.filter((s) => s !== skill))), file_path).toBe(2);
+    }
+  });
+
+  it("asks for no skill before editing data, lock files or the app's memory", () => {
     expect(run("Write", { file_path: "C:\\Users\\u\\.claude\\projects\\p\\memory\\m.md" })).toBe(0);
-    expect(run("Write", { file_path: "D:\\repo\\src\\a.ts" })).toBe(2);
-    expect(run("Write", { file_path: "D:\\repo\\src\\a.ts" }, loaded)).toBe(0);
     expect(run("Write", { file_path: "D:\\repo\\data.json" })).toBe(0);
     expect(run("Write", { file_path: "D:\\repo\\pnpm-lock.yaml" })).toBe(0);
   });

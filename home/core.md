@@ -6,8 +6,8 @@ Every turn reads this, his own sessions and his unattended agents alike, so each
 
 | When | Read or do |
 |---|---|
-| Writing or changing any document, post, comment or code | `doc-upkeep` |
-| Measuring or comparing options, or publishing numbers | `deciding` |
+| Writing or changing a document or post; code; a rule, skill or decision record | `updating-docs`; `writing-comments`; `recording-learnings` |
+| Measuring or comparing options, or publishing numbers | `comparing-options` |
 | Opening or merging a pull request | Load `shipping-prs` with the Skill tool before `gh pr create` or a merge |
 | A run, wait loop or background command that may take long | A limit inside the command just above its expected time (a background command gets no tool timeout), so a hang shows early |
 | A skill's step fails or a better way turns up | Do what works, then fix the skill in its own repo in the same change, and say what changed and why. Someone else's skill: say what to change |

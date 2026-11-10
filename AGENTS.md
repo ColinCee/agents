@@ -11,8 +11,8 @@ The repository is public: no paths, names or accounts of the author's in any fil
 ## Layout
 
 - `skills/<name>/`: one folder per skill, flat, directly under `skills/`. The folder name is the skill's `name`.
-- A skill not yet tried lives in `skills/.experimental/`. It moves up when a try shows it helps, and is deleted when it does not.
-- **Two levels.** A checklist skill (such as `housekeeping`) may name a focused skill for a step (`doc-upkeep`), with one line saying what to do when that skill is not installed. A focused skill does one job and never needs another. No deeper levels, and a checklist never calls another checklist. Prefer folding a step into the checklist over a separate skill the user would rarely call.
+- A skill not yet tried says so in the README table, and is deleted when a try shows it does not help.
+- **Two levels.** A checklist skill (such as `tidying-repos`) may name a focused skill for a step (`updating-docs`), with one line saying what to do when that skill is not installed. A focused skill does one job and never needs another. No deeper levels, and a checklist never calls another checklist. Prefer folding a step into the checklist over a separate skill the user would rarely call.
 - `src/` holds the TypeScript source of what ships (`src/lease/` installs with `npm run install-lease`). **Never put source in `skills/`:** `npx skills add` copies the whole skill folder, so it would ship. A shipped script is `src/skills/<skill>/scripts/<name>.mts`; `npm run build` compiles it with plain `tsc` to `skills/<skill>/scripts/<name>.mjs`. Commit the `.mjs`: installing runs no build. CI fails when it no longer matches its source.
 - `tools/*.ts` are the repository's own tools (validate, install), run with `tsx` through `npm run`; `tests/` their tests.
 - `mods/` holds Claude Code plugins (hooks); `bench/<skill>/README.md` the results of trying a skill. Mock a mod's look only with what its elements draw (`$.ui.resolve`): whole character cells, native buttons (text colours inside them are dropped), no pixel offsets or hover. An HTML mockup promises what the mod cannot show, so say which effects it cannot draw.

@@ -6,13 +6,15 @@ Skills, instructions and tools for coding agents.
 
 | Skill | Loads | What it does |
 |---|---|---|
-| [doc-upkeep](skills/doc-upkeep/SKILL.md) | by itself | Keeps docs and comments true, short and easy to scan: stale lines fixed in place, one home per fact. |
-| [housekeeping](skills/housekeeping/SKILL.md) | `/housekeeping` | A full clean-up pass in a safe order: what could be lost, code health, unused code, docs. |
-| [ui-decluttering](skills/ui-decluttering/SKILL.md) | `/ui-decluttering` | Redesigns a busy screen: one primary action, at most four choices in view. |
-| [session-review](skills/session-review/SKILL.md) | `/session-review` | Finds what you keep correcting, typed or edited by hand in the agent's text, fixes each where it belongs, and measures whether the fix works. |
-| [deciding](skills/deciding/SKILL.md) | by itself | Decides from evidence: one question, the ground truth, a fair repeated comparison. |
-| [speed-budgets](skills/.experimental/speed-budgets/SKILL.md) | by itself | Fails CI when a web page gets heavier or slower than its budget: bytes by type, requests, LCP. Not yet tried. |
-| [shipping-prs](skills/.experimental/shipping-prs/SKILL.md) | by itself | Takes a pull request from opened to merged: tests, fresh reviews for correctness, security, performance, docs and related repos, every automated comment answered and resolved. Not yet tried. |
+| [shipping-prs](skills/shipping-prs/SKILL.md) | by itself | Takes a pull request from opened to merged: tests, fresh reviews for correctness, security, performance, docs and related repos, every automated comment answered and resolved. Used daily; not yet tried against a run without it. |
+| [updating-docs](skills/updating-docs/SKILL.md) | by itself | Keeps docs and posts true, short and easy to scan: stale lines fixed in place, one home per fact. |
+| [writing-comments](skills/writing-comments/SKILL.md) | by itself | Keeps code comments to why, never what the code does or its history. |
+| [recording-learnings](skills/recording-learnings/SKILL.md) | by itself | Puts each lesson, rule or decision in its one home in git, and keeps `AGENTS.md` short. Not yet tried on its own. |
+| [comparing-options](skills/comparing-options/SKILL.md) | by itself | Decides from evidence: one question, the ground truth, a fair repeated comparison. |
+| [tidying-repos](skills/tidying-repos/SKILL.md) | `/tidying-repos` | A full clean-up pass in a safe order: what could be lost, code health, unused code, docs. |
+| [reviewing-sessions](skills/reviewing-sessions/SKILL.md) | `/reviewing-sessions` | Finds what you keep correcting, typed or edited by hand in the agent's text, fixes each where it belongs, and measures whether the fix works. |
+| [restructuring-code](skills/restructuring-code/SKILL.md) | by itself | Moves code grown by appending into folders by job and deep modules behind small interfaces. Barely tried: loaded once. |
+| [budgeting-page-performance](skills/budgeting-page-performance/SKILL.md) | by itself | Fails CI when a web page gets heavier or slower than its budget: bytes by type, requests, LCP. Never tried. |
 
 ```bash
 npx skills add ColinCee/agents --global --skill '*' --agent claude-code
@@ -30,7 +32,7 @@ Other people's skills I use:
 
 [home/core.md](home/core.md) and [home/desktop.md](home/desktop.md): how every agent should work with me, and what applies only when I am there. Install: `npm run install-home -- --apply`.
 
-That also installs the skills kept in my other repos beside what they describe (`homelab-network`, in homelab; not in CI), and [home/hooks/require-skill.mjs](home/hooks/require-skill.mjs) with its entry in `~/.claude/settings.json`. The install also turns Claude Code's auto memory off in that file: what an agent learns goes in git. The hook refuses a step until the skill for it is loaded: `shipping-prs` before a first push or a pull request, `deciding` before a benchmark, `doc-upkeep` before editing a doc or code file.
+That also installs the skills kept in my other repos beside what they describe (`reaching-homelab-devices`, in homelab; not in CI), and [home/hooks/require-skill.mjs](home/hooks/require-skill.mjs) with its entry in `~/.claude/settings.json`. The install also turns Claude Code's auto memory off in that file: what an agent learns goes in git. The hook refuses a step until the skill for it is loaded: `shipping-prs` before a first push or a pull request, `comparing-options` before a benchmark, and before an edit `updating-docs` (a doc), `writing-comments` (code) or `recording-learnings` (agent rules, a skill or a decision record).
 
 ## Tools
 
