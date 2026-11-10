@@ -1,5 +1,5 @@
-// Measures the keep-going reminder (mods/keep-going) against one baseline, agents with no AGENTS.md rule, from stops
-// labelled by what the user typed next, and draws it as one chart. Data stays in ~/.claude/keep-going, never in this
+// Measures each version of the stop rules against one baseline, agents with no AGENTS.md rule, from stops
+// a labeller model judged (labelling/README.md), and draws it as one chart. Data stays in ~/.claude/keep-going, never in this
 // repository: it is the user's own sessions.
 
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -77,7 +77,7 @@ function versions(): Version[] {
   return lines.map((l) => Object.fromEntries(cells(l).map((c, i) => [keys[i], c])) as Version);
 }
 
-/** Every rule version against the first, from the labelled stops, and how many reminders the hook gave. */
+/** Every rule version against the first, from the labelled stops. */
 function main(): number {
   const labelDir = join(DATA, "labels");
   const judged = (existsSync(labelDir) ? readdirSync(labelDir) : [])
@@ -107,14 +107,6 @@ function main(): number {
     return 1;
   }
   for (const r of [base, ...rows]) console.log(`${r.name}: ${r.stops} stops, ${r.needlessPer100} needless per 100`);
-  // What the reminder costs: one extra agent turn each, over the session's cached conversation.
-  const logDir = join(DATA, "log");
-  const days = existsSync(logDir) ? readdirSync(logDir) : [];
-  const reminders = days.reduce(
-    (n, d) => n + readdirSync(join(logDir, d)).flatMap((f) => jsonl(join(logDir, d, f))).length,
-    0,
-  );
-  if (days.length) console.log(`Reminders: ${Math.round(reminders / days.length)} a day, one extra agent turn each`);
   const page = join(DATA, "results.html");
   writeFileSync(page, chartPage(base, rows, versions()));
   console.log(`\nChart: ${page}`);

@@ -1,5 +1,0 @@
-{
-  "name": "keep-going-local",
-  "owner": { "name": "ColinCee" },
-  "plugins": [{ "name": "keep-going", "source": "./" }]
-}

@@ -1,6 +1,6 @@
--- The keep-going trial's daily score, from the user's own replies (no model labels), and the day's stops for labelling.
+-- The daily score of agent stops, from the user's own replies (no model labels), and the day's stops for labelling.
 -- Run: duckdb -cmd "SET VARIABLE day = '2026-11-07'" -f tools/stop-score.sql
--- Writes ~/.claude/keep-going/measures/stop-score/<day>.csv (one row per half) and ~/.claude/keep-going/stops/<day>.json;
+-- Writes ~/.claude/keep-going/measures/stop-score/<day>.csv (one row per half of the ended reminder trial) and ~/.claude/keep-going/stops/<day>.json;
 -- both folders must exist.
 
 SET VARIABLE home = replace(coalesce(getenv('USERPROFILE'), getenv('HOME')), '\', '/');
@@ -15,7 +15,8 @@ FROM (SELECT json AS j FROM read_json_objects(getvariable('home') || '/.claude/p
 WHERE CAST(TRY_CAST(j ->> 'timestamp' AS TIMESTAMP) AS DATE) = CAST(getvariable('day') AS DATE)
 QUALIFY row_number() OVER (PARTITION BY j ->> 'uuid' ORDER BY ts) = 1;
 
--- Same rule as arm() in mods/keep-going/hooks/register.ts: an even last hex digit of the session id gets the reminder.
+-- The halves of the reminder trial (docs/keep-going.md): an even last hex digit of the session id got the reminder.
+-- Kept so every day's file has the same columns.
 CREATE TEMP TABLE sess AS
 SELECT DISTINCT sid, CASE WHEN (instr('0123456789abcdef', right(sid, 1)) - 1) % 2 = 0 THEN 'on' ELSE 'off' END AS arm
 FROM ev WHERE coalesce(ep, '') NOT LIKE 'sdk%';
