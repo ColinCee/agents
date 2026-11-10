@@ -7,7 +7,7 @@ How often agents stop to ask for what they could do themselves. A reminder at ea
 | Daily score | [tools/stop-score.sql](../tools/stop-score.sql): the user's replies and go-aheads ("yes, merge it", "do it", "now what?", typed or clicked) and input tokens, still in the reminder trial's two halves, which no longer differ; also the day's stops for labelling |
 | One stop's thread | [tools/stop-thread.sql](../tools/stop-thread.sql), for the labelling page |
 | Chart | `npm run keep-going`: needless stops per 100 by rule version, from model labels |
-| Data | `~/.claude/keep-going/`: `measures/stop-score/`, `stops/`, `labels/`, `versions.csv` (the chart's rule versions) and `labelling/README.md`, the daily steps. Never in this repository: it is the user's own sessions |
+| Data | `~/.claude/keep-going/`: `measures/stop-score/`, `stops/`, `labels/`, `versions.csv` (the chart's rule versions) and `labelling/README.md`, the daily steps. Never in this repository: it is the user's own sessions. `backup.toml` here lists it for the user's nightly PC backup |
 
 A go-ahead is a stop where the agent asked for permission it already had. A labeller also reads each day's stops with the user's own calls as examples; its labels draw the chart but decide nothing, since two labellers each matched the user's own calls on only half of the hard stops.
 
