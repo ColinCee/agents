@@ -16,6 +16,18 @@ Every document and comment is a promise that has to be kept true. Make each one 
 5. **Give each fact one home.** What code does inside (a flag, a limit, a condition, a module's steps) lives in the code: the document names the file, function or constant instead. A document keeps only why, where things run and how they connect, traps, steps a person follows, measured results and the user's standing rules; a list a reader picks from stays a table, its details in the code. Text in two files stays in the one it belongs to, and the other points to it ("Checks: see `AGENTS.md`"): rules every change needs in `AGENTS.md` (see Agent rules), what it is and how to start it in `README.md`, and no copy of what the user's own instructions already say.
 6. **Compare sizes.** The documents together should be no longer than before, unless a new feature needed a new section. Check with `git diff --stat`.
 
+## Homes
+
+What an agent learns goes in git, where every machine gets it, never in Claude Code's auto memory.
+
+| Learned | Home |
+|---|---|
+| A rule for every project | The user's own instructions, in the repository they are installed from |
+| A rule for one project, or a trap in a skill | Its `AGENTS.md` or that skill (see Agent rules) |
+| A decision and why | A decision record (see Decision records) |
+| A private fact about the user or their machines | Their private notes, never a public repository |
+| Status, findings, a dropped idea | The project's document for it, made under `docs/` if there is none |
+
 ## Shape
 
 Readers scan; shape every document for that. These are the defaults; the project's own documents win where they differ.

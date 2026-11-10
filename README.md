@@ -30,7 +30,7 @@ Other people's skills I use:
 
 [home/core.md](home/core.md) and [home/desktop.md](home/desktop.md): how every agent should work with me, and what applies only when I am there. Install: `npm run install-home -- --apply`.
 
-That also installs the skills kept in my other repos beside what they describe (`homelab-network`, in homelab; not in CI), and [home/hooks/require-skill.mjs](home/hooks/require-skill.mjs) with its entry in `~/.claude/settings.json`. It refuses a step until the skill for it is loaded: `shipping-prs` before a first push or a pull request, `deciding` before a benchmark, `doc-upkeep` before editing a doc or code file.
+That also installs the skills kept in my other repos beside what they describe (`homelab-network`, in homelab; not in CI), and [home/hooks/require-skill.mjs](home/hooks/require-skill.mjs) with its entry in `~/.claude/settings.json`. The install also turns Claude Code's auto memory off in that file: what an agent learns goes in git. The hook refuses a step until the skill for it is loaded: `shipping-prs` before a first push or a pull request, `deciding` before a benchmark, `doc-upkeep` before editing a doc or code file.
 
 ## Tools
 

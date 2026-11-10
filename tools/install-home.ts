@@ -26,7 +26,8 @@ They are the author's own instructions. Read them before installing them as your
 With --apply, joins them into ~/.claude/AGENTS.md and ~/.codex/AGENTS.md (Codex), copies every skill in skills/ to
 ~/.claude/skills/ (and downloads the skills kept in other repos, such as homelab-network, except where CI=true;
 one that does not load is named and the run exits 1), home/hooks/require-skill.mjs to
-~/.claude/hooks/ with its PreToolUse entry in ~/.claude/settings.json (only that entry; the rest of the file is kept), and writes ~/.claude/CLAUDE.md as
+~/.claude/hooks/ with its PreToolUse entry in ~/.claude/settings.json, where it also turns Claude Code's auto memory off
+(only those two; the rest of the file is kept), and writes ~/.claude/CLAUDE.md as
 one line, @AGENTS.md: Claude Code reads only CLAUDE.md at user level, and the import pulls AGENTS.md in. Any file
 it replaces is first kept as <name>.<date-time>.bak beside it. Copies, not links: Windows without Developer Mode
 cannot make links.
@@ -92,7 +93,8 @@ function skillTargets(): [string, Buffer][] {
 }
 
 // The hook's PreToolUse entry in ~/.claude/settings.json, so every machine runs the same checks. Only the entry whose
-// command runs require-skill.mjs is replaced or added; every other setting and hook stays as it was.
+// command runs require-skill.mjs is replaced or added; every other setting and hook stays as it was, but one: the
+// auto memory is turned off, since it stays on one machine and what an agent learns belongs in git (doc-upkeep, Homes).
 function settingsTarget(): [string, Buffer] {
   const path = join(homedir(), ".claude", "settings.json");
   const settings = existsSync(path) ? JSON.parse(readFileSync(path, "utf8")) : {};
@@ -103,6 +105,7 @@ function settingsTarget(): [string, Buffer] {
   const pre: object[] = settings.hooks?.PreToolUse ?? [];
   const at = pre.findIndex(ours);
   settings.hooks = { ...settings.hooks, PreToolUse: at < 0 ? [...pre, entry] : pre.with(at, entry) };
+  settings.autoMemoryEnabled = false;
   const want = Buffer.from(`${JSON.stringify(settings, null, 2)}\n`);
   // Same settings in other formatting count as matching, so a hand-formatted file is left alone.
   const same = existsSync(path) && JSON.stringify(JSON.parse(readFileSync(path, "utf8"))) === JSON.stringify(settings);
