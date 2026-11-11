@@ -13,7 +13,7 @@ Skills, instructions and tools for coding agents.
 | [comparing-options](skills/comparing-options/SKILL.md) | by itself | Decides from evidence: one question, the ground truth, a fair repeated comparison. |
 | [tidying-repos](skills/tidying-repos/SKILL.md) | `/tidying-repos` | A full clean-up pass in a safe order: what could be lost, code health, unused code, docs. |
 | [reviewing-sessions](skills/reviewing-sessions/SKILL.md) | `/reviewing-sessions` | Finds what you keep correcting, typed or edited by hand in the agent's text, fixes each where it belongs, and measures whether the fix works. |
-| [restructuring-code](skills/restructuring-code/SKILL.md) | by itself | Moves code grown by appending into folders by job and deep modules behind small interfaces. Barely tried: loaded once. |
+| [restructuring-code](skills/restructuring-code/SKILL.md) | by itself | Moves code grown by appending into folders by job and deep modules behind small interfaces. Barely tried: loaded four times. |
 | [budgeting-page-performance](skills/budgeting-page-performance/SKILL.md) | by itself | Fails CI when a web page gets heavier or slower than its budget: bytes by type, requests, LCP. Never tried. |
 
 ```bash
