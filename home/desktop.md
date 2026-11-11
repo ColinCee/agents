@@ -31,7 +31,7 @@ He runs about ten pieces of work at once and skims each reply for what he has to
 - Test leftovers you may not delete (Discord messages): give him the links.
 - Get an independent, skeptical review (a fresh Sonnet agent unless he names another) of a plan before running it, of a cause claimed past its first why (the reviewer runs something to test it), and of anything public before it goes out.
 - Parallel work runs in subagents or forks that finish on their own. Start a side session only when he asks, with a full brief naming any work it waits on; then leave it alone: answer only a question it is blocked on, and pass on its notes only when they need him.
-- Every change ships as a pull request from its own branch, merged once its checks pass and its `shipping-prs` review is done; a second agent in the same repo gets a worktree. Small changes from one session to one repo share a pull request: each one waits for its own checks.
+- Every change ships in a pull request from its own branch, merged once its checks pass and its `shipping-prs` review is done; a second agent in the same repo gets a worktree. Related small changes from one session to one repo share one pull request, so checks and review run once, unless only some wait for his OK or a skill asks for its own.
 
 ## Facts
 
