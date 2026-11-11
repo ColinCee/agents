@@ -8,11 +8,23 @@ Every document is a promise that has to be kept true: make each one true and the
 
 ## When to write one
 
-Only what must be kept goes in git. The rest lives where its work happens.
+Only what must be kept goes in git: a line earns its place if a future reader would do the wrong thing without it and the code cannot say it. The rest lives where its work happens. Write it in the pull request that changes the behaviour, never ahead of it.
+
+A project's whole set, by default:
+
+| Document | Holds | Size, a starting point |
+|---|---|---|
+| `README.md` | What it is, a person's one start command, links | About 300 words |
+| `AGENTS.md` | The index an agent reads every turn (`recording-learnings`) | About 300 words |
+| `docs/architecture.md` | The overview: one hand-drawn SVG of how the parts connect, then a short section per part, each the one home the code's comments point to | About 1,000 words; a part that outgrows it gets its own page, linked from it |
+| A recovery page, if any | Only hand steps no script can do, when the automation is gone (restore, rebuild) | One screen per task |
+| Decision records | Comparisons that were run (`recording-learnings`) | One page each |
+
+Anything else needs a reason the pull request states. A size cap, where the project keeps one, only goes down: growth cuts the same amount elsewhere first.
 
 - Still being discussed, or a to-do list for work about to start: the issue, the pull request or the conversation holds it.
 - One-time steps (a migration, a switch-over): a checklist in the pull request's description.
-- A runbook only for hand steps a person repeats and cannot automate, often under pressure (restoring a backup, rebuilding a host).
+- Steps an agent or a script can do are a script or the agent's job, not a runbook.
 - No example file that repeats a list the code already holds, such as `.example` secret files when the deploy script renders the real ones and names every key.
 
 ## Documents
@@ -51,6 +63,8 @@ Then one line on what was left as it is and why.
 ## Gotchas
 
 From real corrections:
+
+- Agents' docs in one repository reached about 10,000 words in twelve files, four of them runbooks, and had to be cut back to the set above.
 
 - An appended correction ("Update (Sep 30): now 14 tests") is how documents grow and contradict themselves. The fix is to rewrite the first line and delete the second.
 - A rule copied word for word into three files was updated in one and left stale in two. Copies drift; pointers do not.
