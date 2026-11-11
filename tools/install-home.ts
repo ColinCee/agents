@@ -195,9 +195,11 @@ async function main(): Promise<number> {
     }
   };
   const stale = targets.filter(([path, want]) => linked(path) || !existsSync(path) || !readFileSync(path).equals(want));
-  // Only names this installer put there, never another installer's skill. The name must be a plain folder name.
-  const gone = [...new Set(managedBefore())]
-    .filter((name) => /^[\w.-]+$/.test(name) && !managed.includes(name))
+  // Only names this installer put there, never another installer's skill. A plain folder name (never . or ..), and
+  // compared without case, since Windows and macOS folder names ignore it.
+  const keepNames = new Set(managed.map((name) => name.toLowerCase()));
+  const gone = [...new Set(managedBefore().map((name) => name.toLowerCase()))]
+    .filter((name) => /^[a-z0-9][\w.-]*$/.test(name) && !keepNames.has(name))
     .map((name) => join(skills, name))
     .filter((folder) => existsSync(folder) || linked(folder));
 

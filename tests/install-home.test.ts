@@ -67,7 +67,8 @@ test("removes a skill it installed that has left the repo, keeping a copy, and l
     writeFileSync(join(skills, name, "SKILL.md"), `${name}\n`);
   }
   mkdirSync(join(home, ".claude", "hooks"), { recursive: true });
-  writeFileSync(join(home, ".claude", "hooks", "installed-skills.json"), '["old-listed"]');
+  // "." and a case-only spelling of a live skill must never remove anything else.
+  writeFileSync(join(home, ".claude", "hooks", "installed-skills.json"), '["old-listed", ".", "..", "Shipping-PRs"]');
   mkdirSync(join(home, ".agents"));
   writeFileSync(
     join(home, ".agents", ".skill-lock.json"),
@@ -79,6 +80,7 @@ test("removes a skill it installed that has left the repo, keeping a copy, and l
   expect(existsSync(join(skills, "old-listed"))).toBe(false);
   expect(existsSync(join(skills, "old-locked"))).toBe(false);
   expect(existsSync(join(skills, "someone-elses"))).toBe(true);
+  expect(existsSync(join(skills, "shipping-prs", "SKILL.md"))).toBe(true);
   const kept = readdirSync(join(home, ".claude", "skills-replaced"));
   expect(kept.filter((f) => f.startsWith("old-")).length).toBe(2);
   const listed = JSON.parse(readFileSync(join(home, ".claude", "hooks", "installed-skills.json"), "utf8"));
