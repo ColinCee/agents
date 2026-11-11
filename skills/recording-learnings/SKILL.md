@@ -29,7 +29,7 @@ What an agent learns goes in git, where every machine gets it, never in Claude C
 
 ## Decision records
 
-A decision record (ADR) is only for a decision that is hard to undo and where options were tried or measured: it keeps what lost and why, so no one runs the comparison again. A choice nobody weighed gets a comment in the code, or nothing; a current design is described by the architecture overview (`updating-docs`), not by a record.
+A decision record (ADR) is only for a decision where options were tried or measured: it keeps what lost and why, so no one runs the comparison again. A choice nobody weighed gets a comment in the code, or nothing; a current design is described by the architecture overview (`updating-docs`), not by a record.
 
 - Where: `docs/adr/NNNN-area.md`, named for the system or area, not the choice, in the repository that owns the system the decision changes, numbered from 0001. A decision across repositories lives with the main system; the others link to it. Personal notes hold general lessons that link to it, never the record.
 - Shape: one page under Status, Context, Decision and Consequences. Evidence (method, results, charts) goes in `docs/adr/NNNN-area/` beside it; raw data and test harnesses stay out of the repository. The plan to carry it out goes in issues.
@@ -39,4 +39,4 @@ A decision record (ADR) is only for a decision that is hard to undo and where op
 ## Gotchas
 
 - One monitoring decision grew three records, each superseding the last, so no single page said what stood or why. Fold new findings into the one record for that area.
-- Agents wrote a record for every choice: of one repository's five, three described a design nobody had compared, and the owner deleted them as waste. No comparison run, no record.
+- Agents wrote a record for every choice; two of one repository's five described a design nobody had compared, and were deleted as waste. No comparison run, no record.

@@ -12,12 +12,12 @@ Only what must be kept goes in git: a line earns its place if a future reader wo
 
 A project's whole set, by default:
 
-| Document | Holds | Size |
+| Document | Holds | Size, a starting point |
 |---|---|---|
 | `README.md` | What it is, a person's one start command, links | About 300 words |
 | `AGENTS.md` | The index an agent reads every turn (`recording-learnings`) | About 300 words |
 | `docs/architecture.md` | The overview: one hand-drawn SVG of how the parts connect, then a short section per part, each the one home the code's comments point to | About 1,000 words; a part that outgrows it gets its own page, linked from it |
-| A recovery page | Hand steps a person follows when the automation is gone (restore, rebuild) | One screen per task |
+| A recovery page, if any | Only hand steps no script can do, when the automation is gone (restore, rebuild) | One screen per task |
 | Decision records | Comparisons that were run (`recording-learnings`) | One page each |
 
 Anything else needs a reason the pull request states. A size cap, where the project keeps one, only goes down: growth cuts the same amount elsewhere first.
@@ -64,7 +64,7 @@ Then one line on what was left as it is and why.
 
 From real corrections:
 
-- Agents' docs in one repository reached about 10,000 words in twelve files, four of them runbooks, and had to be cut back to the set above. Write into that set, not beside it.
+- Agents' docs in one repository reached about 10,000 words in twelve files, four of them runbooks, and had to be cut back to the set above.
 
 - An appended correction ("Update (Sep 30): now 14 tests") is how documents grow and contradict themselves. The fix is to rewrite the first line and delete the second.
 - A rule copied word for word into three files was updated in one and left stale in two. Copies drift; pointers do not.
