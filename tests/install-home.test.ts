@@ -121,7 +121,7 @@ test.skipIf(process.platform === "win32")("replaces a CLAUDE.md link without wri
   expect(readFileSync(join(home, ".claude", "CLAUDE.md"), "utf8")).toBe("@AGENTS.md\n");
 });
 
-test("leaves out other repos' skills in CI, where Kaizen's runners install", () => {
+test("leaves out other repos' skills in CI, so a test fetches nothing", () => {
   const home = mkdtempSync(join(tmpdir(), "install-home-"));
   install(home, "--apply");
   expect(existsSync(join(home, ".claude", "skills", "reaching-homelab-devices"))).toBe(false);

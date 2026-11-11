@@ -47,7 +47,7 @@ const IMPORT = Buffer.from("@AGENTS.md\n");
 // installed copies are only ever copies: a fix made in one was lost when the skill was next installed (5 Nov 2026).
 const SKILLS = resolve(HOME, "..", "skills");
 // Skills that live in the author's other public repos, beside what they describe, so a new machine gets them from
-// this one command. Not in CI: Kaizen's runners install these rules too, and these skills are not their work.
+// this one command. Not in CI, so a test run of the install fetches nothing from the network.
 const OTHER_SKILLS: Record<string, string> = {
   "reaching-homelab-devices":
     "https://raw.githubusercontent.com/ColinCee/homelab/main/.github/skills/reaching-homelab-devices/SKILL.md",

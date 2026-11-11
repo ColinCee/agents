@@ -138,7 +138,7 @@ describe("require-skill hook", () => {
     expect(run("Bash", { command: "gh pr view 3" })).toBe(0);
   });
 
-  it("merges only once the checks pass, as a required check would (auto-kaizen#664 merged red)", () => {
+  it("merges only once the checks pass, as a required check would", () => {
     const merge = (command: string, env: object) => run("Bash", { command }, loaded, env);
     expect(merge("gh pr merge 664 --squash -R o/r", { CHECKS: "fail" })).toBe(2);
     expect(merge("gh pr merge 664 --squash -R o/r", { CHECKS: "pass" })).toBe(0);

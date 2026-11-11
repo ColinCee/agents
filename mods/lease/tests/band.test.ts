@@ -66,9 +66,9 @@ test("one row: free and leased RAM, each holder, the GPU, who waits; stuck ones 
 });
 
 test("a RAM holder shows its status after its name, and the GPU shows free", async () => {
-  const builds = { ...strata, name: "kaizen-ci", note: "a VM for builds, with a long note", status: "1/2" };
+  const builds = { ...strata, name: "build-vm", note: "a VM for builds, with a long note", status: "1/2" };
   const band = bandOf(state([{ ...builds, wants: [{ resource: "ram", gb: 12 }] }]), NOW);
-  expect(band?.parts.map((p) => p.text)).toEqual(["RAM 1 GB free, 12 leased", "kaizen-ci 1/2", "GPU ·"]);
+  expect(band?.parts.map((p) => p.text)).toEqual(["RAM 1 GB free, 12 leased", "build-vm 1/2", "GPU ·"]);
 });
 
 test("two holders stuck alike say it once; a long status is cut; a stale measurement shows no GPU", async () => {
