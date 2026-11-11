@@ -27,13 +27,13 @@ What an agent learns goes in git, where every machine gets it, never in Claude C
 
 ## Decision records
 
-A decision record (ADR) keeps what was decided and why, as it stood then; every other document is kept current.
+A decision record (ADR) holds the current decision for one system or decision area, and why; each area has one.
 
-- Where: `docs/adr/NNNN-short-title.md` in the repository that owns the system the decision changes, numbered from 0001. A decision across repositories lives with the main system; the others link to it. Personal notes hold general lessons that link to it, never the record.
-- Shape: one page under Status, Context, Decision and Consequences. Evidence (method, results, charts) goes in `docs/adr/NNNN-short-title/` beside it; raw data and test harnesses stay out of the repository. The plan to carry it out goes in issues.
-- Status: proposed, accepted, rejected, deprecated, or "Superseded by NNNN" (the new record says "Supersedes NNNN").
-- Editing: a proposed record changes freely. Once past proposed (accepted, deprecated, superseded), it and its evidence folder change only in the Status line; a changed decision, or new evidence, is a new record that supersedes it. Facts that move (today's figures, how to run it) live in the operational documents the record links to.
+- Where: `docs/adr/NNNN-area.md`, named for the system or area, not the choice, in the repository that owns the system the decision changes, numbered from 0001. A decision across repositories lives with the main system; the others link to it. Personal notes hold general lessons that link to it, never the record.
+- Shape: one page under Status, Context, Decision and Consequences. Evidence (method, results, charts) goes in `docs/adr/NNNN-area/` beside it; raw data and test harnesses stay out of the repository. The plan to carry it out goes in issues.
+- Status: proposed or accepted; deprecated once the system is gone.
+- Editing: a changed decision, or new evidence, rewrites that area's record and evidence folder in place, never a new record beside it; git keeps the old versions. Records already split across one area merge into one, and the rest are deleted. The record's Context keeps why earlier options were dropped. Facts that move (today's figures, how to run it) live in the operational documents the record links to.
 
 ## Gotchas
 
-- Agents reworded accepted decision records to match later changes, so a record no longer said what had been decided or why. An accepted record changes only in its Status line.
+- One monitoring decision grew three records, each superseding the last, so no single page said what stood or why. Fold new findings into the one record for that area.
