@@ -1,4 +1,4 @@
 # Data of this project that is not in Git, sent nightly to the homelab and backed up there
-# (homelab repository: scripts/pc_backup.py, docs/runbooks/backups.md): the daily
+# (homelab repository: scripts/pc_backup.py, docs/architecture.md, Backups): the daily
 # session review's records (docs/keep-going.md).
 paths = ["~/.claude/keep-going"]
