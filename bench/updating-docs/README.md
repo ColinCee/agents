@@ -16,4 +16,4 @@
 The test, with what it plants, and every run are in the private `agents-bench` repository, under `skills/updating-docs/`: kept out of public view so no model can learn the answers.
 The "no history" rule and the comment lead sentence came later and are untested here. The hook loads it before a doc edit, since a rule that only points at a skill loaded it about 1 time in 3.
 
-Measured on `doc-upkeep`, before it was split; the comment rows are now `writing-comments`'s, and the rest of the old skill is `recording-learnings`.
+Measured on `doc-upkeep`, before it was split: the comment rows now belong to `writing-comments`.

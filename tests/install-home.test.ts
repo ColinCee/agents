@@ -59,6 +59,34 @@ test("installs every skill, and reports an installed copy that was edited by han
   install(home);
 });
 
+test("removes a skill it installed that has left the repo, keeping a copy, and leaves other skills alone", () => {
+  const home = mkdtempSync(join(tmpdir(), "install-home-"));
+  const skills = join(home, ".claude", "skills");
+  for (const name of ["old-listed", "old-locked", "someone-elses"]) {
+    mkdirSync(join(skills, name), { recursive: true });
+    writeFileSync(join(skills, name, "SKILL.md"), `${name}\n`);
+  }
+  mkdirSync(join(home, ".claude", "hooks"), { recursive: true });
+  writeFileSync(join(home, ".claude", "hooks", "installed-skills.json"), '["old-listed"]');
+  mkdirSync(join(home, ".agents"));
+  writeFileSync(
+    join(home, ".agents", ".skill-lock.json"),
+    JSON.stringify({ skills: { "old-locked": { source: "ColinCee/agents" }, "someone-elses": { source: "x/y" } } }),
+  );
+  expect(() => install(home)).toThrow(); // exit 1: two would be removed
+  expect(existsSync(join(skills, "old-listed"))).toBe(true);
+  install(home, "--apply");
+  expect(existsSync(join(skills, "old-listed"))).toBe(false);
+  expect(existsSync(join(skills, "old-locked"))).toBe(false);
+  expect(existsSync(join(skills, "someone-elses"))).toBe(true);
+  const kept = readdirSync(join(home, ".claude", "skills-replaced"));
+  expect(kept.filter((f) => f.startsWith("old-")).length).toBe(2);
+  const listed = JSON.parse(readFileSync(join(home, ".claude", "hooks", "installed-skills.json"), "utf8"));
+  expect(listed).toContain("shipping-prs");
+  expect(listed).not.toContain("old-listed");
+  install(home);
+});
+
 test("adds the hook to settings.json, turns app memory off and keeps every other setting and hook", () => {
   const home = mkdtempSync(join(tmpdir(), "install-home-"));
   mkdirSync(join(home, ".claude"));

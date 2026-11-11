@@ -16,6 +16,9 @@ writeFileSync(
     skills: { "shipping-prs": { source: "ColinCee/agents" }, "asd-ste100": { source: "someone/else" } },
   }),
 );
+// install-home's list of the skills it installed, which the hook guards too.
+mkdirSync(join(fakeHome, ".claude", "hooks"), { recursive: true });
+writeFileSync(join(fakeHome, ".claude", "hooks", "installed-skills.json"), '["updating-docs"]');
 // A session that has loaded no skill yet.
 const empty = join(dir, "empty.jsonl");
 writeFileSync(empty, '{"type":"user","message":{"content":"hi"}}\n');
@@ -98,6 +101,7 @@ describe("require-skill hook", () => {
     const home = (p: string) => join(fakeHome, p);
     expect(run("Edit", { file_path: home(".claude/skills/shipping-prs/SKILL.md") }, loaded)).toBe(2);
     expect(run("Edit", { file_path: home(".claude/skills/asd-ste100/SKILL.md") }, loaded)).toBe(0);
+    expect(run("Edit", { file_path: home(".claude/skills/updating-docs/SKILL.md") }, loaded)).toBe(2);
     expect(run("Write", { file_path: home(".claude/AGENTS.md") }, loaded)).toBe(2);
     expect(run("Edit", { file_path: home(".claude/hooks/require-skill.mjs") })).toBe(2);
     expect(run("Edit", { file_path: home(".claude/projects/p/memory/m.md") })).toBe(0);
