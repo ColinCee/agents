@@ -1,6 +1,6 @@
 ---
 name: updating-docs
-description: Keeps docs and posts true and few, with only what must be kept in git, stale lines fixed in place, one home per fact, numbers checked against their source. Use when code changes that a doc describes, or writing a doc, runbook, example file or post.
+description: Keeps docs and posts true and few, so only what must be kept goes in git, with stale lines fixed in place, one home per fact and numbers checked. Use when code changes that a doc describes, or writing a doc, runbook, example file or post.
 license: MIT
 ---
 
@@ -20,7 +20,7 @@ Only what must be kept goes in git. The rest lives where its work happens.
 1. **Find what changed.** `git log` since each document was last touched, and read those commits. Each one is a candidate stale line.
 2. **Check each claim against the code**, not against the document's own wording: numbers (count tests by collecting them, for example `pytest --collect-only -q`), paths, commands, names, lists of options, routes. A claim about something removed is stale; a line that restates what code does is cut to a pointer (step 5), not corrected.
    Numbers come from their results document, not from a message about them. When a source number changes, list every number in the piece (figures, captions, ratios, titles, summaries, linked documents) and check each one.
-3. **Fix the stale line where it is**, so the document reads as if it had always been right: never an "Update:", "Note:" or dated line below the old one. If the line restates what code does, step 5 says what stays.
+3. **Fix the stale line where it is**, so the document reads as if it had always been right: never an "Update:", "Note:" or dated line below the old one. If the line restates what code does, step 5 says what stays. Never change what code does here: if the document is right and the code is wrong, say so.
 4. **Delete what describes removed things**, with no "Removed", "Changes" or history entry unless the project keeps a changelog. Git already records what was removed and when; the reader needs what is there now.
 5. **Give each fact one home.** What code does inside (a flag, a limit, a condition, a module's steps) lives in the code: the document names the file, function or constant instead. A document keeps only why, where things run and how they connect, traps, steps a person follows, measured results and the user's standing rules; a list a reader picks from stays a table, its details in the code. Text in two files stays in the one it belongs to, and the other points to it ("Checks: see `AGENTS.md`"): rules every change needs in `AGENTS.md` (kept short: `recording-learnings`), what it is and how to start it in `README.md`, and no copy of what the user's own instructions already say.
 6. **Compare sizes.** The documents together should be no longer than before, unless a new feature needed a new section. Check with `git diff --stat`.
@@ -38,8 +38,6 @@ Readers scan; shape every document for that. These are the defaults; the project
 - **A README is for people.** What it does, a picture of how the parts fit, a person's one start command, and links to the docs; for settings and limits, point to the code.
 - **One copyable command per job.**
 - **Plain words.** No selling ("powerful", "simple") and no hedging. No bold lead-ins on sentences or bullets, no em dashes, and titles of a few words.
-
-Never change what code does while updating its documents or comments. If a document is right and the code is wrong, say so.
 
 ## The report
 

@@ -7,7 +7,7 @@ Skills, instructions and tools for coding agents.
 | Skill | Loads | What it does |
 |---|---|---|
 | [shipping-prs](skills/shipping-prs/SKILL.md) | by itself | Takes a pull request from opened to merged: tests, fresh reviews for correctness, security, performance, docs and related repos, every automated comment answered and resolved. Used daily; not yet tried against a run without it. |
-| [updating-docs](skills/updating-docs/SKILL.md) | by itself | Keeps docs and posts true, short and easy to scan: stale lines fixed in place, one home per fact. |
+| [updating-docs](skills/updating-docs/SKILL.md) | by itself | Keeps docs and posts true, short and easy to scan: only what must be kept, stale lines fixed in place, one home per fact. |
 | [writing-comments](skills/writing-comments/SKILL.md) | by itself | Keeps code comments to why, never what the code does or its history. |
 | [recording-learnings](skills/recording-learnings/SKILL.md) | by itself | Puts each lesson, rule or decision in its one home in git, and keeps `AGENTS.md` short. Not yet tried on its own. |
 | [comparing-options](skills/comparing-options/SKILL.md) | by itself | Decides from evidence: one question, the ground truth, a fair repeated comparison. |

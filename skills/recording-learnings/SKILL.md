@@ -15,7 +15,7 @@ What an agent learns goes in git, where every machine gets it, never in Claude C
 | A decision and why | A decision record (see Decision records) |
 | A private fact about the user or their machines | Their private notes, never a public repository |
 | Findings to keep, a dropped idea | The project's document for it, made under `docs/` if there is none |
-| Status, open questions, next steps | The issue or pull request, never git |
+| Status, open questions, next steps | The issue or pull request (`updating-docs`) |
 
 ## Agent rules
 
