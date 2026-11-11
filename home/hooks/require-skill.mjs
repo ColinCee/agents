@@ -13,14 +13,17 @@ const command = String(input.tool_input?.command ?? "");
 const file = String(input.tool_input?.file_path ?? "").replaceAll("\\", "/");
 const home = homedir().replaceAll("\\", "/").toLowerCase();
 // Copies installed from the agents repo: an edit here is lost at the next install.
-// Skills count only when the installer's lock says they came from the agents repo; other skills stay editable.
+// Skills count only when install-home's list or npx skills' lock says they came from the agents repo; other skills
+// stay editable.
 let fromRepo = [];
 try {
-  const lock = JSON.parse(readFileSync(`${homedir()}/.agents/.skill-lock.json`, "utf8"));
-  fromRepo = Object.entries(lock.skills ?? {})
-    .filter(([, s]) => s.source === "ColinCee/agents")
-    .map(([name]) => `.claude/skills/${name.toLowerCase()}/`);
+  fromRepo.push(...JSON.parse(readFileSync(`${homedir()}/.claude/hooks/installed-skills.json`, "utf8")));
 } catch {}
+try {
+  const lock = JSON.parse(readFileSync(`${homedir()}/.agents/.skill-lock.json`, "utf8"));
+  fromRepo.push(...Object.keys(lock.skills ?? {}).filter((name) => lock.skills[name]?.source === "ColinCee/agents"));
+} catch {}
+fromRepo = fromRepo.map((name) => `.claude/skills/${String(name).toLowerCase()}/`);
 const installed = [
   ...fromRepo,
   ".claude/hooks/require-skill.mjs",
@@ -43,6 +46,9 @@ const measuring = /(^|[;&|(\n]\s*)(hyperfine\b|(npm|pnpm) run bench\b)/;
 const isDoc =
   /\.(md|py|[cm]?[jt]sx?|ya?ml|sh|ps1|css|html|sql|toml|go|rs|java|kt|swift|cs|c|cpp|h|rb|php)$/i.test(file) &&
   !/\/\.claude\/(projects|plans)\/|\/AppData\/Local\/Temp\/|\/scratchpad\/|\/node_modules\/|lock\.ya?ml$|\.min\.|\.d\.ts$/i.test(file);
+// Agent rules, skills and their references, decision records, and the agents repo's home/ (its rules and this hook).
+// A Linux /home/ path does not match: only home/core.md, home/desktop.md and home/hooks/ do.
+const isRule = /(^|\/)(AGENTS|CLAUDE|SKILL)\.md$|\/skills\/[^/]+\/references\/|\/docs\/adr\/|\/home\/((core|desktop)\.md|hooks\/[^/]+)$/i.test(file);
 
 function refuse(message) {
   console.error(message);
@@ -182,10 +188,12 @@ if (tool === "Bash" || tool === "PowerShell") {
       refuse("Push to main only the head of an open pull request whose checks have passed; open one, or use `gh pr merge`.");
     green([number], undefined, false, pushed);
   }
-  if (measuring.test(bare)) needs("deciding", "measuring or comparing options");
+  if (measuring.test(bare)) needs("comparing-options", "measuring or comparing options");
 } else if (installed)
   refuse(
     "This file is an installed copy and the next install overwrites it. Change it in its repo (skills, rules and hooks: the agents repo, https://github.com/ColinCee/agents), merge, then run `npm run install-home -- --apply` there.",
   );
-else if (isDoc) needs("doc-upkeep", "writing or changing a document or code (comments follow its rules)");
+else if (isDoc && isRule) needs("recording-learnings", "changing agent rules, a skill or a decision record");
+else if (isDoc && /\.md$/i.test(file)) needs("updating-docs", "writing or changing a document");
+else if (isDoc) needs("writing-comments", "writing or changing code (its comments follow it)");
 process.exit(0);

@@ -2,6 +2,7 @@
 // the hook and skills.
 import {
   copyFileSync,
+  cpSync,
   existsSync,
   lstatSync,
   mkdirSync,
@@ -24,12 +25,13 @@ const HELP = `Install home/core.md and home/desktop.md as every agent's user-lev
 They are the author's own instructions. Read them before installing them as yours.
 
 With --apply, joins them into ~/.claude/AGENTS.md and ~/.codex/AGENTS.md (Codex), copies every skill in skills/ to
-~/.claude/skills/ (and downloads the skills kept in other repos, such as homelab-network, except where CI=true;
+~/.claude/skills/ (and downloads the skills kept in other repos, such as reaching-homelab-devices, except where CI=true;
 one that does not load is named and the run exits 1), home/hooks/require-skill.mjs to
 ~/.claude/hooks/ with its PreToolUse entry in ~/.claude/settings.json, where it also turns Claude Code's auto memory off
 (only those two; the rest of the file is kept), and writes ~/.claude/CLAUDE.md as
 one line, @AGENTS.md: Claude Code reads only CLAUDE.md at user level, and the import pulls AGENTS.md in. Any file
-it replaces is first kept as <name>.<date-time>.bak beside it. Copies, not links: Windows without Developer Mode
+it replaces is first kept as <name>.<date-time>.bak beside it, and a skill it installed that has left the repo is
+removed, kept first in ~/.claude/skills-replaced/. Copies, not links: Windows without Developer Mode
 cannot make links.
 
 Exit codes: 0 everything matches or was installed, 1 something differs (report only), 2 home/core.md or home/desktop.md is missing.`;
@@ -41,13 +43,14 @@ const SOURCES = [join(HOME, "core.md"), join(HOME, "desktop.md")];
 const HOOK = join(HOME, "hooks", "require-skill.mjs");
 // Claude Code reads ~/.claude/CLAUDE.md, never ~/.claude/AGENTS.md; a relative import resolves beside the file.
 const IMPORT = Buffer.from("@AGENTS.md\n");
-// Every skill in this repo (skills/<name>, skills/.experimental/<name>), installed as ~/.claude/skills/<name>. The
+// Every skill in this repo (skills/<name>), installed as ~/.claude/skills/<name>. The
 // installed copies are only ever copies: a fix made in one was lost when the skill was next installed (5 Nov 2026).
 const SKILLS = resolve(HOME, "..", "skills");
 // Skills that live in the author's other public repos, beside what they describe, so a new machine gets them from
 // this one command. Not in CI: Kaizen's runners install these rules too, and these skills are not their work.
 const OTHER_SKILLS: Record<string, string> = {
-  "homelab-network": "https://raw.githubusercontent.com/ColinCee/homelab/main/.github/skills/homelab-network/SKILL.md",
+  "reaching-homelab-devices":
+    "https://raw.githubusercontent.com/ColinCee/homelab/main/.github/skills/reaching-homelab-devices/SKILL.md",
 };
 
 // A skill that did not load is left as it is and named, and the run exits 1, so a failed fetch never reads as success.
@@ -77,24 +80,40 @@ function files(dir: string): string[] {
   });
 }
 
+const skillNames = (): string[] =>
+  readdirSync(SKILLS).filter((name) => !name.startsWith(".") && existsSync(join(SKILLS, name, "SKILL.md")));
+
 function skillTargets(): [string, Buffer][] {
-  return [SKILLS, join(SKILLS, ".experimental")]
-    .filter((root) => existsSync(root))
-    .flatMap((root) =>
-      readdirSync(root)
-        .filter((name) => !name.startsWith(".") && existsSync(join(root, name, "SKILL.md")))
-        .flatMap((name) =>
-          files(join(root, name)).map((f): [string, Buffer] => [
-            join(homedir(), ".claude", "skills", name, f),
-            readFileSync(join(root, name, f)),
-          ]),
-        ),
-    );
+  return skillNames().flatMap((name) =>
+    files(join(SKILLS, name)).map((f): [string, Buffer] => [
+      join(homedir(), ".claude", "skills", name, f),
+      readFileSync(join(SKILLS, name, f)),
+    ]),
+  );
+}
+
+// The skills this installer manages, listed beside the hook: the hook refuses edits to their installed copies, and a
+// later install removes one that has left the repo. Before this list existed, npx skills' lock named them.
+const LIST = join(homedir(), ".claude", "hooks", "installed-skills.json");
+function managedBefore(): string[] {
+  const read = (path: string) => {
+    try {
+      return JSON.parse(readFileSync(path, "utf8"));
+    } catch {
+      return undefined;
+    }
+  };
+  const lock: Record<string, { source?: string }> = read(join(homedir(), ".agents", ".skill-lock.json"))?.skills ?? {};
+  const listed: unknown = read(LIST);
+  return [
+    ...(Array.isArray(listed) ? listed.map(String) : []),
+    ...Object.keys(lock).filter((name) => lock[name]?.source === "ColinCee/agents"),
+  ];
 }
 
 // The hook's PreToolUse entry in ~/.claude/settings.json, so every machine runs the same checks. Only the entry whose
 // command runs require-skill.mjs is replaced or added; every other setting and hook stays as it was, but one: the
-// auto memory is turned off, since it stays on one machine and what an agent learns belongs in git (doc-upkeep, Homes).
+// auto memory is turned off, since it stays on one machine and what an agent learns belongs in git (recording-learnings).
 function settingsTarget(): [string, Buffer] {
   const path = join(homedir(), ".claude", "settings.json");
   const settings = existsSync(path) ? JSON.parse(readFileSync(path, "utf8")) : {};
@@ -152,6 +171,8 @@ async function main(): Promise<number> {
     [join(homedir(), ".claude", "hooks", "require-skill.mjs"), readFileSync(HOOK)],
     ...skillTargets(),
   ];
+  const managed = [...skillNames(), ...Object.keys(OTHER_SKILLS)].sort();
+  targets.push([LIST, Buffer.from(`${JSON.stringify(managed, null, 2)}\n`)]);
   const other = await otherSkillTargets();
   targets.push(...other.targets);
   for (const f of other.failed) console.error(`skipped ${f}`);
@@ -174,12 +195,30 @@ async function main(): Promise<number> {
     }
   };
   const stale = targets.filter(([path, want]) => linked(path) || !existsSync(path) || !readFileSync(path).equals(want));
+  // Only names this installer put there, never another installer's skill. A plain folder name (never . or ..), and
+  // compared without case, since Windows and macOS folder names ignore it.
+  const keepNames = new Set(managed.map((name) => name.toLowerCase()));
+  const gone = [...new Set(managedBefore().map((name) => name.toLowerCase()))]
+    .filter((name) => /^[a-z0-9][\w.-]*$/.test(name) && !keepNames.has(name))
+    .map((name) => join(skills, name))
+    .filter((folder) => existsSync(folder) || linked(folder));
 
   if (!apply) {
     for (const [path] of targets)
       console.log(`${stale.some(([p]) => p === path) ? "would replace" : "matches"}: ${path}`);
-    if (stale.length) console.log("Run with --apply to install.");
-    return stale.length || other.failed.length ? 1 : 0;
+    for (const folder of gone) console.log(`would remove (no longer in the repo): ${folder}`);
+    if (stale.length || gone.length) console.log("Run with --apply to install.");
+    return stale.length || gone.length || other.failed.length ? 1 : 0;
+  }
+  for (const folder of gone) {
+    if (!linked(folder)) {
+      const stamp = new Date().toISOString().replace(/[-:]/g, "").replace("T", "-").slice(0, 15);
+      const backup = join(homedir(), ".claude", "skills-replaced", `${relative(skills, folder)}.${stamp}`);
+      cpSync(folder, backup, { recursive: true });
+      console.log(`kept ${backup}`);
+    }
+    rmSync(folder, { recursive: true, force: true });
+    console.log(`removed ${folder}, which is no longer in the repo`);
   }
   for (const [path, want] of stale) {
     const folder = linked(path);
@@ -194,7 +233,7 @@ async function main(): Promise<number> {
     writeFileSync(path, want);
     console.log(`installed ${path}`);
   }
-  if (!stale.length && !other.failed.length) console.log("Everything already matches.");
+  if (!stale.length && !gone.length && !other.failed.length) console.log("Everything already matches.");
   return other.failed.length ? 1 : 0;
 }
 

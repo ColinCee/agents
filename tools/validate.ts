@@ -275,17 +275,9 @@ export function check(root: string): Report {
   const home = join(root, "skills");
   const listed = isDir(home) ? readdirSync(home).sort() : [];
   const skills = listed.filter((n) => !n.startsWith(".") && isDir(join(home, n))).map((n) => join(home, n));
-  // Drafts: checked like the rest, but not listed in the README until they have proved themselves in real work.
-  const draftsHome = join(home, ".experimental");
-  const drafts = isDir(draftsHome)
-    ? readdirSync(draftsHome)
-        .sort()
-        .filter((n) => isDir(join(draftsHome, n)))
-        .map((n) => join(draftsHome, n))
-    : [];
-  if (!skills.length && !drafts.length) report.error("skills/", "no skill folders found");
+  if (!skills.length) report.error("skills/", "no skill folders found");
   const readme = existsSync(join(root, "README.md")) ? read(join(root, "README.md")) : "";
-  for (const skill of [...skills, ...drafts]) {
+  for (const skill of skills) {
     const name = skill.split(/[\\/]/).at(-1) ?? "";
     if (!existsSync(join(skill, "SKILL.md"))) {
       report.error(`${name}/`, "has no SKILL.md");
@@ -296,7 +288,7 @@ export function check(root: string): Report {
     checkFrontmatter(skill, fields, report);
     checkText(skill, body, report);
     checkScripts(root, skill, fields, report);
-    if (!drafts.includes(skill) && !readme.includes(`skills/${name}/SKILL.md`))
+    if (!readme.includes(`skills/${name}/SKILL.md`))
       report.error("README.md", `does not list ${name}; add a row to the table of skills`);
   }
   return report;

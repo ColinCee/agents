@@ -1,5 +1,14 @@
 import { execFileSync } from "node:child_process";
-import { existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, symlinkSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  lstatSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -38,13 +47,45 @@ test("installs the rules and a CLAUDE.md that imports them", () => {
 test("installs every skill, and reports an installed copy that was edited by hand", () => {
   const home = mkdtempSync(join(tmpdir(), "install-home-"));
   install(home, "--apply");
+  const repoSkills = resolve(import.meta.dirname, "..", "skills");
+  expect(readdirSync(join(home, ".claude", "skills")).sort()).toEqual(readdirSync(repoSkills).sort());
   const skill = join(home, ".claude", "skills", "shipping-prs", "SKILL.md");
   expect(readFileSync(skill, "utf8")).toBe(
-    readFileSync(resolve(import.meta.dirname, "..", "skills", ".experimental", "shipping-prs", "SKILL.md"), "utf8"),
+    readFileSync(resolve(import.meta.dirname, "..", "skills", "shipping-prs", "SKILL.md"), "utf8"),
   );
   writeFileSync(skill, "a fix made in the installed copy\n");
   expect(() => install(home)).toThrow(); // exit 1: something differs
   install(home, "--apply");
+  install(home);
+});
+
+test("removes a skill it installed that has left the repo, keeping a copy, and leaves other skills alone", () => {
+  const home = mkdtempSync(join(tmpdir(), "install-home-"));
+  const skills = join(home, ".claude", "skills");
+  for (const name of ["old-listed", "old-locked", "someone-elses"]) {
+    mkdirSync(join(skills, name), { recursive: true });
+    writeFileSync(join(skills, name, "SKILL.md"), `${name}\n`);
+  }
+  mkdirSync(join(home, ".claude", "hooks"), { recursive: true });
+  // "." and a case-only spelling of a live skill must never remove anything else.
+  writeFileSync(join(home, ".claude", "hooks", "installed-skills.json"), '["old-listed", ".", "..", "Shipping-PRs"]');
+  mkdirSync(join(home, ".agents"));
+  writeFileSync(
+    join(home, ".agents", ".skill-lock.json"),
+    JSON.stringify({ skills: { "old-locked": { source: "ColinCee/agents" }, "someone-elses": { source: "x/y" } } }),
+  );
+  expect(() => install(home)).toThrow(); // exit 1: two would be removed
+  expect(existsSync(join(skills, "old-listed"))).toBe(true);
+  install(home, "--apply");
+  expect(existsSync(join(skills, "old-listed"))).toBe(false);
+  expect(existsSync(join(skills, "old-locked"))).toBe(false);
+  expect(existsSync(join(skills, "someone-elses"))).toBe(true);
+  expect(existsSync(join(skills, "shipping-prs", "SKILL.md"))).toBe(true);
+  const kept = readdirSync(join(home, ".claude", "skills-replaced"));
+  expect(kept.filter((f) => f.startsWith("old-")).length).toBe(2);
+  const listed = JSON.parse(readFileSync(join(home, ".claude", "hooks", "installed-skills.json"), "utf8"));
+  expect(listed).toContain("shipping-prs");
+  expect(listed).not.toContain("old-listed");
   install(home);
 });
 
@@ -83,7 +124,7 @@ test.skipIf(process.platform === "win32")("replaces a CLAUDE.md link without wri
 test("leaves out other repos' skills in CI, where Kaizen's runners install", () => {
   const home = mkdtempSync(join(tmpdir(), "install-home-"));
   install(home, "--apply");
-  expect(existsSync(join(home, ".claude", "skills", "homelab-network"))).toBe(false);
+  expect(existsSync(join(home, ".claude", "skills", "reaching-homelab-devices"))).toBe(false);
 });
 
 // --import takes a URL; a bare Windows path (C:\\...) does not load.
@@ -104,12 +145,12 @@ function installOther(home: string, skill: string | undefined, ...args: string[]
 
 test("installs another repo's skill, and a failed or wrong download fails the run", () => {
   const home = mkdtempSync(join(tmpdir(), "install-home-"));
-  const skill = join(home, ".claude", "skills", "homelab-network", "SKILL.md");
+  const skill = join(home, ".claude", "skills", "reaching-homelab-devices", "SKILL.md");
   expect(installOther(home, undefined, "--apply")).toBe(1);
   expect(existsSync(skill)).toBe(false);
   expect(installOther(home, "<html>sign in</html>", "--apply")).toBe(1);
   expect(existsSync(skill)).toBe(false);
-  const good = "---\nname: homelab-network\n---\nbody\n";
+  const good = "---\nname: reaching-homelab-devices\n---\nbody\n";
   expect(installOther(home, good, "--apply")).toBe(0);
   expect(readFileSync(skill, "utf8")).toBe(good);
   expect(installOther(home, good)).toBe(0);
@@ -118,14 +159,14 @@ test("installs another repo's skill, and a failed or wrong download fails the ru
 // Windows without Developer Mode cannot make links; CI on macOS and Linux covers it.
 test.skipIf(process.platform === "win32")("replaces a linked skill folder without writing through it", () => {
   const home = mkdtempSync(join(tmpdir(), "install-home-"));
-  const store = join(home, ".agents", "skills", "homelab-network");
+  const store = join(home, ".agents", "skills", "reaching-homelab-devices");
   mkdirSync(store, { recursive: true });
   writeFileSync(join(store, "SKILL.md"), "the other installer's copy\n");
   mkdirSync(join(home, ".claude", "skills"), { recursive: true });
-  symlinkSync(store, join(home, ".claude", "skills", "homelab-network"));
-  const good = "---\nname: homelab-network\n---\nbody\n";
+  symlinkSync(store, join(home, ".claude", "skills", "reaching-homelab-devices"));
+  const good = "---\nname: reaching-homelab-devices\n---\nbody\n";
   expect(installOther(home, good, "--apply")).toBe(0);
   expect(readFileSync(join(store, "SKILL.md"), "utf8")).toBe("the other installer's copy\n");
-  expect(lstatSync(join(home, ".claude", "skills", "homelab-network")).isSymbolicLink()).toBe(false);
-  expect(readFileSync(join(home, ".claude", "skills", "homelab-network", "SKILL.md"), "utf8")).toBe(good);
+  expect(lstatSync(join(home, ".claude", "skills", "reaching-homelab-devices")).isSymbolicLink()).toBe(false);
+  expect(readFileSync(join(home, ".claude", "skills", "reaching-homelab-devices", "SKILL.md"), "utf8")).toBe(good);
 });
