@@ -11,6 +11,6 @@ Comments never say what code does, only why, and only where the why is not plain
 - **Make the code say it first.** A clearer name, a smaller function or a named constant beats a comment.
 - **A comment says why**: a constraint from outside the code or a trap a reader would fall into, in a line.
 - **No history.** No dates, issue or PR numbers, incidents or "used to": git keeps them.
-- **Point, do not repeat.** A quirk explained in one place gets a one-line reference from everywhere it matters ("see `parse.py`, `legacy_dates`"), not a second explanation.
+- **Point, do not repeat.** A quirk explained in one place gets a one-line reference from everywhere it matters ("see `parse.py`, `legacy_dates`"), not a second explanation. How a part fits the system is the architecture overview's: point to its section (`docs/architecture.md#alerts`), by heading, not line.
 - **Code kept unused on purpose** carries a one-line note at both ends saying why and pointing to the other end; without it, the next tidy-up deletes it.
 - **When code changes, its comments change in the same edit.** A comment that no longer matches the code is worse than none.
