@@ -26,9 +26,10 @@ They are the author's own instructions. Read them before installing them as your
 
 With --apply, joins them into ~/.claude/AGENTS.md and ~/.codex/AGENTS.md (Codex), copies every skill in skills/ to
 ~/.claude/skills/ (and downloads the skills kept in other repos, such as reaching-homelab-devices, except where CI=true;
-one that does not load is named and the run exits 1), home/hooks/require-skill.mjs to
-~/.claude/hooks/ with its PreToolUse entry in ~/.claude/settings.json, where it also turns Claude Code's auto memory off
-(only those two; the rest of the file is kept), and writes ~/.claude/CLAUDE.md as
+one that does not load is named and the run exits 1), the hooks in home/hooks/ to ~/.claude/hooks/ with their entries
+in ~/.claude/settings.json, where it also turns Claude Code's auto memory off (only those; the rest of the file is
+kept), the rule trials in home/trials/ to ~/.claude/trials/ (Codex, which runs no hook, gets each trial's rule in its
+AGENTS.md; an installed trial that has left the repo is removed), and writes ~/.claude/CLAUDE.md as
 one line, @AGENTS.md: Claude Code reads only CLAUDE.md at user level, and the import pulls AGENTS.md in. Any file
 it replaces is first kept as <name>.<date-time>.bak beside it, and a skill it installed that has left the repo is
 removed, kept first in ~/.claude/skills-replaced/. Copies, not links: Windows without Developer Mode
@@ -41,6 +42,13 @@ const HOME = resolve(dirname(fileURLToPath(import.meta.url)), "..", "home");
 const SOURCES = [join(HOME, "core.md"), join(HOME, "desktop.md")];
 // The hook that refuses `gh pr create` and `gh pr merge` until shipping-prs is loaded; settings.json points at it.
 const HOOK = join(HOME, "hooks", "require-skill.mjs");
+// The hook that gives each session its half of every rule trial (docs/keep-going.md), and the trials it reads.
+const GROUPS_HOOK = join(HOME, "hooks", "rule-groups.mjs");
+const TRIALS = join(HOME, "trials");
+const trialNames = (): string[] => (existsSync(TRIALS) ? readdirSync(TRIALS).filter((f) => f.endsWith(".md")) : []);
+/** A trial's rule as agents with no hook get it: always on. */
+const onText = (trial: string): string =>
+  /^## On\n([\s\S]*?)(?=^## |(?![\s\S]))/m.exec(trial.replaceAll("\r\n", "\n"))?.[1]?.trim() ?? "";
 // Claude Code reads ~/.claude/CLAUDE.md, never ~/.claude/AGENTS.md; a relative import resolves beside the file.
 const IMPORT = Buffer.from("@AGENTS.md\n");
 // Every skill in this repo (skills/<name>), installed as ~/.claude/skills/<name>. The
@@ -117,13 +125,18 @@ function managedBefore(): string[] {
 function settingsTarget(): [string, Buffer] {
   const path = join(homedir(), ".claude", "settings.json");
   const settings = existsSync(path) ? JSON.parse(readFileSync(path, "utf8")) : {};
-  const command = `node "${join(homedir(), ".claude", "hooks", "require-skill.mjs").replaceAll("\\", "/")}"`;
-  const entry = { matcher: "Bash|PowerShell|Edit|Write|MultiEdit", hooks: [{ type: "command", command }] };
-  const ours = (e: { hooks?: { command?: string }[] }) =>
-    e.hooks?.some((h) => h.command?.includes("require-skill.mjs"));
-  const pre: object[] = settings.hooks?.PreToolUse ?? [];
-  const at = pre.findIndex(ours);
-  settings.hooks = { ...settings.hooks, PreToolUse: at < 0 ? [...pre, entry] : pre.with(at, entry) };
+  const run = (file: string) => `node "${join(homedir(), ".claude", "hooks", file).replaceAll("\\", "/")}"`;
+  const place = (event: string, file: string, matcher?: string) => {
+    const entry = { ...(matcher ? { matcher } : {}), hooks: [{ type: "command", command: run(file) }] };
+    const ours = (e: { hooks?: { command?: string }[] }) => e.hooks?.some((h) => h.command?.includes(file));
+    const now: object[] = settings.hooks?.[event] ?? [];
+    const at = now.findIndex(ours);
+    settings.hooks = { ...settings.hooks, [event]: at < 0 ? [...now, entry] : now.with(at, entry) };
+  };
+  place("PreToolUse", "require-skill.mjs", "Bash|PowerShell|Edit|Write|MultiEdit");
+  // Subagents get the same trial rules as the session that started them.
+  place("SessionStart", "rule-groups.mjs");
+  place("SubagentStart", "rule-groups.mjs");
   settings.autoMemoryEnabled = false;
   const want = Buffer.from(`${JSON.stringify(settings, null, 2)}\n`);
   // Same settings in other formatting count as matching, so a hand-formatted file is left alone.
@@ -164,11 +177,18 @@ async function main(): Promise<number> {
     return 2;
   }
   const text = Buffer.concat(SOURCES.map((p) => readFileSync(p)));
+  const trials = trialNames().map((f): [string, Buffer] => [f, readFileSync(join(TRIALS, f))]);
+  const trialRules = trials.map(([, body]) => onText(body.toString("utf8"))).filter(Boolean);
+  const codex = trialRules.length
+    ? Buffer.concat([text, Buffer.from(`\n## Rules on trial\n\n${trialRules.map((r) => `- ${r}`).join("\n")}\n`)])
+    : text;
   const targets: [string, Buffer][] = [
     [join(homedir(), ".claude", "AGENTS.md"), text],
     [join(homedir(), ".claude", "CLAUDE.md"), IMPORT],
-    [join(homedir(), ".codex", "AGENTS.md"), text],
+    [join(homedir(), ".codex", "AGENTS.md"), codex],
     [join(homedir(), ".claude", "hooks", "require-skill.mjs"), readFileSync(HOOK)],
+    [join(homedir(), ".claude", "hooks", "rule-groups.mjs"), readFileSync(GROUPS_HOOK)],
+    ...trials.map(([f, body]): [string, Buffer] => [join(homedir(), ".claude", "trials", f), body]),
     ...skillTargets(),
   ];
   const managed = [...skillNames(), ...Object.keys(OTHER_SKILLS)].sort();
@@ -202,13 +222,23 @@ async function main(): Promise<number> {
     .filter((name) => /^[a-z0-9][\w.-]*$/.test(name) && !keepNames.has(name))
     .map((name) => join(skills, name))
     .filter((folder) => existsSync(folder) || linked(folder));
+  // An installed trial that has left the repo would still reach every session.
+  const installedTrials = join(homedir(), ".claude", "trials");
+  const endedTrials = (existsSync(installedTrials) ? readdirSync(installedTrials) : [])
+    .filter((f) => f.endsWith(".md") && !trials.some(([name]) => name === f))
+    .map((f) => join(installedTrials, f));
 
   if (!apply) {
     for (const [path] of targets)
       console.log(`${stale.some(([p]) => p === path) ? "would replace" : "matches"}: ${path}`);
     for (const folder of gone) console.log(`would remove (no longer in the repo): ${folder}`);
-    if (stale.length || gone.length) console.log("Run with --apply to install.");
-    return stale.length || gone.length || other.failed.length ? 1 : 0;
+    for (const file of endedTrials) console.log(`would remove (its trial has left the repo): ${file}`);
+    if (stale.length || gone.length || endedTrials.length) console.log("Run with --apply to install.");
+    return stale.length || gone.length || endedTrials.length || other.failed.length ? 1 : 0;
+  }
+  for (const file of endedTrials) {
+    rmSync(file);
+    console.log(`removed ${file}, whose trial has left the repo`);
   }
   for (const folder of gone) {
     if (!linked(folder)) {
@@ -233,7 +263,8 @@ async function main(): Promise<number> {
     writeFileSync(path, want);
     console.log(`installed ${path}`);
   }
-  if (!stale.length && !gone.length && !other.failed.length) console.log("Everything already matches.");
+  if (!stale.length && !gone.length && !endedTrials.length && !other.failed.length)
+    console.log("Everything already matches.");
   return other.failed.length ? 1 : 0;
 }
 

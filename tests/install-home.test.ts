@@ -39,9 +39,27 @@ test("installs the rules and a CLAUDE.md that imports them", () => {
   const home = mkdtempSync(join(tmpdir(), "install-home-"));
   install(home, "--apply");
   expect(readFileSync(join(home, ".claude", "AGENTS.md"), "utf8")).toBe(RULES);
-  expect(readFileSync(join(home, ".codex", "AGENTS.md"), "utf8")).toBe(RULES);
   expect(readFileSync(join(home, ".claude", "CLAUDE.md"), "utf8")).toBe("@AGENTS.md\n");
   install(home); // exits 0 only when everything matches
+});
+
+test("installs the rule trials for the hook, gives Codex their rules, and removes a trial that has left the repo", () => {
+  const home = mkdtempSync(join(tmpdir(), "install-home-"));
+  const installed = join(home, ".claude", "trials");
+  mkdirSync(installed, { recursive: true });
+  writeFileSync(join(installed, "ended.md"), "## On\nA rule whose trial is over.\n");
+  install(home, "--apply");
+  const trials = existsSync(join(HOME, "trials")) ? readdirSync(join(HOME, "trials")) : [];
+  expect(readdirSync(installed).sort()).toEqual(trials.sort());
+  const codex = readFileSync(join(home, ".codex", "AGENTS.md"), "utf8");
+  expect(codex.startsWith(RULES)).toBe(true);
+  for (const f of trials) {
+    const on = /^## On\n([\s\S]*?)(?=^## |(?![\s\S]))/m
+      .exec(readFileSync(join(HOME, "trials", f), "utf8"))?.[1]
+      ?.trim();
+    expect(on && codex.includes(on)).toBeTruthy();
+  }
+  install(home);
 });
 
 test("installs every skill, and reports an installed copy that was edited by hand", () => {
