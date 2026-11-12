@@ -4,7 +4,7 @@ How a change to an agent rule is tested and then tracked, and how often agents s
 
 ## Testing a rule
 
-A new wording is first replayed on past moments (hours), then put on trial for a random half of tasks (7 days at most). [agent-experiments](https://github.com/ColinCee/agent-experiments) counts each rule's misses from the user's `measures/measures.sql`, takes the looks, gives the verdicts, runs replays and draws the daily overview page; how and why: its [architecture](https://github.com/ColinCee/agent-experiments/blob/main/docs/architecture.md). When to run it: [reviewing-sessions](../skills/reviewing-sessions/SKILL.md), step 6.
+A new wording is first replayed on past moments (hours), then put on trial for a random half of tasks, looked at when its smaller group reaches 10, 20 and 40 tasks and last on day 7. [agent-experiments](https://github.com/ColinCee/agent-experiments) counts each rule's misses from the user's `measures/measures.sql`, takes the looks, gives the verdicts, runs replays and draws the daily overview page; how and why: its [architecture](https://github.com/ColinCee/agent-experiments/blob/main/docs/architecture.md). When to run it: [reviewing-sessions](../skills/reviewing-sessions/SKILL.md), step 6.
 
 Data stays in `~/.claude/keep-going/`, never in this repository: it is the user's own sessions. `backup.toml` lists it for the user's nightly PC backup.
 

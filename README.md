@@ -39,7 +39,7 @@ That also installs the skills kept in my other repos beside what they describe (
 | Tool | What it does | Install |
 |---|---|---|
 | `lease` | Locks the GPU, RAM or a browser so agents and programs on one machine don't collide; one row above the Claude Code prompt shows RAM, holders and the GPU. | `npm run install-lease` |
-| [agent-experiments](https://github.com/ColinCee/agent-experiments) | Tests whether a rule change works, on past moments and then on a random half of tasks, and draws one daily page. | Pinned in [reviewing-sessions](skills/reviewing-sessions/SKILL.md), step 6 |
+| [agent-experiments](https://github.com/ColinCee/agent-experiments) | Tests whether a rule change works, on past moments and then on a random half of tasks, and draws one daily page. | Its code is pinned in [reviewing-sessions](skills/reviewing-sessions/SKILL.md), step 6 |
 
 ## Why so few skills
 

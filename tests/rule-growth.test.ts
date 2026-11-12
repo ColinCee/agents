@@ -15,5 +15,7 @@ test("rules that grow pass only with a line giving the reason", () => {
     `Rules and skills grew by 12 words (500 to 512). Reword, merge or move a line out, or add a line to the pull request description starting "${REASON}" saying why it could not stay the same size.`,
   );
   expect(decide(500, 512, `## Problem\r\n  ${REASON} a new hook needs its own line.`)).toBeUndefined();
+  expect(decide(500, 512, `- ${REASON} a bullet works.`)).toBeUndefined();
+  expect(decide(500, 512, `*  ${REASON} so does this one.`)).toBeUndefined();
   expect(decide(500, 512, `Not here: ${REASON} mid-line.`)).toBeDefined();
 });

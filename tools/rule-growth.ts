@@ -5,7 +5,8 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const RULES = /^(home\/[^/]+\.md|skills\/[^/]+\/SKILL\.md)$/;
+// Trials count too, so a rule cannot leave the count by moving into one.
+const RULES = /^(home\/(trials\/)?[^/]+\.md|skills\/[^/]+\/SKILL\.md)$/;
 export const REASON = "Why it grows:";
 
 export const words = (text: string) => text.split(/\s+/).filter(Boolean).length;
@@ -13,7 +14,15 @@ export const words = (text: string) => text.split(/\s+/).filter(Boolean).length;
 /** The failure message, or nothing when the size held or the description gives the reason. */
 export function decide(before: number, after: number, body: string): string | undefined {
   if (after <= before) return undefined;
-  if (body.split(/\r?\n/).some((line) => line.trim().startsWith(REASON))) return undefined;
+  if (
+    body.split(/\r?\n/).some((line) =>
+      line
+        .trim()
+        .replace(/^[-*]\s+/, "")
+        .startsWith(REASON),
+    )
+  )
+    return undefined;
   return `Rules and skills grew by ${after - before} words (${before} to ${after}). Reword, merge or move a line out, or add a line to the pull request description starting "${REASON}" saying why it could not stay the same size.`;
 }
 

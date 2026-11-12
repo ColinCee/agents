@@ -4,6 +4,8 @@ on:
   push:
     branches: [main]
   pull_request:
+    # edited: a re-run reuses the old description, so adding the rule-growth reason must trigger a new run.
+    types: [opened, synchronize, reopened, edited]
 
 permissions:
   contents: read
