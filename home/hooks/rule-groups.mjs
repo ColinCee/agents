@@ -1,6 +1,6 @@
 // A Claude Code SessionStart and SubagentStart hook: gives the session the rules kept as trials in ~/.claude/trials
 // (docs/keep-going.md), each on for a random half of tasks, so a rule's effect is measured against sessions of the
-// same days without it. The first line it prints is the session's record of its groups: tools/sessions.sql reads it
+// same days without it. The first line it prints is the session's record of its groups: agent-experiments reads it
 // back from the transcript.
 import { createHash } from "node:crypto";
 import { readdirSync, readFileSync } from "node:fs";
