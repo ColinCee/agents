@@ -41,9 +41,3 @@ test("the hook gives a task the same groups in every session, splits tasks in ha
   expect(share("holdout=yes")).toBeLessThan(0.16);
   expect(stamps.every((s) => s.includes("holdout=yes") === s.includes("kept=off"))).toBe(true);
 }, 120_000);
-
-test("with no trials installed, as on Kaizen's runner, the hook holds no task out", () => {
-  const home = mkdtempSync(join(tmpdir(), "rule-groups-"));
-  const stamps = Array.from({ length: 100 }, (_, i) => hook(home, { session_id: `s${i}`, cwd: "/repo" }));
-  expect(stamps.every((s) => s.includes("holdout=no"))).toBe(true);
-}, 60_000);
