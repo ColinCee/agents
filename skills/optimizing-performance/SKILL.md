@@ -19,7 +19,7 @@ Every change is a guess until a measurement keeps it. Each measurement follows `
 
 ## The report
 
-A page, not a list of pull requests, with one accent per meaning across it, each in a legend: grey for neutral (totals, someone else's share), green for time saved, red for time still ours. No number is shown twice:
+A page, not a list of pull requests, with one accent per meaning, each in a legend: grey for totals and others' share, green for saved, blue for time still ours, red only for worse. No number is shown twice:
 
 1. One line: before → now, and the percentage.
 2. A waterfall chart from before to now: one bar per kept change, labelled with the time saved and its percentage of the run before it. An axis break keeps small savings visible beside a big one.
