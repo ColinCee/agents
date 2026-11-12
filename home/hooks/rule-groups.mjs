@@ -28,8 +28,7 @@ try {
   try {
     names = readdirSync(join(claude, "trials")).filter((f) => f.endsWith(".md")).sort();
   } catch {}
-  // With no trials here (Kaizen's runner writes every trial's rule into its own rules), nothing is held back.
-  const holdout = names.length > 0 && share("holdout") < HOLDOUT;
+  const holdout = share("holdout") < HOLDOUT;
   const version = createHash("sha256").update(read(join(claude, "AGENTS.md")));
   const groups = [];
   const rules = [];
