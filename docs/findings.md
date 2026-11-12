@@ -4,7 +4,7 @@ One line per settled result about the author's agent rules, newest first, each l
 
 | Settled | Finding | Write-up |
 |---|---|---|
-| Nov 2026 | The line against pull request numbers in replies: a replay of 198 past moments cut them 72% (60 to 84), but real agents with the line broke it three times as often as the replay, so a replay cannot settle it; on trial | [#PRNUM](https://github.com/ColinCee/agents/pull/PRNUM) |
+| Nov 2026 | The line against pull request numbers in replies: a replay of 198 past moments cut them 72% (60 to 84), but real agents with the line broke it three times as often as the replay, so a replay cannot settle it; on trial | [#98](https://github.com/ColinCee/agents/pull/98) |
 | Nov 2026 | Before-and-after verdicts passed about 1 in 4 made-up fixes; three looks at random halves pass 2 to 3% | [Why this method](keep-going.md#why-this-method) |
 | Nov 2026 | A week of sessions finds a true halving of a common mistake only 22 to 40% of the time, so a replay comes first | [Why this method](keep-going.md#why-this-method) |
 | Nov 2026 | A hook that refuses a commit naming no paths: such commits fell 79% (70 to 85), before and after | [#24](https://github.com/ColinCee/agents/pull/24) |
