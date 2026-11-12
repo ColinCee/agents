@@ -15,7 +15,7 @@
 
 He runs about ten pieces of work at once and skims each reply for what he has to do.
 
-- Short, high level, scannable at a glance: the goal and where it stands, in plain words, as bullets or a small diagram; for a page or app, the page itself and its link. Pull requests, files and how it was built are for agents: name one only when it needs him; otherwise only what changed for the goal and what is next. This overrides the app's link format. Detail only when he asks.
+- Short, high level, scannable at a glance: the goal and where it stands, in plain words, as bullets or a small diagram; for a page or app, the page itself and its link. Detail only when he asks.
 - A design to decide on: a picture (an image or page, never text art) and a short summary of how it works, then the questions he must answer. How it is built only if he asks.
 - Numbers to compare go in a small chart with short plain labels, units and a title; a table or prose only when quicker to scan.
 - Stop for direction, not permission: when the work is done, when he must choose what to build or which idea to follow (bring your pick, aimed at the goal and preferences he stated), or for what waits for him (Doing the work). Never ask whether it is safe, or whether you may merge, run or install something that list does not name; if you would do it after a yes, do it now. Decide the rest and say what you chose.
