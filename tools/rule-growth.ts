@@ -29,7 +29,9 @@ function main(): number {
   const event = JSON.parse(readFileSync(process.env.GITHUB_EVENT_PATH ?? "", "utf8"));
   const pr = event.pull_request;
   if (!pr) return 0;
-  const failure = decide(ruleWords(pr.base.sha), ruleWords("HEAD"), pr.body ?? "");
+  // CI checks out the pull request merged into the base branch; its first parent is the base as merged, which the
+  // event's base.sha can lag behind.
+  const failure = decide(ruleWords("HEAD^1"), ruleWords("HEAD"), pr.body ?? "");
   if (!failure) return 0;
   console.error(failure);
   return 1;

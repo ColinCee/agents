@@ -1,6 +1,6 @@
 # Rules for this repository
 
-Checks: `npm ci && npm run check` before every commit (`npm ci` first, so a fresh clone has its tools). It runs the type-check, lint, tests, `npm run validate` (the skill rules a program can check) and the build; CI runs the same.
+Checks: `npm ci && npm run check` before every commit (`npm ci` first, so a fresh clone has its tools). It runs the type-check, lint, tests, `npm run validate` (the skill rules a program can check) and the build; CI runs the same, and fails a pull request that adds words to rules or skills unless its description has a `Why it grows:` line.
 
 Skills here are in the open [Agent Skills](https://agentskills.io/specification) format and are installed with `npx skills add`, so any agent may load them, on any operating system, on a machine that is not the author's.
 

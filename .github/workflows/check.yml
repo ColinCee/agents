@@ -18,6 +18,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 2 # the rule-growth step compares a pull request's merge commit with its first parent
       - uses: actions/setup-node@v7.0.0
         with:
           node-version: ${{ matrix.node }}
@@ -28,8 +30,6 @@ jobs:
       - run: npm test
       - run: npm run validate
       - if: github.event_name == 'pull_request' && matrix.os == 'ubuntu-latest' && matrix.node == '24'
-        run: |
-          git fetch --no-tags --depth=1 origin ${{ github.event.pull_request.base.sha }}
-          npm run rule-growth
+        run: npm run rule-growth
       # The scripts that ship inside skills are compiled from src/; the committed output must match the source.
       - run: npm run build && git diff --exit-code -- skills
