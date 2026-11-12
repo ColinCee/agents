@@ -8,7 +8,7 @@ Every change is a guess until a measurement keeps it. Each measurement follows `
 
 ## Steps
 
-1. **The measure and the load.** One number the user waits on, end to end (push to the result the user waits on, such as a green check or a deploy), and the load it must be fast under, from history: how many run at once and how often.
+1. **The measure and the load.** One number, end to end (push to the result the user waits on, such as a green check or a deploy), and the load it must be fast under, from history: how many run at once and how often.
 2. **The stop.** The last three ideas tried each save less than the baseline's spread (its slowest run minus its fastest), unless the user set another.
 3. **Make the profile automatic.** Every run gives its own breakdown (traces or log timestamps, in the project's observability stack where it has one), so a profile is a query. Timings come from the source, never estimates.
 4. **Baseline,** with nothing else of yours running on the host: the median of at least ten runs on today's commit, and their spread. Re-take it whenever the host changes.
