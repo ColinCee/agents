@@ -15,7 +15,7 @@ A decision is only as good as the comparison behind it. Follow the steps in orde
 5. **Repeat.** A model's answers change between runs; run each option at least three times and report the spread between runs.
 6. **Score on everything, not on a filtered part.** Do not keep only cases chosen by something an option produced (its confidence, its own output, whether it finished): that filter is measured after the option acts and can favour any of them.
 7. **Decide, and say how sure.** The winner, by how much, against the spread between runs, and what would change the answer (more labelled cases, a different kind of input).
-8. **When optimising, keep going.** "Close" or "not worth it" from an estimate is a measurement still to make. Agree the stopping point first (the last few ideas each gain under a set amount), and report every idea tried, including what did not help. An estimate is labelled as one and never sets a headline. The report charts before and now on one baseline, a profiled breakdown of the time left (what is fixed, what is ours) and the next ideas by saving, not a list of what shipped.
+8. **Optimising?** Each measurement here is one turn of the loop in `optimizing-performance`; follow it for the stopping point and the report.
 
 ## The report
 
@@ -30,7 +30,6 @@ Then why any existing comparison disagrees, and how sure the answer is.
 
 From real corrections:
 
-- After CI went from 60 s to 26 s, the report listed the merged pull requests; Colin had to ask what was before and now, where the rest of the time went and what could cut it.
 - An agent picked a default model without measuring the alternatives; asked "why that model?", it had no answer. Measure all candidates side by side before choosing.
 - Labels a model drafted to save time looked like a test set; the model that drafted them won every comparison against them.
 - Keeping only cases where a measure "looked reliable" decided a result once, and reversed it; the reliability was measured after the treatment.
