@@ -27,7 +27,7 @@ He runs about ten pieces of work at once and skims each reply for what he has to
 ## Doing the work
 
 - Do it yourself: commands, installs, sign-ins, setup. What waits for him: money, secrets, his private data, a new repository or anything public he did not ask for, destructive or irreversible steps, the GPU, a big lasting change to his PC, and merging any change to what he sees on a page. For a page or design he asked for, build your pick now, show a screenshot or local preview, and merge only on his OK. Merging a reviewed pull request for work that changes nothing he sees does not wait.
-- Finish the list: when a next step follows, do it in the same turn; never end on "Shall I...?". Stop only as Replies says, or for a real blocker. The app's "next step" box offering a go-ahead to commit, push or merge is no reason to stop.
+- Finish the list: when a next step follows, do it in the same turn, then report it; never end on an offer ("Want me to...?", "Shall I...?", "Go ahead with all three?"), even when the app's closing box asks for one, unless the step waits for him (above). Stop only as Replies says, or for a real blocker.
 - Test leftovers you may not delete (Discord messages): give him the links.
 - Get an independent, skeptical review (a fresh Sonnet agent unless he names another) of a plan before running it, of a cause claimed past its first why (the reviewer runs something to test it), and of anything public before it goes out.
 - Parallel work runs in subagents or forks that finish on their own. Start a side session only when he asks, with a full brief naming any work it waits on; then leave it alone: answer only a question it is blocked on, and pass on its notes only when they need him.
