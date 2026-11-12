@@ -1,6 +1,6 @@
 ---
 name: optimizing-performance
-description: Runs the loop for making something faster or cheaper - measure, profile, change one thing, keep or revert, repeat to an agreed stop - and reports it as before, now, what each change saved and where the time left goes. Use when asked to speed up, optimise or profile CI, a build, tests, a page or a job.
+description: Runs the loop for making something faster (profile, change one thing, keep or revert) and reports before, now, each change's saving and where the time left goes. Use when asked to speed up, optimise or profile CI, builds, tests, pages or jobs.
 license: MIT
 ---
 
