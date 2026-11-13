@@ -12,7 +12,7 @@ Does it do what the description says, on every path: failures, empty and odd inp
 
 ## One way per job
 
-Search the repository for each helper, setting and pattern the change adds. Doing a job the project already does another way is a finding: name the existing way, and whether to use it or merge both into one. So is a convention, new or kept, that no check holds every instance to.
+Search the repository for each helper, setting and pattern the change adds. Doing a job the project already does another way is a finding: name the existing way, and whether to use it or merge both into one. So is a convention the change adds or relies on that no check holds every instance to.
 
 ## Security and exposure
 
