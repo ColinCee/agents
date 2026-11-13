@@ -6,7 +6,9 @@ Skills, instructions and tools for coding agents.
 
 | Skill | Loads | What it does |
 |---|---|---|
-| [shipping-prs](skills/shipping-prs/SKILL.md) | by itself | Takes a pull request from opened to merged: tests, fresh reviews for correctness, security, performance, docs and related repos, every automated comment answered and resolved. Used daily; not yet tried against a run without it. |
+| [shipping-prs](skills/shipping-prs/SKILL.md) | by itself | Takes a pull request from opened to merged: tests, fresh reviews, every automated comment answered and resolved. Used daily; not yet tried against a run without it. |
+| [reviewing-changes](skills/reviewing-changes/SKILL.md) | by itself | Fresh reviewers check a change from fixed angles: correctness, running it as users do, design, moved code, security, cost, docs, shipping order. Not yet tried. |
+| [designing-modules](skills/designing-modules/SKILL.md) | by itself | Designs a split or a new module two ways and keeps the one with fewer names crossing module lines and no load-time import cycle. Not yet tried. |
 | [updating-docs](skills/updating-docs/SKILL.md) | by itself | Keeps docs and posts true, short and easy to scan: only what must be kept, stale lines fixed in place, one home per fact. |
 | [writing-comments](skills/writing-comments/SKILL.md) | by itself | Keeps code comments to why, never what the code does or its history. |
 | [recording-learnings](skills/recording-learnings/SKILL.md) | by itself | Puts each lesson, rule or decision in its one home in git, and keeps `AGENTS.md` short. Not yet tried on its own. |

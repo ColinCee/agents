@@ -6,7 +6,7 @@ Every turn reads this, his own sessions and his unattended agents alike, so each
 
 | When | Read or do |
 |---|---|
-| Writing or changing a document or post; code; a rule, skill or decision record | `updating-docs`; `writing-comments`; `recording-learnings` |
+| Writing or changing a document or post; code, and before adding a module, a function other modules call or splitting a file; a rule, skill or decision record | `updating-docs`; `writing-comments`, `designing-modules`; `recording-learnings` |
 | Measuring or comparing options, or publishing numbers; making something faster or cheaper | `comparing-options`; `optimizing-performance` |
 | A skill's step fails or a better way turns up | Do what works, then fix the skill in its own repo in the same change, and say what changed and why. Someone else's skill: say what to change |
 | Changing a skill, these rules or a hook | Only in the agents repo, by pull request: `home/core.md` if it holds with no human present, else `home/desktop.md`. Reword, merge, delete or move detail out before adding a line: rules and skills must not grow without a stated reason |
