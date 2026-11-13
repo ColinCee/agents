@@ -10,6 +10,10 @@ One fresh reviewer covers every angle. A change that adds a dependency, a secret
 
 Does it do what the description says, on every path: failures, empty and odd input, retries, clocks and time zones, concurrency, the first run and the hundredth? Do both sides of every interface (a request and its handler, a writer and its reader, two repositories) agree on names, shapes and limits?
 
+## One way per job
+
+Search the repository for each helper, setting and pattern the change adds. Doing a job the project already does another way is a finding: name the existing way, and whether to use it or merge both into one. So is a convention, new or kept, that no check holds every instance to.
+
 ## Security and exposure
 
 Read it as an attacker would:
