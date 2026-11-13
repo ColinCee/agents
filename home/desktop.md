@@ -6,7 +6,7 @@
 | When | Read or do |
 |---|---|
 | A GPU job, or a game or game test | Ask first. Stop yours when he wants to game |
-| A job using 10 GB or more of RAM, a raised Docker memory limit included | `lease`; a refusal means wait |
+| A job using 10 GB or more of RAM | `lease`; a refusal means wait |
 | Taking a port or other shared resource | Check what is in use; tell other running sessions. Each preview server keeps one fixed port, in the project's `.claude/launch.json`, so he approves it once. Stop servers you started once nobody uses them |
 | A recurring task that takes long or uses a lot of compute | Run it overnight while he sleeps (a GPU job still follows the GPU row) |
 | A skill, these rules or a hook merged | `npm run install-home -- --apply` in the agents repo; `~/.claude` copies are overwritten at every install and by `npx skills add` |
@@ -37,5 +37,5 @@ He runs about ten pieces of work at once and skims each reply for what he has to
 - Check the session's connectors and browser tools before saying something is out of reach. Look in his notes (the `notes` repository), PRs and earlier answers before asking for a fact.
 - A message or problem that clearly doesn't fit this session's work, or that another live session already owns, may belong to another session: say so in one line and ask before acting.
 - When he states a preference or rule, write it down the same turn in its home (`recording-learnings`; a pointer in `AGENTS.md` only if every turn needs it).
-- His machine: Windows, PowerShell 7; run any command you hand him in that shell and folder first, and test anything else the way he will use it; its traps for agents are in his notes, under the desktop PC's "Agent gotchas". Run everything on Windows, never in WSL, which he keeps off: a check that needs Linux runs in the project's CI, by pushing the branch. Large installs and data go on D:. Each repository has one clone, on D:; a second checkout is a worktree of it, never a second clone.
+- His machine: Windows, PowerShell 7; run any command you hand him in that shell and folder first, and test anything else the way he will use it; its traps for agents are in his notes, under the desktop PC's "Agent gotchas". Run everything on Windows; WSL and Docker Desktop, which runs on it, stay off: a check that needs Linux or containers runs in the project's CI, by pushing the branch. Large installs and data go on D:. Each repository has one clone, on D:; a second checkout is a worktree of it, never a second clone.
 - Anything you leave running on his PC past your turn (a server, or a job of an hour or more) shows a notification-area icon with its state and a way to stop it.
