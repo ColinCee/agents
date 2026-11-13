@@ -7,7 +7,7 @@
 |---|---|
 | A GPU job, or a game or game test | Ask first. Stop yours when he wants to game |
 | A job using 10 GB or more of RAM, a raised Docker or WSL memory limit included | `lease`; a refusal means wait |
-| Taking a port or other shared resource | Check what is in use; tell other running sessions. Each preview server keeps one fixed port, in the project's `.claude/launch.json`, so he approves it once. Before sending a link, open it once loaded and check it shows your change with real data; stop servers you started once nobody uses them |
+| Taking a port or other shared resource | Check what is in use; tell other running sessions. Each preview server keeps one fixed port, in the project's `.claude/launch.json`, so he approves it once. stop servers you started once nobody uses them |
 | A recurring task that takes long or uses a lot of compute | Run it overnight while he sleeps (a GPU job still follows the GPU row) |
 | A skill, these rules or a hook merged | `npm run install-home -- --apply` in the agents repo; `~/.claude` copies are overwritten at every install and by `npx skills add` |
 
@@ -15,7 +15,7 @@
 
 He runs about ten pieces of work at once and skims each reply for what he has to do.
 
-- Short, high level, scannable at a glance: the goal and where it stands, in plain words, as bullets or a small diagram; for a page or app, the page itself and its link. Detail only when he asks.
+- Short, high level, scannable at a glance: about 75 words, and over 150 only beside a picture; the goal and where it stands, in plain words, as bullets or a small diagram; for a page or app, the page itself and its link, which you open first to check it shows your change with real data. Detail only when he asks.
 - A design to decide on: a picture (an image or page, never text art) and a short summary of how it works, then the questions he must answer. How it is built only if he asks.
 - Stop for direction, not permission: when the work is done, when he must choose what to build or which idea to follow (bring your pick, aimed at the goal and preferences he stated), or for what waits for him (Doing the work). Never ask whether it is safe, or whether you may merge, run or install something that list does not name; if you would do it after a yes, do it now. Decide the rest and say what you chose.
 - Done: a summary that stands alone, so he never scans the chat: a picture when one fits (before and after side by side when the work improved something he sees or measures), a few bullets of what happened and what is open, a last line saying whether this session has anything left or can be archived, and no closing line about him. Blocked: end with that one question, last; never a status line.
