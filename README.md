@@ -31,7 +31,7 @@ Other people's skills I use:
 | Skill | Loads | What it does | Install |
 |---|---|---|---|
 | [asd-ste100](https://github.com/danyuchn/asd-ste100-skill) | by itself | Rewrites dense or ambiguous English into short, one-meaning sentences (Simplified Technical English), for text an agent must parse. | `npx skills add danyuchn/asd-ste100-skill --global --agent claude-code` |
-| [modern-web-guidance](https://github.com/GoogleChrome/modern-web-guidance) | by itself | Web platform guides with browser-support data, searched with its CLI, so agents use current HTML, CSS and JavaScript features with fallbacks instead of legacy patterns. | `claude plugin marketplace add GoogleChrome/modern-web-guidance`, then `claude plugin install modern-web-guidance@googlechrome --scope user` (a plugin, so it updates itself) |
+| [modern-web-guidance](https://github.com/GoogleChrome/modern-web-guidance) | by itself | Web platform guides with browser-support data, searched with its CLI, so agents use current HTML, CSS and JavaScript features with fallbacks instead of legacy patterns. | `claude plugin marketplace add GoogleChrome/modern-web-guidance`, then `claude plugin install modern-web-guidance@googlechrome --scope user` |
 
 ## Instructions for agents
 
