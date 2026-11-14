@@ -6,7 +6,6 @@ Skills, instructions and tools for coding agents.
 
 | Skill | Loads | What it does |
 |---|---|---|
-| [delivering-changes](skills/delivering-changes/SKILL.md) | by itself | Takes a change from request to merged: needs pinned first, two or more ways weighed, guesses probed on the real thing, each need checked live. Each step names the skill below that does it. Not yet tried. |
 | [placing-code](skills/placing-code/SKILL.md) | by itself | Where code goes: folders by job, files and tests beside what uses them, no catch-all folders, splits with the fewest names crossing modules, safe moves. [Beat no skill by more than chance at laying out two repositories](bench/placing-code/README.md). |
 | [writing-comments](skills/writing-comments/SKILL.md) | by itself | Keeps code comments to why, never what the code does or its history. |
 | [updating-docs](skills/updating-docs/SKILL.md) | by itself | Keeps docs and posts true, short and easy to scan: only what must be kept, stale lines fixed in place, one home per fact. |

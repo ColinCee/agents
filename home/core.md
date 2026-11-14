@@ -6,7 +6,6 @@ Every turn reads this, his own sessions and his unattended agents alike, so each
 
 | When | Read or do |
 |---|---|
-| Starting a change: a feature, fix, refactor or tool choice | `delivering-changes` |
 | Writing or changing a document or post; code; a rule, skill or decision record | `updating-docs`; `writing-comments`; `recording-learnings` |
 | Adding or splitting a module or file, or restructuring a repository | `placing-code` |
 | Measuring or comparing options, publishing numbers, or making something faster or cheaper | `comparing-options` |
