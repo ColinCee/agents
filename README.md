@@ -15,7 +15,7 @@ Skills, instructions and tools for coding agents.
 | [comparing-options](skills/comparing-options/SKILL.md) | by itself | Decides from evidence: one question, the ground truth, a fair repeated comparison. |
 | [optimizing-performance](skills/optimizing-performance/SKILL.md) | by itself | The loop for making something faster: profile, change one thing, keep or revert, then report before, now and where the time left goes. Tried once, on homelab CI. |
 | [tidying-repos](skills/tidying-repos/SKILL.md) | `/tidying-repos` | A full clean-up pass in a safe order: what could be lost, code health, unused code, docs. |
-| [reviewing-sessions](skills/reviewing-sessions/SKILL.md) | `/reviewing-sessions` | Finds what you keep correcting, typed or edited by hand in the agent's text, fixes each where it belongs, and measures whether the fix works. |
+| [reviewing-sessions](skills/reviewing-sessions/SKILL.md) | by itself, or `/reviewing-sessions` | Finds what you keep correcting, typed or edited by hand in the agent's text, fixes each where it belongs, and measures whether the fix works. |
 | [restructuring-code](skills/restructuring-code/SKILL.md) | by itself | Moves code grown by appending into folders by job and deep modules behind small interfaces. Barely tried: loaded by one session. |
 | [budgeting-page-performance](skills/budgeting-page-performance/SKILL.md) | by itself | Fails CI when a web page gets heavier or slower than its budget: bytes by type, requests, LCP. Never tried. |
 

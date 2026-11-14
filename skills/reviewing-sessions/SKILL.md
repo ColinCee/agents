@@ -1,8 +1,7 @@
 ---
 name: reviewing-sessions
-description: Reviews one day's agent sessions for what the user corrected and rules the agent broke unnoticed, fixes each where it belongs, and measures whether the fix works. Use when asked what the user keeps correcting, or to learn from past sessions.
+description: Reviews one day's agent sessions for what the user corrected and rules the agent broke unnoticed, fixes each where it belongs, and measures whether the fix works. Use when asked to review a day's sessions, or what the user keeps correcting.
 license: MIT
-disable-model-invocation: true
 compatibility: Requires uv, git, and Node (the agents repo's install-home).
 ---
 
