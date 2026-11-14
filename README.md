@@ -12,6 +12,7 @@ Skills, instructions and tools for coding agents.
 | [recording-learnings](skills/recording-learnings/SKILL.md) | by itself | Puts each lesson, rule or decision in its one home in git, and keeps `AGENTS.md` short. Not yet tried on its own. |
 | [shipping-prs](skills/shipping-prs/SKILL.md) | by itself | Takes a pull request from opened to merged: tests, a fresh review, every comment answered, then the merge. Used daily; [its review angles found no more bugs than a plain review](bench/shipping-prs/README.md), so they are read only for risky changes. |
 | [comparing-options](skills/comparing-options/SKILL.md) | by itself | Decides from evidence: one question, the ground truth, a fair repeated comparison; and the loop for making something faster. |
+| [delivering-changes](skills/delivering-changes/SKILL.md) | `/delivering-changes` | A change from request to merged: needs and a sample you can react to first, then options, probes, checks. [Unproven](bench/delivering-changes/README.md): tried by hand. |
 | [tidying-repos](skills/tidying-repos/SKILL.md) | `/tidying-repos` | A full clean-up pass in a safe order: what could be lost, code health, unused code, docs. |
 | [reviewing-sessions](skills/reviewing-sessions/SKILL.md) | by itself, or `/reviewing-sessions` | Finds what you keep correcting, typed or edited by hand in the agent's text, fixes each where it belongs, and measures whether the fix works. |
 
