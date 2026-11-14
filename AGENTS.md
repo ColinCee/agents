@@ -24,7 +24,7 @@ The repository is public: no paths, names or accounts of the author's in any fil
 
 ## Trying a skill
 
-Run the same real task with and without the skill, on the same model, at least five times each, since agents vary from run to run. Read what the agent did, not only its last message. Keep the skill only when it beats no skill by more than chance (p < 0.05); within the noise, the cheaper one wins. Note the result in one line in `bench/<name>/README.md`.
+Run the same real task with and without the skill, on the same model, at least five times each, since agents vary from run to run. Read what the agent did, not only its last message. Keep the skill only when it beats no skill by more than chance (p < 0.05), or as a command the author tries by hand, said in its results; within the noise, the cheaper one wins. Note the result in one line in `bench/<name>/README.md`.
 
 ## Commits
 
