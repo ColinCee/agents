@@ -1,10 +1,6 @@
----
-name: optimizing-performance
-description: Runs the loop for making something faster (profile, change one thing, keep or revert) and reports before, now, each change's saving and where the time left goes. Use when asked to speed up, optimise or profile CI, builds, tests or jobs.
-license: MIT
----
+# Making something faster
 
-Every change is a guess until a measurement keeps it. Each measurement follows `comparing-options`; this skill is the loop around it.
+Every change is a guess until a measurement keeps it. Each measurement follows the `comparing-options` SKILL.md; this is the loop around it.
 
 ## Steps
 

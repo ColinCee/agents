@@ -7,9 +7,8 @@ Every turn reads this, his own sessions and his unattended agents alike, so each
 | When | Read or do |
 |---|---|
 | Writing or changing a document or post; code; a rule, skill or decision record | `updating-docs`; `writing-comments`; `recording-learnings` |
-| Before adding a module or a function other modules call, or splitting a file | `designing-modules` |
-| Restructuring a repository or planning where its files go | `structuring-repos` |
-| Measuring or comparing options, or publishing numbers; making something faster or cheaper | `comparing-options`; `optimizing-performance` |
+| Adding or splitting a module or file, or restructuring a repository | `placing-code` |
+| Measuring or comparing options, publishing numbers, or making something faster or cheaper | `comparing-options` |
 | A skill's step fails or a better way turns up | Do what works, then fix the skill in its own repo in the same change, and say what changed and why. Someone else's skill: say what to change |
 | Changing a skill, these rules or a hook | Only in the agents repo, by pull request: `home/core.md` if it holds with no human present, else `home/present.md` (he is in the chat) or `home/local.md` (his machines). Reword, merge, delete or move detail out before adding a line: rules and skills must not grow without a stated reason |
 

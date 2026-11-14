@@ -1,8 +1,4 @@
----
-name: reviewing-changes
-description: Reviews a change with fresh agents from fixed angles (correctness, running it as users do, design, moved code, one way per job, security, cost, docs, shipping order). Use when reviewing a pull request, a branch or a diff, or before merging one.
-license: MIT
----
+# Reviewing a change
 
 The author's review finds what the author already thought of. Fresh agents find the rest, but only when given the change and not the author's list of what to check: a reviewer handed that list finds only what is on it.
 

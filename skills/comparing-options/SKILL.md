@@ -1,6 +1,6 @@
 ---
 name: comparing-options
-description: Decides between options from evidence, with one question, one baseline, a fair repeated comparison and how sure it is. Use when asked which option is better, whether a change helps, or to benchmark, measure or compare speed.
+description: Decides between options from evidence, with one question, one baseline, a fair repeated comparison and how sure it is. Use when asked which option is better, whether a change helps, or to benchmark, measure, compare or speed something up.
 license: MIT
 ---
 
@@ -15,7 +15,7 @@ A decision is only as good as the comparison behind it. Follow the steps in orde
 5. **Repeat.** A model's answers change between runs; run each option at least five times and report the spread between runs.
 6. **Score on everything, not on a filtered part.** Do not keep only cases chosen by something an option produced (its confidence, its own output, whether it finished): that filter is measured after the option acts and can favour any of them.
 7. **Decide, and say how sure.** The winner, by how much, against the spread between runs, and what would change the answer (more labelled cases, a different kind of input).
-8. **Optimising?** Each measurement here is one turn of the loop in `optimizing-performance`; follow it for the stopping point and the report.
+8. **Optimising?** Each measurement here is one turn of the loop in `references/optimizing.md`; follow it for the stopping point and the report.
 
 ## The report
 
