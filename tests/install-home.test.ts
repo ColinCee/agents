@@ -18,7 +18,7 @@ const TOOL = resolve(import.meta.dirname, "..", "tools", "install-home.ts");
 const HOME = resolve(import.meta.dirname, "..", "home");
 const RULES = ["core.md", "desktop.md"].map((f) => readFileSync(join(HOME, f), "utf8")).join("");
 // Every turn reads them, and Anthropic advises keeping such files under about 200 lines. Growth below that is the
-// reviewers' to question (shipping-prs, review-angles.md), not this test's.
+// reviewers' to question (reviewing-changes), not this test's.
 const RULES_MAX_LINES = 200;
 
 test("the rules stay under the line limit", () => {

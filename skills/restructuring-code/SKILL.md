@@ -13,7 +13,7 @@ Agents add to the file that already holds related code, so files only grow. Rest
 3. **Add a guard test first**, in its own change: it fails when any workflow, doc, skill or test names a path or module that no longer exists. Also find tests and checks that only look in the top folder (`glob("*.py")`, a flat directory list); make them search every folder, or they keep passing while silently checking nothing.
 4. **Move in order**: first the modules nothing else in the code imports, so no other file changes; modules that import each other in a loop move together in one change, since splitting them gains nothing.
 5. **Keep names and callers working.** File names stay the same, so searches and history still find them. Every name other code imports stays importable from where it was (a re-export is fine) until its callers move. Update imports, command entry points, workflow lines, docs and skill links in the same change.
-6. **Then deepen, separately.** Splitting a big module into a few deep ones (much behind a small interface) is its own change after the moves: design it two ways, keep the one with the smaller interface for callers.
+6. **Then deepen, separately.** Splitting a big module into a few deep ones (much behind a small interface) is its own change after the moves, designed first with `designing-modules` (without it: design two splits and keep the one with fewer names crossing module lines).
 
 ## Every change
 
