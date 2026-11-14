@@ -39,6 +39,12 @@ Other people's skills I use:
 
 That also installs the skills kept in my other repos beside what they describe (`reaching-homelab-devices`, in homelab; not in CI), and [home/hooks/require-skill.mjs](home/hooks/require-skill.mjs) with its entry in `~/.claude/settings.json`. The install also turns Claude Code's auto memory off in that file: what an agent learns goes in git. The hook refuses a step until the skill for it is loaded: `shipping-prs` before a first push or a pull request, `comparing-options` before a benchmark, and before an edit `updating-docs` (a doc), `writing-comments` (code) or `recording-learnings` (agent rules, a skill or a decision record).
 
+A cloud environment (claude.ai) starts each session from a fresh container, so its setup script runs the same install with `--unattended`: `core.md` without `desktop.md`, plus the skills and hooks. Its network must allow github.com and raw.githubusercontent.com, or the script fails and no session starts. It takes `main` as of each container's build:
+
+```bash
+rm -rf /opt/agents && git clone --depth 1 https://github.com/ColinCee/agents /opt/agents && node /opt/agents/tools/install-home.ts --apply --unattended
+```
+
 ## Tools
 
 | Tool | What it does | Install |

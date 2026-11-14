@@ -43,6 +43,13 @@ test("installs the rules and a CLAUDE.md that imports them", () => {
   install(home); // exits 0 only when everything matches
 });
 
+test("--unattended installs core.md alone, for a machine no one sits at", () => {
+  const home = mkdtempSync(join(tmpdir(), "install-home-"));
+  install(home, "--apply", "--unattended");
+  expect(readFileSync(join(home, ".claude", "AGENTS.md"), "utf8")).toBe(readFileSync(join(HOME, "core.md"), "utf8"));
+  install(home, "--unattended");
+});
+
 test("installs the rule trials for the hook, gives Codex their rules, and removes a trial that has left the repo", () => {
   const home = mkdtempSync(join(tmpdir(), "install-home-"));
   const installed = join(home, ".claude", "trials");
