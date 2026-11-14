@@ -13,7 +13,7 @@ Fewer skills is better. Every installed skill's description costs context, a loa
    - A **command** is asked for by name (`tidying-repos`), and stands for a whole process the user would otherwise type out. It carries `disable-model-invocation: true`, so it loads only when named and its description costs nothing otherwise; most skills here are commands. Worse: the same words without the skill leave out steps the process promises, or do them differently from run to run.
 3. **It is one job.** Like a function: narrow enough that its description says exactly when to use it, wide enough that one task does not need three skills.
 4. **It is generic.** Nothing in it depends on the author's projects, machine, accounts or one agent's tools. What differs per project is read from that project (its `AGENTS.md`, `README.md`, config), not written into the skill.
-5. **It was tried.** The same real task, run with the skill and without it, comes out clearly better with it. How: [AGENTS.md](../AGENTS.md), Trying a skill.
+5. **It was tried.** The same real task, run with the skill and without it, beats it by more than chance, or is cheaper for the same result. How: [AGENTS.md](../AGENTS.md), Trying a skill.
 
 ## Skill folder
 
