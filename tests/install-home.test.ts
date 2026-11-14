@@ -49,6 +49,8 @@ test("--cloud leaves out local.md", () => {
   const cloud = ["core.md", "present.md"].map((f) => readFileSync(join(HOME, f), "utf8")).join("");
   expect(readFileSync(join(home, ".claude", "AGENTS.md"), "utf8")).toBe(cloud);
   install(home, "--cloud");
+  // Both claude.ai environments' setup scripts still pass the old name; an unknown option would stop their sessions.
+  install(home, "--unattended");
 });
 
 test("installs the rule trials for the hook, gives Codex their rules, and removes a trial that has left the repo", () => {
