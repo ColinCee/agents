@@ -18,4 +18,4 @@ The first split that comes to mind follows the file's headings, not who calls wh
 
 - One shared module of types looked simplest. It had more crossings (67 against 59) and cycles at load time, because the shared types needed types from the modules that imported them.
 - A line cap moves code to random seams; the crossing count measures what callers must know.
-- After a split, code reaches a sibling by `module.name`, so a test patches the module that defines the name; `from x import name` copies the name, and a patch on `x` misses the copy.
+- After a split, reach a sibling by `module.name`: `from x import name` copies the name, so a test's patch on `x` misses the copy.

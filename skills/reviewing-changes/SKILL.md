@@ -8,11 +8,9 @@ The author's review finds what the author already thought of. Fresh agents find 
 
 ## Steps
 
-1. **Brief fresh agents** with the diff, the pull request's description (its draft, before opening), the paths of the related repositories, and the skills that fit the change to load first (such as `updating-docs`, `comparing-options`). They read and run read-only checks; they change and post nothing. In a public repository, or someone else's, review before the first push, since the push publishes the change.
+1. **Brief fresh agents** with the diff, the pull request's description (its draft, before opening), the paths of the related repositories (those the change reaches: a service it calls or that calls it, infrastructure it runs on, docs kept elsewhere; the description names them), and the skills that fit the change to load first (such as `updating-docs`, `comparing-options`). They read and run read-only checks; they change and post nothing. In a public repository, or someone else's, review before the first push, since the push publishes the change.
 2. **One reviewer covers every angle below.** A change that adds a dependency, a secret, a network path or a second repository gets one reviewer per angle instead, at the same time: there one reviewer runs out of attention.
 3. **Each finding** gives `file:line`, what breaks and for whom, and how sure; run it when it can be run. A change to a skill or to agent rules cites what it saw (the sessions, the counts), and reviewers check that evidence, since one session rarely shows the pattern.
-
-**Related repositories** are the ones the change reaches: a service it calls or that calls it, infrastructure it runs on, notes or docs kept elsewhere that describe it. The description names them.
 
 ## Angles
 
