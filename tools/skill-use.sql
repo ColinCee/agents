@@ -35,8 +35,9 @@ readfile AS (
 -- A renamed skill keeps its loads under the old name: without this it reads as unused for 30 days. A row can go once
 -- its rename is older than the longest window anyone runs.
 renamed(was, now) AS (VALUES ('doc-upkeep', 'updating-docs'), ('deciding', 'comparing-options'),
-  ('session-review', 'reviewing-sessions'), ('housekeeping', 'tidying-repos'), ('restructuring', 'restructuring-code'),
-  ('speed-budgets', 'budgeting-page-performance'), ('homelab-network', 'reaching-homelab-devices')),
+  ('session-review', 'reviewing-sessions'), ('housekeeping', 'tidying-repos'), ('restructuring', 'placing-code'),
+  ('restructuring-code', 'placing-code'), ('structuring-repos', 'placing-code'), ('designing-modules', 'placing-code'),
+  ('reviewing-changes', 'shipping-prs'), ('optimizing-performance', 'comparing-options'), ('homelab-network', 'reaching-homelab-devices')),
 loads AS (
   -- A plugin's skill is named plugin:skill; the prefix is dropped, so it counts for an installed skill of that name.
   SELECT sid, day, coalesce(r.now, x.name) AS skill, how

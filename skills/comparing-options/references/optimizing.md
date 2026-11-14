@@ -1,6 +1,6 @@
 # Making something faster
 
-Every change is a guess until a measurement keeps it. Each measurement follows `SKILL.md`; this is the loop around it.
+Every change is a guess until a measurement keeps it. Each measurement follows the `comparing-options` SKILL.md; this is the loop around it.
 
 ## Steps
 
