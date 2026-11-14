@@ -4,6 +4,8 @@
 
 ## Review angles
 
+Measured as the skill `reviewing-changes`, now `references/review.md`.
+
 **What to expect:** about the same bugs found as a plain review, at 2.6 times the mean cost per review.
 
 | On Claude Opus 5.5, Claude Code, 12 past pull requests, 3 runs each | Without | `reviewing-changes` | mattpocock `code-review` |

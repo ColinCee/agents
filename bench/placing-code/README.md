@@ -2,7 +2,7 @@
 
 **What to expect:** asked to restructure a repository, the agent plans a folder per job and puts every test and single-use file beside what uses it. Without it, and with the other skills tried, agents left tests where they were.
 
-| On Claude Opus 5.5, Claude Code, 2 repositories, 6 runs each | Without | `placing-code` | `restructuring-code` | mattpocock `improve-codebase-architecture` |
+| On Claude Opus 5.5, Claude Code, 2 repositories, 6 runs each | Without | `placing-code` (then `structuring-repos`) | `restructuring-code` | mattpocock `improve-codebase-architecture` |
 |---|---|---|---|---|
 | The owner's structure goals (0 to 1) | 0.49 | **0.81** | 0.50 | 0.45 |
 | Tests moved beside their code | 13% | **100%** | 13% | 11% |
@@ -16,6 +16,8 @@ How sure: the structure-goals measure is the owner's rules, which the skill stat
 The test and every run are in the private `agents-bench` repository, under `skills/restructuring-code/`: kept out of public view so no model can learn the answers.
 
 ## Splitting a file
+
+Measured under its earlier name, `designing-modules`, now `references/splitting.md`.
 
 **What to expect:** before splitting a file or adding a module, the agent designs it two ways, counts the names that would cross module lines, and writes a `Design:` section. On one split it passed every check in all three runs; without it, the agent split as well but left a larger interface.
 
