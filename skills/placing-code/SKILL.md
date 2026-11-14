@@ -1,10 +1,10 @@
 ---
-name: structuring-repos
-description: Plans a whole repo's folder layout by job, files and tests beside what uses them, no catch-all folders, one home per fact, and a check that keeps it. Use when asked to restructure a repo, improve its project structure or organise its folders.
+name: placing-code
+description: Decides where code goes, with folders by job, files and tests beside what uses them, no catch-all folders, splits with the fewest names crossing modules, safe moves. Use when adding or splitting a module, or restructuring a repo.
 license: MIT
 ---
 
-Agents fix the file in front of them, so a repository's layout drifts: a `scripts/` folder fills with anything, tests pile up in a `tests/` tree, a helper used once lives far from its user. This skill looks at the whole repository first and plans where everything belongs; moving the files then follows `restructuring-code` (without it: move in small changes that keep every caller working).
+Agents fix the file in front of them, so a repository's layout drifts: a `scripts/` folder fills with anything, tests pile up in a `tests/` tree, a helper used once lives far from its user. This skill looks at the whole repository first and plans where everything belongs; moving files follows `references/moving.md`, and splitting one `references/splitting.md`.
 
 ## Steps
 
@@ -17,7 +17,7 @@ Agents fix the file in front of them, so a repository's layout drifts: a `script
    - What several jobs use lives once, where all of them import it, never a copy per job.
    - A subfolder earns its place when its files use each other more than the rest. Prefer fewer, flatter folders; three levels at most.
 4. **Find duplicates and dead files**: two files or functions doing one job, two copies of one list, constant or config, and files nothing uses or runs. Plan one home for each and plan deleting the dead.
-5. **Check the plan**: count the uses that cross a top-level folder before and after; the new layout crosses fewer, and no two folders import each other. A big file doing several jobs is split in its own change with `designing-modules`, not in this pass.
+5. **Check the plan**: count the uses that cross a top-level folder before and after; the new layout crosses fewer, and no two folders import each other. A big file doing several jobs is split in its own change (`references/splitting.md`), not in this pass.
 6. **Write it down**: a table of folders and their jobs, then every move as old path → new path. The layout ships with a test that keeps it: it fails on a top-level folder missing from the table, a catch-all name, a single-use file away from its user, or a test away from its code. Without one, the next agent undoes the layout.
 
 ## Gotchas

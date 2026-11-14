@@ -1,8 +1,4 @@
----
-name: designing-modules
-description: Designs a split or a new module two ways, counts the names that would cross module lines, and keeps the smaller interface with no load-time import cycle. Use when about to add a module, add a function other modules call, or split a file.
-license: MIT
----
+# Splitting a file or adding a module
 
 The first split that comes to mind follows the file's headings, not who calls what, and its cost shows later as names every module has to know. Count before moving code.
 

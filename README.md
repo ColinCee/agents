@@ -6,19 +6,15 @@ Skills, instructions and tools for coding agents.
 
 | Skill | Loads | What it does |
 |---|---|---|
-| [shipping-prs](skills/shipping-prs/SKILL.md) | by itself | Takes a pull request from opened to merged: tests, fresh reviews, every automated comment answered and resolved. Used daily; not yet tried against a run without it. |
-| [reviewing-changes](skills/reviewing-changes/SKILL.md) | by itself | Fresh reviewers check a change from fixed angles: correctness, running it as users do, design, moved code, security, cost, docs, shipping order. [Finds about as many bugs as a plain review](bench/reviewing-changes/README.md), at 2.6 times the cost. |
-| [designing-modules](skills/designing-modules/SKILL.md) | by itself | Designs a split or a new module two ways and keeps the one with fewer names crossing module lines and no load-time import cycle. [Passed every check in three runs on one split](bench/designing-modules/README.md), with a smaller interface than without it. |
-| [updating-docs](skills/updating-docs/SKILL.md) | by itself | Keeps docs and posts true, short and easy to scan: only what must be kept, stale lines fixed in place, one home per fact. |
+| [delivering-changes](skills/delivering-changes/SKILL.md) | by itself | Takes a change from request to merged: needs pinned first, two or more ways weighed, guesses probed on the real thing, each need checked live. Each step names the skill below that does it. Not yet tried. |
+| [placing-code](skills/placing-code/SKILL.md) | by itself | Where code goes: folders by job, files and tests beside what uses them, no catch-all folders, splits with the fewest names crossing modules, safe moves. [Beat no skill by more than chance at laying out two repositories](bench/placing-code/README.md). |
 | [writing-comments](skills/writing-comments/SKILL.md) | by itself | Keeps code comments to why, never what the code does or its history. |
+| [updating-docs](skills/updating-docs/SKILL.md) | by itself | Keeps docs and posts true, short and easy to scan: only what must be kept, stale lines fixed in place, one home per fact. |
 | [recording-learnings](skills/recording-learnings/SKILL.md) | by itself | Puts each lesson, rule or decision in its one home in git, and keeps `AGENTS.md` short. Not yet tried on its own. |
-| [comparing-options](skills/comparing-options/SKILL.md) | by itself | Decides from evidence: one question, the ground truth, a fair repeated comparison. |
-| [optimizing-performance](skills/optimizing-performance/SKILL.md) | by itself | The loop for making something faster: profile, change one thing, keep or revert, then report before, now and where the time left goes. Tried once, on homelab CI. |
+| [shipping-prs](skills/shipping-prs/SKILL.md) | by itself | Takes a pull request from opened to merged: tests, a fresh review, every comment answered, then the merge. Used daily; [its review angles found no more bugs than a plain review](bench/shipping-prs/README.md), so they are read only for risky changes. |
+| [comparing-options](skills/comparing-options/SKILL.md) | by itself | Decides from evidence: one question, the ground truth, a fair repeated comparison; and the loop for making something faster. |
 | [tidying-repos](skills/tidying-repos/SKILL.md) | `/tidying-repos` | A full clean-up pass in a safe order: what could be lost, code health, unused code, docs. |
 | [reviewing-sessions](skills/reviewing-sessions/SKILL.md) | by itself, or `/reviewing-sessions` | Finds what you keep correcting, typed or edited by hand in the agent's text, fixes each where it belongs, and measures whether the fix works. |
-| [structuring-repos](skills/structuring-repos/SKILL.md) | by itself | Plans a whole repository's layout: a folder per job, files and tests beside what uses them, no catch-all folders, one home per fact, and a check that keeps it. [Beat no skill by more than chance on two repositories](bench/structuring-repos/README.md), the only skill tried that moved tests beside their code. |
-| [restructuring-code](skills/restructuring-code/SKILL.md) | by itself | Moves code grown by appending into folders by job and deep modules behind small interfaces. Barely tried: loaded by one session. |
-| [budgeting-page-performance](skills/budgeting-page-performance/SKILL.md) | by itself | Fails CI when a web page gets heavier or slower than its budget: bytes by type, requests, LCP. Never tried. |
 
 ```bash
 npx skills add ColinCee/agents --global --skill '*' --agent claude-code
