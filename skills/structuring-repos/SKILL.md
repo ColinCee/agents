@@ -9,7 +9,7 @@ Agents fix the file in front of them, so a repository's layout drifts: a `script
 ## Steps
 
 1. **Map every tracked file** (`git ls-files`): its job in a few words, and what uses it: imports, and paths named in workflows, service units, compose files, build files and scripts. Note how the project is started and installed (commands, entry points, paths copied to a host, CI jobs): those paths are contracts.
-2. **Draw the top level**: one folder per job a reader would look for (`billing/`, `ci-runner/`, `docs/`), each with its job in one line, about seven at most. Never a catch-all (`scripts/`, `utils/`, `lib/`, `common/`, `helpers/`, `misc/`, `shared/`) or a folder per layer or file type (`services/`, `models/`, `configs/`): they grow by whatever is easiest to add. At the root only what tools need there.
+2. **Draw the top level**: one folder per job a reader would look for (`billing/`, `deploy/`, `docs/`), each with its job in one line, about seven at most. Never a catch-all (`scripts/`, `utils/`, `lib/`, `common/`, `helpers/`, `misc/`, `shared/`) or a folder per layer or file type (`services/`, `models/`, `configs/`): they grow by whatever is easiest to add. At the root only what tools need there.
 3. **Place each file:**
    - A file only one other uses sits beside that user.
    - A test sits beside the code it tests (`billing/invoice.py`, `billing/invoice_test.py`), not in a separate `tests/` tree; shared fixtures sit with the tests that use them.
@@ -23,5 +23,5 @@ Agents fix the file in front of them, so a repository's layout drifts: a `script
 ## Gotchas
 
 - Splitting a flat package into feature folders adds crossings when every feature imports a shared core: keep the core at the package's top, so features only import upward.
-- A folder named for a tool's convention or a technology (`docker.service.d`, `yaml/`) hides its job; name it for the job.
+- A folder named for a tool's convention or a technology (`conf.d/`, `yaml/`) hides its job; name it for the job.
 - Paths a host installs, a unit runs or CI names are contracts: each move updates every reference in the same change.

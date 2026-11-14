@@ -9,6 +9,8 @@
 | Folder fit to what uses what, change from no skill | | **+0.013** | +0.006 | 0.000 |
 | Cost per run | $1.15 | $1.41 | $1.11 | $1.07 |
 
-Only `structuring-repos` beats no skill by more than chance (p < 0.01 on both measures, Holm-corrected). On one repository its layouts scored as well as the owner's own (0.77 against 0.76). It costs about $0.26 more a run, within the noise. The runs planned the layout without moving files, and one repository is where the skill's rules came from; the other was held out.
+Only `structuring-repos` beats no skill by more than chance (p < 0.01 on both measures, Holm-corrected), on the repository held out from writing it as well as on the one its rules came from. It costs about $0.26 more a run, within the noise. mattpocock's side wrote one invalid layout (two files to one path).
+
+How sure: the structure-goals measure is the owner's rules, which the skill states, so it shows the skill is followed; the folder-fit measure is written by neither and is the neutral check. The runs planned the layout without moving files, and the prompt named the skill, so whether it loads by itself from its description is untested.
 
 The test and every run are in the private `agents-bench` repository, under `skills/restructuring-code/`: kept out of public view so no model can learn the answers.
