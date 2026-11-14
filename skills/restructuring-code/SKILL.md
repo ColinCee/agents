@@ -8,7 +8,7 @@ Agents add to the file that already holds related code, so files only grow. Rest
 
 ## Steps
 
-1. **Map before moving.** List each module, what it is for in a few words, and what imports it. Group by job, named for what a reader would look for (for example `chat/`, `billing/`, `reports/`), not by layer or file type. Code everything uses stays at the top.
+1. **Plan the layout before moving**, with `structuring-repos` (without it: list each module, its job and what imports it, and group by job, not by layer or file type).
 2. **Leave in place what finds itself by location**: code that counts folders up to find the repository root, reads a file beside it, or is copied out alone by a build. Search for `__file__`, `parent.parent`, `import.meta.url` and the like before moving a file.
 3. **Add a guard test first**, in its own change: it fails when any workflow, doc, skill or test names a path or module that no longer exists. Also find tests and checks that only look in the top folder (`glob("*.py")`, a flat directory list); make them search every folder, or they keep passing while silently checking nothing.
 4. **Move in order**: first the modules nothing else in the code imports, so no other file changes; modules that import each other in a loop move together in one change, since splitting them gains nothing.
