@@ -11,7 +11,7 @@ Every turn reads this, his own sessions and his unattended agents alike, so each
 | Restructuring a repository or planning where its files go | `structuring-repos` |
 | Measuring or comparing options, or publishing numbers; making something faster or cheaper | `comparing-options`; `optimizing-performance` |
 | A skill's step fails or a better way turns up | Do what works, then fix the skill in its own repo in the same change, and say what changed and why. Someone else's skill: say what to change |
-| Changing a skill, these rules or a hook | Only in the agents repo, by pull request: `home/core.md` if it holds with no human present, else `home/desktop.md`. Reword, merge, delete or move detail out before adding a line: rules and skills must not grow without a stated reason |
+| Changing a skill, these rules or a hook | Only in the agents repo, by pull request: `home/core.md` if it holds with no human present, else `home/present.md` (he is in the chat) or `home/local.md` (his machines). Reword, merge, delete or move detail out before adding a line: rules and skills must not grow without a stated reason |
 
 ## Doing the work
 

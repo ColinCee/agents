@@ -1,5 +1,5 @@
-// Install home/core.md and home/desktop.md as the user-level instructions of the coding agents on this machine, with
-// the hook and skills.
+// Install home/core.md, present.md and local.md as the user-level instructions of the coding agents on this machine,
+// with the hook and skills.
 import {
   copyFileSync,
   cpSync,
@@ -17,13 +17,13 @@ import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 
-const HELP = `Install home/core.md and home/desktop.md (core.md alone with --unattended) as every agent's user-level
+const HELP = `Install home/core.md, present.md and local.md (no local.md with --cloud) as every agent's user-level
 instructions. Reports only unless --apply.
 
   npm run install-home             # what would change
   npm run install-home -- --apply  # write it
-  node tools/install-home.ts --apply --unattended  # core.md alone, for a machine no one sits at (a cloud
-                                                   # environment's setup script); plain Node 22, no npm ci
+  node tools/install-home.ts --apply --cloud  # no local.md, for a cloud environment's setup script;
+                                              # plain Node 22, no npm ci
 
 They are the author's own instructions. Read them before installing them as yours.
 
@@ -41,8 +41,8 @@ cannot make links.
 Exit codes: 0 everything matches or was installed, 1 something differs (report only), 2 a file it installs from home/ is missing.`;
 
 const HOME = resolve(dirname(fileURLToPath(import.meta.url)), "..", "home");
-// core.md is what unattended agents also read (they take it alone); desktop.md is for sessions with the author present.
-const SOURCES = [join(HOME, "core.md"), join(HOME, "desktop.md")];
+// core.md holds for every agent; present.md only with the author in the chat; local.md only on the author's machines.
+const SOURCES = ["core.md", "present.md", "local.md"].map((f) => join(HOME, f));
 // The hook that refuses `gh pr create` and `gh pr merge` until shipping-prs is loaded; settings.json points at it.
 const HOOK = join(HOME, "hooks", "require-skill.mjs");
 // The hook that gives each session its half of every rule trial (docs/keep-going.md), and the trials it reads.
@@ -166,6 +166,9 @@ async function main(): Promise<number> {
     const { values } = parseArgs({
       options: {
         apply: { type: "boolean", default: false },
+        cloud: { type: "boolean", default: false },
+        // Its old name, until the claude.ai environments' setup scripts say --cloud: an unknown option fails them,
+        // and then no session starts.
         unattended: { type: "boolean", default: false },
         help: { type: "boolean", short: "h", default: false },
       },
@@ -175,7 +178,7 @@ async function main(): Promise<number> {
       return 0;
     }
     apply = Boolean(values.apply);
-    sources = values.unattended ? SOURCES.slice(0, 1) : SOURCES;
+    sources = values.cloud || values.unattended ? SOURCES.slice(0, 2) : SOURCES;
   } catch (e) {
     console.error(`${(e as Error).message}\n\n${HELP}`);
     return 2;

@@ -16,7 +16,7 @@ import { expect, test } from "vitest";
 
 const TOOL = resolve(import.meta.dirname, "..", "tools", "install-home.ts");
 const HOME = resolve(import.meta.dirname, "..", "home");
-const RULES = ["core.md", "desktop.md"].map((f) => readFileSync(join(HOME, f), "utf8")).join("");
+const RULES = ["core.md", "present.md", "local.md"].map((f) => readFileSync(join(HOME, f), "utf8")).join("");
 // Every turn reads them, and Anthropic advises keeping such files under about 200 lines. Growth below that is the
 // reviewers' to question (reviewing-changes), not this test's.
 const RULES_MAX_LINES = 200;
@@ -43,10 +43,13 @@ test("installs the rules and a CLAUDE.md that imports them", () => {
   install(home); // exits 0 only when everything matches
 });
 
-test("--unattended installs core.md alone, for a machine no one sits at", () => {
+test("--cloud leaves out local.md", () => {
   const home = mkdtempSync(join(tmpdir(), "install-home-"));
-  install(home, "--apply", "--unattended");
-  expect(readFileSync(join(home, ".claude", "AGENTS.md"), "utf8")).toBe(readFileSync(join(HOME, "core.md"), "utf8"));
+  install(home, "--apply", "--cloud");
+  const cloud = ["core.md", "present.md"].map((f) => readFileSync(join(HOME, f), "utf8")).join("");
+  expect(readFileSync(join(home, ".claude", "AGENTS.md"), "utf8")).toBe(cloud);
+  install(home, "--cloud");
+  // Both claude.ai environments' setup scripts still pass the old name; an unknown option would stop their sessions.
   install(home, "--unattended");
 });
 
