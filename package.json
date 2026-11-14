@@ -18,7 +18,8 @@
     "install-home": "tsx tools/install-home.ts",
     "hidden": "tsx tools/run-hidden.ts",
     "keep-going": "tsx tools/keep-going.ts",
-    "rule-growth": "tsx tools/rule-growth.ts"
+    "rule-growth": "tsx tools/rule-growth.ts",
+    "repeated-rules": "tsx tools/repeated-rules.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.15",

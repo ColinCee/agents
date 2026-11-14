@@ -21,6 +21,8 @@ const HELP = `Install home/core.md and home/desktop.md as every agent's user-lev
 
   npm run install-home             # what would change
   npm run install-home -- --apply  # write it
+  node tools/install-home.ts --apply --unattended  # core.md alone, for a machine no one sits at (a cloud
+                                                   # environment's setup script); plain Node 22, no npm ci
 
 They are the author's own instructions. Read them before installing them as yours.
 
@@ -158,25 +160,31 @@ function keep(path: string): string {
 
 async function main(): Promise<number> {
   let apply: boolean;
+  let sources: string[];
   try {
     const { values } = parseArgs({
-      options: { apply: { type: "boolean", default: false }, help: { type: "boolean", short: "h", default: false } },
+      options: {
+        apply: { type: "boolean", default: false },
+        unattended: { type: "boolean", default: false },
+        help: { type: "boolean", short: "h", default: false },
+      },
     });
     if (values.help) {
       console.log(HELP);
       return 0;
     }
     apply = Boolean(values.apply);
+    sources = values.unattended ? SOURCES.slice(0, 1) : SOURCES;
   } catch (e) {
     console.error(`${(e as Error).message}\n\n${HELP}`);
     return 2;
   }
-  const missing = SOURCES.find((p) => !existsSync(p));
+  const missing = sources.find((p) => !existsSync(p));
   if (missing) {
     console.error(`Error: ${missing} is missing.`);
     return 2;
   }
-  const text = Buffer.concat(SOURCES.map((p) => readFileSync(p)));
+  const text = Buffer.concat(sources.map((p) => readFileSync(p)));
   const trials = trialNames().map((f): [string, Buffer] => [f, readFileSync(join(TRIALS, f))]);
   const trialRules = trials.map(([, body]) => onText(body.toString("utf8"))).filter(Boolean);
   const codex = trialRules.length

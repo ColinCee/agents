@@ -6,6 +6,8 @@ on:
   pull_request:
     # edited: a re-run reuses the old description, so adding the rule-growth reason must trigger a new run.
     types: [opened, synchronize, reopened, edited]
+  schedule:
+    - cron: "17 6 * * *"
 
 permissions:
   contents: read
@@ -33,5 +35,9 @@ jobs:
       - run: npm run validate
       - if: github.event_name == 'pull_request' && matrix.os == 'ubuntu-latest' && matrix.node == '24'
         run: npm run rule-growth
+      # Reads the projects' AGENTS.md from GitHub: on pull requests here (a home rule copying one) and daily (a
+      # project copying a home rule).
+      - if: matrix.os == 'ubuntu-latest' && matrix.node == '24'
+        run: npm run repeated-rules
       # The scripts that ship inside skills are compiled from src/; the committed output must match the source.
       - run: npm run build && git diff --exit-code -- skills
