@@ -37,33 +37,48 @@ const lines = (text: string) =>
     .split(/\r?\n/)
     .map((line) => line.trim())
     .filter(Boolean);
-const status = (trial: string) => /^status:\s*(\S+)/m.exec(trial)?.[1];
-const onText = (trial: string) => trial.split(/^## On\s*$/m)[1]?.trim() ?? "";
+const status = (trial: string) => /^status:\s*(\S+)/m.exec(trial)?.[1]?.toLowerCase();
+const section = (trial: string, name: string) =>
+  trial
+    .split(new RegExp(`^## ${name}\\s*$`, "m"))[1]
+    ?.split(/^## /m)[0]
+    ?.trim() ?? "";
+const measured = (trial: string) => /^measures:\s*\S/m.test(trial);
 
 /**
- * The failure message, or nothing when every new or reworded rule line is on trial. A line moved between rule files
- * or out of a trial is not new, nor is one moved into a settled trial; deleting a line needs no trial. A trial that
- * skips testing (a new line made settled, or a settled line reworded) fails too. A rule that may not go on trial,
- * such as one guarding money, says why in the description.
+ * The failure message, or nothing when every new or reworded rule line is on trial. While on trial a line lives only
+ * in its trial file, so a line new to home/*.md fails, unless it was already a rule line elsewhere: moved between
+ * files, out of a settled trial, or restored from a trial's Off; a testing trial's On line does not count, since
+ * moving it out would settle it untested. A testing trial needs a measure, and a settled one may hold only lines that
+ * were already tested. Deleting a line needs no trial. A rule that may not go on trial, such as one guarding money,
+ * says why in the description.
  */
 export function untried(before: Files, after: Files, body: string): string | undefined {
   if (hasLine(body, NOT_ON_TRIAL)) return undefined;
-  const old = new Set(Object.values(before).flatMap(lines));
-  const added = Object.entries(after)
-    .filter(([path, text]) => HOME.test(path) && lines(text).some((line) => !old.has(line) && !line.startsWith("#")))
-    .map(([path]) => path);
+  const tested = Object.entries(before).flatMap(([path, text]) =>
+    !TRIAL.test(path)
+      ? lines(text)
+      : status(text) === "settled"
+        ? lines(section(text, "On"))
+        : lines(section(text, "Off")),
+  );
+  const old = new Set(tested);
+  const isNew = (line: string) => !old.has(line) && !line.startsWith("#");
   const trials = Object.entries(after).filter(([path]) => TRIAL.test(path));
-  const changed = (path: string, text: string) => before[path] === undefined || onText(text) !== onText(before[path]);
-  const testing = trials.some(([path, text]) => status(text) === "testing" && changed(path, text));
-  const skipped = trials
-    .filter(
-      ([path, text]) =>
-        status(text) === "settled" && changed(path, text) && !lines(onText(text)).every((line) => old.has(line)),
-    )
-    .map(([path]) => path);
   const problems = [
-    ...(added.length > 0 && !testing ? [`new or reworded lines in ${added.join(", ")}`] : []),
-    ...(skipped.length > 0 ? [`settled without testing: ${skipped.join(", ")}`] : []),
+    ...Object.entries(after)
+      .filter(([path, text]) => HOME.test(path) && lines(text).some(isNew))
+      .map(([path]) => `new or reworded lines in ${path}`),
+    ...trials
+      .filter(([, text]) => status(text) === "settled" && lines(section(text, "On")).some(isNew))
+      .filter(
+        ([path, text]) =>
+          section(text, "On") !== section(before[path] ?? "", "On") || status(before[path] ?? "") === "settled",
+      )
+      .map(([path]) => `settled without testing: ${path}`),
+    ...trials
+      .filter(([, text]) => status(text) !== "settled" && !measured(text))
+      .map(([path]) => `no measure: ${path}`),
   ];
   if (problems.length === 0) return undefined;
   return `A rule change must go on trial (docs/keep-going.md, Testing a rule): ${problems.join("; ")}. Move the line into a home/trials file with status: testing and a measure, or add a line to the pull request description starting "${NOT_ON_TRIAL}" saying why it cannot be.`;

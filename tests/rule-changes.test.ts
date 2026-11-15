@@ -37,19 +37,36 @@ test("deleting or moving a rule line needs no trial", () => {
   ).toBeUndefined();
 });
 
-test("a new or reworded rule line fails unless a trial starts in the same change", () => {
+test("a new or reworded rule line fails unless it moves into a trial", () => {
   const reworded = { "home/core.md": "# Rules\n\n- Keep replies under 75 words.\n- Commit only your paths.\n" };
+  const onTrial = trial("testing", "- Keep replies under 75 words.");
   expect(untried({ "home/core.md": core }, reworded, "")).toContain("new or reworded lines in home/core.md");
+  expect(untried({ "home/core.md": core }, { ...reworded, "home/trials/short.md": onTrial }, "")).toContain(
+    "new or reworded lines in home/core.md",
+  );
   expect(
     untried(
       { "home/core.md": core },
-      { ...reworded, "home/trials/short.md": trial("testing", "Keep replies under 75 words.") },
+      { "home/core.md": "- Commit only your paths.\n", "home/trials/short.md": onTrial },
       "",
     ),
   ).toBeUndefined();
   expect(
     untried({ "home/core.md": core }, reworded, `- ${NOT_ON_TRIAL} it guards money; a hook enforces it.`),
   ).toBeUndefined();
+});
+
+test("a testing trial's line cannot leave for the rules untested, and a trial needs a measure", () => {
+  const before = {
+    "home/core.md": "- Commit only your paths.\n",
+    "home/trials/short.md": trial("testing", "- Keep replies short."),
+  };
+  expect(untried(before, { "home/core.md": "- Commit only your paths.\n- Keep replies short.\n" }, "")).toContain(
+    "new or reworded lines",
+  );
+  expect(untried({}, { "home/trials/y.md": "---\nstatus: testing\n---\n## Off\n\n## On\nA line.\n" }, "")).toContain(
+    "no measure: home/trials/y.md",
+  );
 });
 
 test("a trial that skips testing fails", () => {
