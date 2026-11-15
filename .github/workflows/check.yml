@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
-    # edited: a re-run reuses the old description, so adding the rule-growth reason must trigger a new run.
+    # edited: a re-run reuses the old description, so adding a reason line must trigger a new run.
     types: [opened, synchronize, reopened, edited]
 
 permissions:
@@ -21,7 +21,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7.0.1
         with:
-          fetch-depth: 2 # the rule-growth step compares a pull request's merge commit with its first parent
+          fetch-depth: 2 # the rule-changes step compares a pull request's merge commit with its first parent
       - uses: actions/setup-node@v7.0.0
         with:
           node-version: ${{ matrix.node }}
@@ -32,6 +32,6 @@ jobs:
       - run: npm test
       - run: npm run validate
       - if: github.event_name == 'pull_request' && matrix.os == 'ubuntu-latest' && matrix.node == '24'
-        run: npm run rule-growth
+        run: npm run rule-changes
       # The scripts that ship inside skills are compiled from src/; the committed output must match the source.
       - run: npm run build && git diff --exit-code -- skills
