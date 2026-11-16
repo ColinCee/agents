@@ -30,9 +30,9 @@ One accent per meaning, each in a legend: grey for totals and others' share, gre
 
 From real corrections:
 
-- After CI went from 60 s to 26 s, the report listed the merged pull requests; Colin had to ask what was before and now, where the rest of the time went and what could cut it.
+- After CI went from 60 s to 26 s, the report listed the merged pull requests; the user had to ask what was before and now, where the rest of the time went and what could cut it.
 - Tuning for one job at a time nearly missed the real load: two days of runner history showed one job running 81% of the busy time and two jobs 18%.
 - Seven savings, each against its own drifting baseline, claimed 42 s together; the runs showed 41 s. One, a host setting, was measured only before then after.
 - A pull request was built and reviewed on an estimated 0.3 s saving; measured, it saved 0.01 s.
-- A review proposed skipping checks for the homelab pull requests with no Python. Most were bots', already on a shortcut, or changed files the tests read: 4 of Colin's last 96 could skip, about 5 s on 4% of runs.
+- A review proposed skipping checks for the pull requests with no Python. Most were bots', already on a shortcut, or changed files the tests read: 4 of the user's last 96 could skip, about 5 s on 4% of runs.
 - A timing run in WSL used a virtual environment that pointed back at the Windows one, so it measured the wrong setup.
