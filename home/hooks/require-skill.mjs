@@ -3,7 +3,7 @@
 // in 3; this refusal loaded shipping-prs every time. It also refuses a merge, or a push to main, whose checks have not
 // passed: GitHub's free plan cannot require checks on a private repository, so this is the required check.
 import { spawnSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { resolve } from "node:path";
 
@@ -45,7 +45,7 @@ const measuring = /(^|[;&|(\n]\s*)(hyperfine\b|(npm|pnpm) run bench\b)/;
 // Docs and code in a project, since code carries comments; not the app's memory, plans or scratch files.
 const isDoc =
   /\.(md|py|[cm]?[jt]sx?|ya?ml|sh|ps1|css|html|sql|toml|go|rs|java|kt|swift|cs|c|cpp|h|rb|php)$/i.test(file) &&
-  !/\/\.claude\/(projects|plans)\/|\/AppData\/Local\/Temp\/|\/scratchpad\/|\/node_modules\/|lock\.ya?ml$|\.min\.|\.d\.ts$/i.test(file);
+  !/\/\.claude\/(projects|plans)\/|\/AppData\/Local\/Temp\/|^\/tmp\/|\/scratchpad\/|\/node_modules\/|lock\.ya?ml$|\.min\.|\.d\.ts$/i.test(file);
 // Agent rules, skills and their references, decision records, and the agents repo's home/ (its rules and this hook).
 // A Linux /home/ path does not match: only home/core.md, present.md, local.md, home/hooks/ and home/trials/ do.
 const isRule = /(^|\/)(AGENTS|CLAUDE|SKILL)\.md$|\/skills\/[^/]+\/references\/|\/docs\/adr\/|\/home\/((core|present|local)\.md|(hooks|trials)\/[^/]+)$/i.test(file);
@@ -195,5 +195,10 @@ if (tool === "Bash" || tool === "PowerShell") {
   );
 else if (isDoc && isRule) needs("recording-learnings", "changing agent rules, a skill or a decision record");
 else if (isDoc && /\.md$/i.test(file)) needs("updating-docs", "writing or changing a document");
-else if (isDoc) needs("writing-comments", "writing or changing code (its comments follow it)");
+else if (isDoc) {
+  // A new code file is the first moment something gets built, and the cheapest one to find that a tool already does it.
+  if (tool === "Write" && !existsSync(file))
+    needs("searching-before-building", "creating a code file (search for a tool that already does its job first)");
+  needs("writing-comments", "writing or changing code (its comments follow it)");
+}
 process.exit(0);
