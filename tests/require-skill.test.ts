@@ -210,6 +210,17 @@ describe("require-skill hook", () => {
     expect(run("PowerShell", { command: 'hyperfine "npm test"' }, loaded)).toBe(0);
   });
 
+  it("needs searching-before-building before writing a new code file, not before changing one", () => {
+    // In the repo, not the temp folder: the hook leaves scratch files alone.
+    const fresh = resolve(__dirname, "no-such-check.ts");
+    expect(refusal("Write", { file_path: fresh })).toMatch(/Load the searching-before-building skill/);
+    expect(run("Write", { file_path: fresh }, loading("searching-before-building", "writing-comments"))).toBe(0);
+    expect(run("Write", { file_path: resolve(__dirname, "require-skill.test.ts") }, loading("writing-comments"))).toBe(
+      0,
+    );
+    expect(run("Edit", { file_path: fresh }, loading("writing-comments"))).toBe(0);
+  });
+
   it("routes each edit to the one skill it needs: a doc, code, or agent rules", () => {
     const routes: [string, string][] = [
       ["D:\\repo\\README.md", "updating-docs"],
