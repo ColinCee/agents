@@ -1,3 +1,4 @@
+import { spawnSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -26,15 +27,17 @@ function write(path: string, text: string): void {
   writeFileSync(path, text);
 }
 
-function errors(): string[] {
-  return check(root)
+const NOBODY = { home: "", email: "" };
+
+function errors(own = NOBODY): string[] {
+  return check(root, own)
     .found.filter((f) => f.level === "error")
     .map((f) => `${f.where}: ${f.what}`);
 }
 
 beforeEach(() => {
   root = mkdtempSync(join(tmpdir(), "validate-"));
-  write(join(root, "README.md"), "| [sample](skills/sample/SKILL.md) |");
+  write(join(root, "README.md"), "| [sample](skills/sample/SKILL.md) | Not yet tried. |");
   write(join(root, "skills/sample/SKILL.md"), SKILL);
   write(join(root, "skills/sample/scripts/run.mjs"), SCRIPT);
   write(join(root, "src/skills/sample/scripts/run.mts"), SCRIPT);
@@ -77,4 +80,52 @@ test("a skill missing from the README is reported", () => {
 test("a description that YAML would read as a second mapping is refused", () => {
   write(join(root, "skills/sample/SKILL.md"), SKILL.replace("Samples things.", "Samples things: quickly."));
   expect(errors().join("\n")).toMatch(/a YAML parser will refuse it/);
+});
+
+test("a nested skill folder is refused", () => {
+  write(join(root, "skills/sample/inner/SKILL.md"), SKILL);
+  expect(errors().join("\n")).toMatch(/sample\/inner: a skill folder holds only/);
+});
+
+test("a stray file under skills/ is refused", () => {
+  write(join(root, "skills/notes.md"), "notes");
+  expect(errors().join("\n")).toMatch(/skills\/notes\.md: only skill folders/);
+});
+
+test("a dotfile in a skill folder is allowed", () => {
+  write(join(root, "skills/sample/.gitkeep"), "");
+  expect(errors()).toEqual([]);
+});
+
+test("TypeScript source in a skill is refused", () => {
+  write(join(root, "skills/sample/references/helper.ts"), "export {};\n");
+  expect(errors().join("\n")).toMatch(/helper\.ts: source ships with the skill/);
+});
+
+test("a skill with no results must say it is not yet tried", () => {
+  write(join(root, "README.md"), "| [sample](skills/sample/SKILL.md) | Samples. |");
+  expect(errors().join("\n")).toMatch(/sample has no bench\/sample\/README\.md/);
+  write(join(root, "bench/sample/README.md"), "results");
+  expect(errors()).toEqual([]);
+});
+
+test("a script that writes files needs --apply", () => {
+  // Only --help runs here, and it exits before the write.
+  const writing = `${SCRIPT}import { writeFileSync } from "node:fs";\nif (argv.includes("--help")) process.exit(0);\nwriteFileSync("out.txt", "x"); // --apply\n`;
+  write(join(root, "skills/sample/scripts/run.mjs"), writing);
+  expect(errors().join("\n")).toMatch(/writes files with no --apply flag/);
+  write(
+    join(root, "skills/sample/scripts/run.mjs"),
+    writing.replace("writeFileSync(", 'if (argv.includes("--apply")) writeFileSync('),
+  );
+  expect(errors()).toEqual([]);
+});
+
+test("a tracked file holding the home folder or git email is refused", () => {
+  write(join(root, "docs/notes.md"), "Logs are in C:\\Users\\Someone\\logs; mail me@example.com\n");
+  spawnSync("git", ["init", "-q"], { cwd: root, windowsHide: true });
+  spawnSync("git", ["add", "."], { cwd: root, windowsHide: true });
+  expect(errors({ home: "C:\\Users\\someone", email: "" }).join("\n")).toMatch(/docs\/notes\.md: holds this machine/);
+  expect(errors({ home: "", email: "Me@example.com" }).join("\n")).toMatch(/docs\/notes\.md: holds this machine/);
+  expect(errors({ home: "/root", email: "" })).toEqual([]);
 });
