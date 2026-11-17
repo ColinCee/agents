@@ -4,6 +4,7 @@ One line per settled result about the author's agent rules, newest first, each l
 
 | Settled | Finding | Write-up |
 |---|---|---|
+| Nov 2026 | shipping-prs asking a fresh review "for every pull request, a one-line follow-up included": pull requests merged with no fresh reviewer fell 49% (28 to 79), before and after | [#106](https://github.com/ColinCee/agents/pull/106) |
 | Nov 2026 | "About 75 words; over 150 only beside a picture": closing replies over 150 words went from 54% to 57% (change +7%, -12 to +28), before and after; not working after two wordings; removed, since a hook would fire on every reply and only the closing summary needs to be short | [#106](https://github.com/ColinCee/agents/pull/106) |
 | Nov 2026 | The line against pull request numbers in replies: a replay of 198 past moments cut them 72% (60 to 84), but real agents with the line broke it three times as often as the replay, so a replay cannot settle it; on trial | [#98](https://github.com/ColinCee/agents/pull/98) |
 | Nov 2026 | p < 0.02 at each of three looks passed a do-nothing rule 6% of the time on real sessions; the stricter limits now used, 3.6% | [Method](https://github.com/ColinCee/agent-experiments/blob/main/docs/architecture.md#method) |
