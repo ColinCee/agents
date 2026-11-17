@@ -58,6 +58,8 @@ const SKILL_PARTS = new Set(["SKILL.md", "scripts", "references", "assets"]);
 const TYPESCRIPT = /\.(ts|mts|cts|tsx)$/;
 const WRITES = /\b(writeFile|appendFile|rm|rmdir|unlink|rename|mkdir|cp|copyFile|createWriteStream)(Sync)?\(/;
 const UNTRIED = /not yet tried/i;
+// The flag as code reads it (a string or a parseArgs option), so a comment naming it does not count.
+const APPLY_FLAG = /["'`]--apply["'`]|\bapply\s*:\s*\{/;
 
 type Level = "error" | "warning";
 interface Found {
@@ -233,7 +235,7 @@ function checkText(skill: string, body: string, report: Report): void {
 function checkLayout(skill: string, report: Report): void {
   const name = skill.split(/[\\/]/).at(-1) ?? "";
   for (const entry of readdirSync(skill).sort()) {
-    if (CACHES.has(entry)) continue;
+    if (CACHES.has(entry) || entry.startsWith(".")) continue;
     const isFolder = isDir(join(skill, entry));
     if (!SKILL_PARTS.has(entry) || isFolder === (entry === "SKILL.md"))
       report.error(
@@ -317,7 +319,7 @@ function checkScripts(root: string, skill: string, fields: Fields, report: Repor
         `imports ${spec}; scripts ship without node_modules, so use Node's built-in modules only (node:...)`,
       );
     }
-    if (WRITES.test(text) && !text.includes("--apply"))
+    if (WRITES.test(text) && !APPLY_FLAG.test(text))
       report.error(at, "writes files with no --apply flag; report by default and write only when the flag is passed");
     if (/\bprocess\.stdin\b|\bnode:readline\b/.test(text))
       report.error(at, "reads typed input; an agent cannot answer. Take an argument");

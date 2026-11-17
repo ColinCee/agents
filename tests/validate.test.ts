@@ -92,6 +92,11 @@ test("a stray file under skills/ is refused", () => {
   expect(errors().join("\n")).toMatch(/skills\/notes\.md: only skill folders/);
 });
 
+test("a dotfile in a skill folder is allowed", () => {
+  write(join(root, "skills/sample/.gitkeep"), "");
+  expect(errors()).toEqual([]);
+});
+
 test("TypeScript source in a skill is refused", () => {
   write(join(root, "skills/sample/references/helper.ts"), "export {};\n");
   expect(errors().join("\n")).toMatch(/helper\.ts: source ships with the skill/);
@@ -105,10 +110,14 @@ test("a skill with no results must say it is not yet tried", () => {
 });
 
 test("a script that writes files needs --apply", () => {
-  const writing = `${SCRIPT}import { writeFileSync } from "node:fs";\nwriteFileSync("out.txt", "x");\n`;
+  // Only --help runs here, and it exits before the write.
+  const writing = `${SCRIPT}import { writeFileSync } from "node:fs";\nif (argv.includes("--help")) process.exit(0);\nwriteFileSync("out.txt", "x"); // --apply\n`;
   write(join(root, "skills/sample/scripts/run.mjs"), writing);
   expect(errors().join("\n")).toMatch(/writes files with no --apply flag/);
-  write(join(root, "skills/sample/scripts/run.mjs"), writing.replace('"x"', '"x"); // only with --apply'));
+  write(
+    join(root, "skills/sample/scripts/run.mjs"),
+    writing.replace("writeFileSync(", 'if (argv.includes("--apply")) writeFileSync('),
+  );
   expect(errors()).toEqual([]);
 });
 
