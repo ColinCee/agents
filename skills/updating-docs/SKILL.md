@@ -44,7 +44,7 @@ Readers scan; shape every document for that. These are the defaults; the project
 - **One line on what it is, at the top.** No introduction paragraph.
 - **What readers use most comes first;** the reasons why come last.
 - **Long documents disclose in layers.** A picture and a few lines first; detail behind tabs, collapsible sections or links, kept for whoever needs it.
-- **Draw diagrams by hand.** An SVG laid out on a grid, in layers where the parts have levels, saved beside the document and linked from it, with only the arrows the point turns on. Boxes in one column share both edges, so their widths match; a new part means re-laying out the grid, not squeezing it into a gap. Check the rendered image, not the coordinates.
+- **Draw diagrams by hand.** An SVG laid out on a grid, in layers where the parts have levels, saved beside the document and linked from it, with only the arrows the point turns on. Boxes in one column share both edges; a new part means re-laying out the grid, not squeezing it into a gap. Render it to an image and look for ragged edges before showing it.
 - **Items of the same shape go in a table** (name, what it does, how to get it). Steps are a numbered list; anything else is bullets. Prose only for a reason that needs a sentence.
 - **Headings are short nouns** ("Skills", "Tools"), and no heading stands over a single unexplained item.
 - **A README is for people.** What it does, a picture of how the parts fit, a person's one start command, and links to the docs; for settings and limits, point to the code.
@@ -71,4 +71,5 @@ From real corrections:
 - A design doc grew to ten sections of tables and read as a wall. The user wanted the picture and five lines first, with the detail one click away.
 - A README was rewritten twice because the content was right but the order was not: an introduction first, the main table halfway down, a heading naming a tool nobody had explained. Put the most-used table first and say what each thing is where it appears.
 - An architecture diagram in mermaid grew to twenty boxes and crossing arrows; the user called it a mess. Redrawn by hand in three layers with nine arrows, it read at a glance.
+- Boxes added to a hand-drawn diagram one at a time, each squeezed into a gap, left its columns ragged; the user sent it back three times until the whole grid was re-laid out.
 - A results document's summary line went stale twice while its table was right, and a post quoting it updated one chart and left the others, the captions and the title on the old numbers.
