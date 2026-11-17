@@ -44,7 +44,7 @@ Readers scan; shape every document for that. These are the defaults; the project
 - **One line on what it is, at the top.** No introduction paragraph.
 - **What readers use most comes first;** the reasons why come last.
 - **Long documents disclose in layers.** A picture and a few lines first; detail behind tabs, collapsible sections or links, kept for whoever needs it.
-- **Draw diagrams by hand.** An SVG laid out on a grid, in layers where the parts have levels, saved beside the document and linked from it, with only the arrows the point turns on.
+- **Draw diagrams by hand.** An SVG laid out on a grid, in layers where the parts have levels, saved beside the document and linked from it, with only the arrows the point turns on. Boxes in one column share both edges, so their widths match; a new part means re-laying out the grid, not squeezing it into a gap. Check the rendered image, not the coordinates.
 - **Items of the same shape go in a table** (name, what it does, how to get it). Steps are a numbered list; anything else is bullets. Prose only for a reason that needs a sentence.
 - **Headings are short nouns** ("Skills", "Tools"), and no heading stands over a single unexplained item.
 - **A README is for people.** What it does, a picture of how the parts fit, a person's one start command, and links to the docs; for settings and limits, point to the code.
