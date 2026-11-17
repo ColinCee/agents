@@ -1,11 +1,14 @@
-// Check every skill in this repository against the rules in AGENTS.md and docs/writing-skills.md. Reports only: it changes nothing.
+// Check this repository against the rules in AGENTS.md and docs/writing-skills.md: every skill, and that no tracked
+// file holds the author's home folder or git email. Reports only: it changes nothing.
 import { spawnSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { homedir } from "node:os";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 
-const HELP = `Check every skill in this repository against the rules in AGENTS.md and docs/writing-skills.md. Reports only.
+const HELP = `Check every skill in this repository, and that no tracked file holds this machine's home folder or git
+email, against the rules in AGENTS.md and docs/writing-skills.md. Reports only.
 
   npm run validate -- [--root DIR] [--json]
 
@@ -50,6 +53,11 @@ const AGENT_TOOLS =
 const NODE_VERSION = /Node (\d+)/;
 const IMPORTS = /(?:^|\n)\s*(?:import|export)[^"'`;]*?from\s*["']([^"']+)["']|\bimport\(\s*["']([^"']+)["']\s*\)/g;
 const CACHES = new Set(["__pycache__", ".ruff_cache", ".pytest_cache", "node_modules"]);
+// What a skill folder may hold; anything else would ship with it, since `npx skills add` copies the whole folder.
+const SKILL_PARTS = new Set(["SKILL.md", "scripts", "references", "assets"]);
+const TYPESCRIPT = /\.(ts|mts|cts|tsx)$/;
+const WRITES = /\b(writeFile|appendFile|rm|rmdir|unlink|rename|mkdir|cp|copyFile|createWriteStream)(Sync)?\(/;
+const UNTRIED = /not yet tried/i;
 
 type Level = "error" | "warning";
 interface Found {
@@ -221,6 +229,58 @@ function checkText(skill: string, body: string, report: Report): void {
   }
 }
 
+/** A skill folder holds only SKILL.md and its three folders, and no TypeScript: what is there ships. */
+function checkLayout(skill: string, report: Report): void {
+  const name = skill.split(/[\\/]/).at(-1) ?? "";
+  for (const entry of readdirSync(skill).sort()) {
+    if (CACHES.has(entry)) continue;
+    const isFolder = isDir(join(skill, entry));
+    if (!SKILL_PARTS.has(entry) || isFolder === (entry === "SKILL.md"))
+      report.error(
+        `${name}/${entry}`,
+        "a skill folder holds only SKILL.md, scripts/, references/ and assets/; skills sit flat under skills/",
+      );
+  }
+  for (const path of files(skill))
+    if (TYPESCRIPT.test(path))
+      report.error(
+        `${name}/${posix(relative(skill, path))}`,
+        "source ships with the skill; put it in src/skills/ and build",
+      );
+}
+
+/** The README row of a skill with no results in bench/ says it is not yet tried. */
+function checkTried(root: string, name: string, readme: string, report: Report): void {
+  if (existsSync(join(root, "bench", name, "README.md"))) return;
+  const row = readme.split(/\r?\n/).find((line) => line.includes(`skills/${name}/SKILL.md`));
+  if (row && !UNTRIED.test(row) && !row.includes("](bench/"))
+    report.error(
+      "README.md",
+      `${name} has no bench/${name}/README.md; say "Not yet tried" in its row, or link its results`,
+    );
+}
+
+/** No tracked file holds this machine's home folder or the git email: the repository is public. */
+function checkPrivate(root: string, own: { home: string; email: string }, report: Report): void {
+  const listed = spawnSync("git", ["ls-files", "-z"], { cwd: root, encoding: "utf8", windowsHide: true });
+  if (listed.status !== 0) return;
+  const normal = (text: string) => text.replace(/\\+/g, "/").toLowerCase();
+  const home = normal(own.home).replace(/\/$/, "");
+  // A home one level deep (/root) is not a person's; any deeper one (/home/x, C:/Users/x) is.
+  const needles = [home.split("/").filter(Boolean).length >= 2 ? home : "", own.email.toLowerCase()].filter(Boolean);
+  if (!needles.length) return;
+  for (const rel of listed.stdout.split("\0").filter(Boolean)) {
+    const path = join(root, rel);
+    if (!existsSync(path) || isDir(path)) continue;
+    const text = read(path);
+    if (text.includes("\0")) continue;
+    const lower = normal(text);
+    for (const needle of needles)
+      if (lower.includes(needle))
+        report.error(rel, "holds this machine's home folder or git email; the repository is public, so take it out");
+  }
+}
+
 /** A script ships compiled from src/: Node builtins only, a header saying what it does, and a working --help. */
 function checkScripts(root: string, skill: string, fields: Fields, report: Report): void {
   const name = skill.split(/[\\/]/).at(-1) ?? "";
@@ -257,6 +317,8 @@ function checkScripts(root: string, skill: string, fields: Fields, report: Repor
         `imports ${spec}; scripts ship without node_modules, so use Node's built-in modules only (node:...)`,
       );
     }
+    if (WRITES.test(text) && !text.includes("--apply"))
+      report.error(at, "writes files with no --apply flag; report by default and write only when the flag is passed");
     if (/\bprocess\.stdin\b|\bnode:readline\b/.test(text))
       report.error(at, "reads typed input; an agent cannot answer. Take an argument");
     const done = spawnSync(process.execPath, [path, "--help"], {
@@ -270,10 +332,18 @@ function checkScripts(root: string, skill: string, fields: Fields, report: Repor
   }
 }
 
-export function check(root: string): Report {
+/** The author's identifiers on this machine, which no tracked file may hold. */
+function ownIdentifiers(root: string): { home: string; email: string } {
+  const email = spawnSync("git", ["config", "user.email"], { cwd: root, encoding: "utf8", windowsHide: true });
+  return { home: homedir(), email: email.status === 0 ? email.stdout.trim() : "" };
+}
+
+export function check(root: string, own = ownIdentifiers(root)): Report {
   const report = new Report();
   const home = join(root, "skills");
   const listed = isDir(home) ? readdirSync(home).sort() : [];
+  for (const n of listed)
+    if (!n.startsWith(".") && !isDir(join(home, n))) report.error(`skills/${n}`, "only skill folders go in skills/");
   const skills = listed.filter((n) => !n.startsWith(".") && isDir(join(home, n))).map((n) => join(home, n));
   if (!skills.length) report.error("skills/", "no skill folders found");
   const readme = existsSync(join(root, "README.md")) ? read(join(root, "README.md")) : "";
@@ -285,12 +355,15 @@ export function check(root: string): Report {
     }
     const { fields, body, wrong } = frontmatter(read(join(skill, "SKILL.md")));
     for (const what of wrong) report.error(`${name}/SKILL.md`, what);
+    checkLayout(skill, report);
     checkFrontmatter(skill, fields, report);
     checkText(skill, body, report);
     checkScripts(root, skill, fields, report);
     if (!readme.includes(`skills/${name}/SKILL.md`))
       report.error("README.md", `does not list ${name}; add a row to the table of skills`);
+    else checkTried(root, name, readme, report);
   }
+  checkPrivate(root, own, report);
   return report;
 }
 
