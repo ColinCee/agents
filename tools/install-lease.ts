@@ -3,7 +3,7 @@
  *
  *   ~/.leases/lease.mjs        the command, one file with no dependencies (state and log live beside it)
  *   ~/.local/bin/lease(.cmd)   `lease` on PATH
- *   ~/.leases/mod              the `lease` mod, the band in Claude Code, copied from mods/lease; only where the claude CLI is
+ *   ~/.leases/mod              the `lease` mod, the band in Claude Code, copied from mods/lease; installed only where the claude CLI is
  *
  * The lease itself needs only Node: other agents and apps call the command and never see the mod.
  *
