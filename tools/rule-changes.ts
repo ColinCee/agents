@@ -37,6 +37,11 @@ const lines = (text: string) =>
     .split(/\r?\n/)
     .map((line) => line.trim())
     .filter(Boolean);
+const sentences = (line: string) =>
+  line
+    .replace(/^[-*]\s+/, "")
+    .split(/(?<=[.!?])\s+(?=[A-Z`"(])/)
+    .filter(Boolean);
 const status = (trial: string) => /^status:\s*(\S+)/m.exec(trial)?.[1]?.toLowerCase();
 const section = (trial: string, name: string) =>
   trial
@@ -47,7 +52,7 @@ const measured = (trial: string) => /^measures:\s*\S/m.test(trial);
 
 /**
  * The failure message, or nothing when every new or reworded rule line is on trial. While on trial a line lives only
- * in its trial file, so a line new to home/*.md fails, unless it was already a rule line elsewhere: moved between
+ * in its trial file, so a line new to home/*.md fails, unless each of its sentences was already a rule elsewhere: moved between
  * files, out of a settled trial, or restored from a trial's Off; a testing trial's On line does not count, since
  * moving it out would settle it untested. A testing trial needs a measure, and a settled one may hold only lines that
  * were already tested. Deleting a line needs no trial. A rule that may not go on trial, such as one guarding money,
@@ -62,8 +67,9 @@ export function untried(before: Files, after: Files, body: string): string | und
         ? lines(section(text, "On"))
         : lines(section(text, "Off")),
   );
-  const old = new Set(tested);
-  const isNew = (line: string) => !old.has(line) && !line.startsWith("#");
+  // Sentences, not lines: a trial then holds only the sentences that change, not a whole long line twice.
+  const old = new Set(tested.flatMap(sentences));
+  const isNew = (line: string) => !line.startsWith("#") && !sentences(line).every((s) => old.has(s));
   const trials = Object.entries(after).filter(([path]) => TRIAL.test(path));
   const problems = [
     ...Object.entries(after)
