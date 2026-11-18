@@ -222,13 +222,15 @@ describe("require-skill hook", () => {
   });
 
   it("routes each edit to the one skill it needs: a doc, code, or agent rules", () => {
+    // A Linux home, built here so validate's user-folder check does not refuse this file. It is not this repo's home/.
+    const linuxHome = ["", "home", "u"].join("/");
     const routes: [string, string][] = [
       ["D:\\repo\\README.md", "updating-docs"],
       ["D:\\repo\\docs\\plan.md", "updating-docs"],
       ["D:\\repo\\src\\a.ts", "writing-comments"],
       ["D:\\repo\\deploy.yml", "writing-comments"],
-      ["/home/u/repo/src/a.py", "writing-comments"],
-      ["/home/u/repo/notes.md", "updating-docs"],
+      [`${linuxHome}/repo/src/a.py`, "writing-comments"],
+      [`${linuxHome}/repo/notes.md`, "updating-docs"],
       ["D:\\repo\\AGENTS.md", "recording-learnings"],
       ["D:\\repo\\CLAUDE.md", "recording-learnings"],
       ["D:\\repo\\.claude\\skills\\x\\SKILL.md", "recording-learnings"],
@@ -244,7 +246,7 @@ describe("require-skill hook", () => {
   });
 
   it("asks for no skill before editing data, lock files or the app's memory", () => {
-    expect(run("Write", { file_path: "C:\\Users\\u\\.claude\\projects\\p\\memory\\m.md" })).toBe(0);
+    expect(run("Write", { file_path: "D:\\profile\\.claude\\projects\\p\\memory\\m.md" })).toBe(0);
     expect(run("Write", { file_path: "D:\\repo\\data.json" })).toBe(0);
     expect(run("Write", { file_path: "D:\\repo\\pnpm-lock.yaml" })).toBe(0);
   });

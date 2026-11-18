@@ -91,7 +91,7 @@ test("the first version's file is read too, so install order does not matter", a
 test("the band draws the row on every surface, and nothing when nothing is held", async ($, on) => {
   let text = state([strata, forms]);
   on("fs.read", async () => ({ value: text }));
-  on("env.get", async (_$, e) => ({ value: e.name === "LEASES_HOME" ? undefined : "C:/Users/someone" }));
+  on("env.get", async (_$, e) => ({ value: e.name === "LEASES_HOME" ? undefined : "D:/profile" }));
   on("clock.now", async () => ({ value: NOW }));
   on("clock.every", async () => ({ value: undefined }));
   on("session.start", async (_$, e) => ({ cwd: e.cwd }));

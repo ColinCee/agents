@@ -6,7 +6,7 @@ Skills here are in the open [Agent Skills](https://agentskills.io/specification)
 
 **Writing or changing a skill, script or tool: read [docs/writing-skills.md](docs/writing-skills.md) first.**
 
-The repository is public: no paths, names or accounts of the author's in any file or commit message (validate catches user-folder paths in skill files, and this machine's home folder and git email in tracked files, so in CI or cloud runs it looks for the runner's, not the author's).
+The repository is public: no paths, names or accounts of the author's in any file or commit message (validate catches user-folder paths in tracked text files on any machine, and locally this machine's home folder and git email too; in CI those two are the runner's, so only the path check counts there).
 
 ## Layout
 
