@@ -1,16 +1,12 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "description": "Only keeps skills pinned to agent-experiments at its latest main: the reviewing-sessions skill names exact code, and bumping it by hand fell behind.",
-  "enabledManagers": [
-    "custom.regex"
-  ],
+  "enabledManagers": ["custom.regex"],
   "dependencyDashboard": false,
   "customManagers": [
     {
       "customType": "regex",
-      "managerFilePatterns": [
-        "/^skills/.+\\.md$/"
-      ],
+      "managerFilePatterns": ["/^skills/.+\\.md$/"],
       "matchStrings": [
         "git\\+(?<depName>https://github\\.com/ColinCee/agent-experiments)@(?<currentDigest>[0-9a-f]{40})"
       ],
@@ -20,9 +16,7 @@
   ],
   "packageRules": [
     {
-      "matchManagers": [
-        "custom.regex"
-      ],
+      "matchManagers": ["custom.regex"],
       "commitMessageTopic": "agent-experiments",
       "automerge": true,
       "platformAutomerge": false
