@@ -1,6 +1,6 @@
 # Writing a skill
 
-How to add, write and change a skill in this repository. `npm run validate` checks, among others, the frontmatter fields and limits, `license: MIT`, the name and folder, `Use when` in the description, the README listing, links, that every file is named in `SKILL.md`, body length, install steps, script imports and `--help`; this page holds the rest. Repository layout and checks: [AGENTS.md](../AGENTS.md).
+How to add, write and change a skill in this repository. `npm run validate` checks, among others, the frontmatter fields and limits, `license: MIT`, the name and folder, `Use when` in the description, the README listing, links, that every file is named in `SKILL.md`, body length, install steps, script imports and `--help`, the skill folder layout with no TypeScript in it, "Not yet tried" in the README for a skill with no results, `--apply` in a script that writes, and the home folder and git email; this page holds the rest. Repository layout and checks: [AGENTS.md](../AGENTS.md).
 
 ## What earns a place
 
