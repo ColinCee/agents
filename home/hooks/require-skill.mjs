@@ -126,21 +126,30 @@ function merges(text) {
   return found;
 }
 
-// The folder of a push that lands on main or master (a refspec naming it, --all or --mirror, or a bare push while on
-// it), or nothing.
-function pushToMain(text) {
+// The folder and remote of each push that lands on main or master (a refspec naming it, --all or --mirror, or a bare
+// push while on it).
+const PUSH_VALUED = new Set(["-o", "--push-option", "--receive-pack", "--exec", "--repo"]);
+function pushesToMain(text) {
+  const found = [];
   const flags = /(?:\s+(?:-[cC]\s+\S+|--[\w-]+(?:=\S+)?))*/.source;
   for (const m of text.matchAll(new RegExp(`(?:^|[;&|(\\n]\\s*)(?:\\w+=\\S*\\s+)*git(?:\\.exe)?(${flags})\\s+push\\b([^;&|\\n]*)`, "g"))) {
     const cwd = folderAt(m.index, m[1].match(/-C\s+(\S+)/)?.[1]);
     const words = m[2].trim().split(/\s+/).filter(Boolean);
-    if (words.some((w) => w === "--all" || w === "--mirror")) return cwd;
-    const refs = words.filter((w) => !w.startsWith("-")).slice(1); // after the remote
-    if (refs.some((r) => /^\+?([^:]*:)?(refs\/heads\/)?(main|master)$/.test(r))) return cwd;
-    if (!refs.length) {
-      const branch = spawnSync("git", ["branch", "--show-current"], { cwd, encoding: "utf8" }).stdout?.trim();
-      if (branch === "main" || branch === "master") return cwd;
-    }
+    const plainWords = words.filter((w, i) => !w.startsWith("-") && !PUSH_VALUED.has(words[i - 1]));
+    const remote = plainWords[0] ?? "origin";
+    const refs = plainWords.slice(1);
+    const branch = refs.length
+      ? ""
+      : spawnSync("git", ["branch", "--show-current"], { cwd, encoding: "utf8" }).stdout?.trim();
+    if (
+      words.some((w) => w === "--all" || w === "--mirror") ||
+      refs.some((r) => /^\+?([^:]*:)?(refs\/heads\/)?(main|master)$/.test(r)) ||
+      branch === "main" ||
+      branch === "master"
+    )
+      found.push({ cwd, remote });
   }
+  return found;
 }
 
 function needs(skill, why) {
@@ -177,7 +186,17 @@ if (tool === "Bash" || tool === "PowerShell") {
   if (target) green([target[2]], target[1], false, folderAt(api.index));
   if (/\bgh(\.exe)?\s+api\s+graphql\b/.test(plain) && /mergePullRequest/.test(plain))
     refuse("Merge with `gh pr merge <number>`, which this hook checks, not a GraphQL mutation.");
-  const pushed = pushToMain(plain);
+  // A repository with no branches has no pull request to merge into: its first commit can only be pushed.
+  const empty = ({ cwd, remote }) => {
+    const heads = spawnSync("git", ["ls-remote", "--heads", remote], {
+      cwd,
+      encoding: "utf8",
+      timeout: 15_000,
+      env: { ...process.env, GIT_TERMINAL_PROMPT: "0" },
+    });
+    return heads.status === 0 && heads.stdout.trim() === "";
+  };
+  const pushed = pushesToMain(plain).find((p) => !empty(p))?.cwd;
   if (pushed) {
     // Only the head of a pull request whose checks passed (the route when gh may not merge a workflow change).
     const head = spawnSync("git", ["rev-parse", "HEAD"], { cwd: pushed, encoding: "utf8" }).stdout?.trim();
