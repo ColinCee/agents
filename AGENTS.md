@@ -6,7 +6,7 @@ Skills here are in the open [Agent Skills](https://agentskills.io/specification)
 
 **Writing or changing a skill, script or tool: read [docs/writing-skills.md](docs/writing-skills.md) first.**
 
-The repository is public: no paths, names or accounts of the author's in any file or commit message (validate catches only this machine's home folder and git email, in tracked files).
+The repository is public: no paths, names or accounts of the author's in any file or commit message (validate catches user-folder paths in skill files, and this machine's home folder and git email in tracked files, so in CI or cloud runs it looks for the runner's, not the author's).
 
 ## Layout
 
@@ -19,7 +19,7 @@ The repository is public: no paths, names or accounts of the author's in any fil
 
 ## Safety
 
-**Scripts report by default.** Nothing is written, deleted or sent unless a flag says so (`--apply`; validate checks only `fs` writes in shipped scripts), and the skill tells the agent to ask the user before passing it.
+**Scripts report by default.** Nothing is written, deleted or sent unless a flag says so (`--apply`; validate fails a shipped script that writes files and never names `--apply`, but does not check that the write waits for it), and the skill tells the agent to ask the user before passing it.
 
 ## Trying a skill
 
