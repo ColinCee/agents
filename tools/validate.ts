@@ -47,8 +47,11 @@ const LINK = /\]\(([^)\s#]+)/g;
 const NOT_FOR_THE_BODY =
   /^#+\s*(changelog|installation|install|license|licence|todo)\b|\b(pip|npm|brew|apt(-get)?) install\b|\bTODO\b/im;
 const BACKSLASH_PATH = /\b(scripts|references|assets)\\\w/;
-// A slash after a name or a dot starts a path inside something else (a link to this repository's home/ folder).
-const USER_FOLDER_PATH = /(?<![\w.-])(?:[A-Za-z]:[\\/]+Users[\\/]+\w|\/Users\/\w|\/home\/\w)/i;
+// Windows, Git Bash (/c/Users), WSL (/mnt/c/Users), macOS and Linux. A slash after a name, dot or hyphen starts a path
+// inside something else (a link to this repository's home/ folder). Case-insensitive only where Windows is, so a web
+// route such as /users/1 passes.
+const USER_FOLDER_PATH =
+  /(?<![\w.-])(?:[A-Za-z]:[\\/]+[Uu][Ss][Ee][Rr][Ss][\\/]+\w|(?:\/mnt)?(?:\/[A-Za-z])?\/Users\/\w|\/home\/\w)/;
 const AGENT_TOOLS =
   /\b(TodoWrite|AskUserQuestion|WebFetch|WebSearch|NotebookEdit|mcp__\w+|(Bash|Read|Edit|Write|Task|Grep|Glob) tool)\b/;
 const NODE_VERSION = /Node (\d+)/;

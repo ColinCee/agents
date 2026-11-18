@@ -135,6 +135,8 @@ test("a user-folder path in any tracked file is refused, with no home or email k
     "docs/windows.md": `Logs are in C:\\${USERS}\\Someone\\logs`,
     "src/escaped.json": `{ "log": "c:\\\\${USERS.toLowerCase()}\\\\someone\\\\logs" }`,
     "tests/mac.test.ts": `const log = "/${USERS}/someone/logs";`,
+    "docs/git-bash.md": `cd /c/${USERS}/someone/logs`,
+    "docs/wsl.md": `cd /mnt/c/${USERS}/someone/logs`,
     ".github/linux.yml": `run: cat /${HOME}/someone/logs`,
   };
   for (const [rel, text] of Object.entries(planted)) write(join(root, rel), `${text}\n`);
@@ -143,8 +145,11 @@ test("a user-folder path in any tracked file is refused, with no home or email k
   for (const rel of Object.keys(planted)) expect(found).toContain(`${rel}: holds a path in a user folder`);
 });
 
-test("a path to a folder named home inside something else is not a user folder", () => {
-  write(join(root, "docs/links.md"), `See [rules](../${HOME}/core.md), skills/${HOME}/x and agents-wt/${HOME}/a.md\n`);
+test("a folder named home inside something else, or a web route, is not a user folder", () => {
+  write(
+    join(root, "docs/links.md"),
+    `See [rules](../${HOME}/core.md), skills/${HOME}/x, agents-wt/${HOME}/a.md and fetch("/${USERS.toLowerCase()}/1")\n`,
+  );
   track();
   expect(errors()).toEqual([]);
 });
