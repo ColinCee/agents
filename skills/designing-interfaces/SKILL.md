@@ -9,11 +9,12 @@ What a page must answer comes before how it looks; the rest keeps it quiet enoug
 ## Before any screen
 
 - **Write who uses it and what it must answer.** Who reads it, on what (a phone, a link an agent sent, a desktop), and the few questions it answers at a glance. Every element answers one of them or goes. Put this in the project's own product or design doc, beside the code.
-- **Show real variants, working.** Two or three directions as working pages with real data at real size, not mockups or text art. After the pick, leave the dev server running on the change's branch, so the person sees the change itself before it merges.
+- **For a new page or a new look, show real variants, working:** two or three directions as working pages with real data at real size, not mockups or text art.
+- **Before a visible change merges, the person sees it running** on its branch (the dev server or a preview), not only a screenshot.
 
 ## Look
 
-- **Minimal and technical,** on the component library the project already has (shadcn where it is there): neutral colours, hairlines, small type (13px), numbers in monospace.
+- **Minimal and technical,** on the component library the project already has: neutral colours, hairlines, small type, numbers in monospace.
 - **Colour only for a result:** good, bad, unsure. Never for decoration, a category or emphasis.
 - **One number format** for one quantity across the page (a signed percent change everywhere, not a ratio in one place and a percent in another).
 - **Words only for names and verdicts.** What a mark means (a band, a dashed line, a colour) is said once on the page, never under each chart.
@@ -26,4 +27,3 @@ What a page must answer comes before how it looks; the rest keeps it quiet enoug
 
 - **Hover or focus previews, a click keeps.** Leaving returns to what was kept.
 - **Every change of state moves, briefly (about 150ms) and slightly;** nothing moves under `prefers-reduced-motion: reduce`.
-- **Each behaviour gets an end-to-end test** that drives the page as a person would.

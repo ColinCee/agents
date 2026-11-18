@@ -7,7 +7,7 @@ Skills, instructions and tools for coding agents.
 | Skill | Loads | What it does |
 |---|---|---|
 | [placing-code](skills/placing-code/SKILL.md) | by itself | Where code goes: folders by job, files and tests beside what uses them, no catch-all folders, splits with the fewest names crossing modules, safe moves. [Beat no skill by more than chance at laying out two repositories](bench/placing-code/README.md). |
-| [designing-interfaces](skills/designing-interfaces/SKILL.md) | by itself | Pages, dashboards and charts that answer their reader at a glance: who and what first, colour only for results, labelled axes, hover previews and a click keeps. [Beat no skill by more than chance on a dashboard task](bench/designing-interfaces/README.md). |
+| [designing-interfaces](skills/designing-interfaces/SKILL.md) | by itself | Pages, dashboards and charts that answer their reader at a glance: who and what first, colour only for results, labelled axes, hover previews and a click keeps. [Its rules followed where no skill followed them, on a dashboard task](bench/designing-interfaces/README.md). |
 | [writing-comments](skills/writing-comments/SKILL.md) | by itself | Keeps code comments to why, never what the code does or its history. [Tried inside `updating-docs`](bench/updating-docs/README.md), before the two split. |
 | [updating-docs](skills/updating-docs/SKILL.md) | by itself | Keeps docs and posts true, short and easy to scan: only what must be kept, stale lines fixed in place, one home per fact. |
 | [recording-learnings](skills/recording-learnings/SKILL.md) | by itself | Puts each lesson, rule or decision in its one home in git, and keeps `AGENTS.md` short. Not yet tried on its own. |
