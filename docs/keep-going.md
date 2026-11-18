@@ -15,6 +15,7 @@ Data stays in `~/.claude/keep-going/`, never in this repository: it is the user'
   status: testing
   measures: <measure ids, comma separated>
   started: <YYYY-MM-DD, the day after it is installed>
+  name: <optional: the mistake in plain words, when measures.sql's measure_names does not name its measure>
   ---
   ## Off
   The line as it was; empty for a new rule.
