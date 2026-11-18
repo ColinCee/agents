@@ -203,7 +203,30 @@ describe("require-skill hook", () => {
     expect(push("git push --mirror origin", { PR: "", CHECKS: "pass" })).toBe(2);
     expect(push("git -c a=b push origin HEAD:main", { PR: "", CHECKS: "pass" })).toBe(2);
     expect(push("git push -u origin feature-main", { PR: "", CHECKS: "pass" })).toBe(0);
-  });
+    // A repository with no branches yet: its first commit has no pull request to go through.
+    const bare = join(dir, "empty.git");
+    spawnSync("git", ["init", "--bare", "-q", bare]);
+    expect(push(`git push -u ${bare} main`, { PR: "", CHECKS: "none" })).toBe(0);
+    // A flag's value is not the remote, and a second push in the command is checked too.
+    expect(push(`git push -o ${bare} origin main`, { PR: "", CHECKS: "none" })).toBe(2);
+    expect(push(`git push ${bare} main && git push origin main`, { PR: "", CHECKS: "none" })).toBe(2);
+    spawnSync("git", ["-C", dir, "init", "-q"]);
+    spawnSync("git", [
+      "-C",
+      dir,
+      "-c",
+      "user.name=t",
+      "-c",
+      "user.email=t@t",
+      "commit",
+      "-q",
+      "--allow-empty",
+      "-m",
+      "first",
+    ]);
+    spawnSync("git", ["-C", dir, "push", "-q", bare, "HEAD:refs/heads/main"]);
+    expect(push(`git push -u ${bare} main`, { PR: "", CHECKS: "none" })).toBe(2);
+  }, 30_000);
 
   it("needs comparing-options before a benchmark", () => {
     expect(refusal("PowerShell", { command: 'hyperfine "npm test"' })).toMatch(/comparing-options/);
