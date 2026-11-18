@@ -28,9 +28,11 @@ console.log(`installed ${command}`);
 
 mkdirSync(bin, { recursive: true });
 const shim = join(bin, windows ? "lease.cmd" : "lease");
+// The real node, not a version manager's launcher (Volta's adds its own cmd.exe and node.exe), so the shim's cmd.exe is
+// the only layer between the caller and lease, the one `caller()` steps over.
 writeFileSync(
   shim,
-  windows ? `@node "${command}" %*\r\n` : `#!/bin/sh\nexec node "${command}" "$@"\n`,
+  windows ? `@"${process.execPath}" "${command}" %*\r\n` : `#!/bin/sh\nexec node "${command}" "$@"\n`,
   windows ? "utf8" : { encoding: "utf8", mode: 0o755 },
 );
 console.log(`installed ${shim}`);

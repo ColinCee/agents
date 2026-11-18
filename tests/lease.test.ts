@@ -24,6 +24,7 @@ type Fake = System & {
   clock: number;
   living: Set<number>;
   starts: Map<number, string>;
+  parents: Map<number, { name: string; ppid: number }>;
   stopped: number[];
 };
 
@@ -34,10 +35,12 @@ function fake(): Fake {
     clock: Date.parse("2026-10-15T12:00:00Z"),
     living: new Set([100, 200, 300, 900]),
     starts: new Map([[900, "start-of-900"]]),
+    parents: new Map(),
     stopped: [],
     now: () => f.clock,
     alive: (pid) => f.living.has(pid),
     started: (pid) => f.starts.get(pid) ?? null,
+    parent: (pid) => f.parents.get(pid) ?? null,
     stop: (pid) => {
       f.stopped.push(pid);
       f.living.delete(pid);
@@ -481,3 +484,13 @@ describe("one holder, several jobs", () => {
 
 const wantWords_ = (wants: { resource: string; gb: number | null }[]) =>
   wants.map((w) => (w.gb === null ? w.resource : `${w.resource}:${w.gb}`)).join(" ");
+
+describe("who holds a lease taken without --pid", () => {
+  test("is the caller of the Windows cmd.exe shim, not the shim, which exits with lease", () => {
+    sys.parents.set(process.ppid, { name: "cmd.exe", ppid: 300 });
+    expect(main(["take", "--name", "spike", "--res", "gpu"], () => {}, sys)).toBe(0);
+    const out: string[] = [];
+    main(["show", "--json"], (t) => out.push(t), sys);
+    expect(JSON.parse(out.join("\n")).view.holds[0].pid).toBe(300);
+  });
+});

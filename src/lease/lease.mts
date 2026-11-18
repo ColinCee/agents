@@ -157,6 +157,8 @@ export type System = {
   now: () => number;
   alive: (pid: number) => boolean;
   started: (pid: number) => string | null;
+  /** A process's program name and its parent, or null when it is gone. */
+  parent: (pid: number) => { name: string; ppid: number } | null;
   stop: (pid: number) => boolean;
   freeGb: () => number;
   totalGb: () => number;
@@ -190,6 +192,22 @@ export const realSystem: System = {
         : spawnSync("ps", ["-o", "lstart=", "-p", String(pid)], { encoding: "utf8", timeout: 20_000 });
     const out = run.status === 0 ? run.stdout.trim() : "";
     return out === "" ? null : out;
+  },
+  // Only Windows needs it: the sh shim execs node, so there the parent is already the caller.
+  parent: (pid) => {
+    if (process.platform !== "win32") return null;
+    const run = spawnSync(
+      "powershell.exe",
+      [
+        "-NoProfile",
+        "-NonInteractive",
+        "-Command",
+        `$p = Get-CimInstance Win32_Process -Filter "ProcessId=${pid}"; if ($p) { "$($p.Name) $($p.ParentProcessId)" }`,
+      ],
+      { encoding: "utf8", windowsHide: true, timeout: 20_000 },
+    );
+    const match = run.status === 0 ? /^(.+?)\s+(\d+)$/.exec(run.stdout.trim()) : null;
+    return match?.[1] && match[2] ? { name: match[1], ppid: Number(match[2]) } : null;
   },
   stop: (pid) => {
     if (process.platform === "win32") {
@@ -999,6 +1017,14 @@ export async function runUnder(
   });
 }
 
+/** The process that ran `lease`. On Windows the `lease.cmd` shim runs node from its own cmd.exe, which exits as soon
+ * as lease does: holding the lease for it freed every hold within seconds as "holder gone", so the holder is the
+ * shim's caller instead. */
+export function caller(sys: System, ppid: number = process.ppid): number {
+  const p = sys.parent(ppid);
+  return p !== null && /^cmd(\.exe)?$/i.test(p.name) ? p.ppid : ppid;
+}
+
 export function main(
   argv: string[],
   out: (text: string) => void = console.log,
@@ -1021,7 +1047,7 @@ export function main(
   try {
     const who = (): Who => ({
       name: need(o.name, "--name"),
-      pid: wholeNumber(o.pid, "--pid", process.ppid) ?? process.ppid,
+      pid: wholeNumber(o.pid, "--pid", null) ?? caller(sys),
     });
     const ttl = wholeNumber(o.ttl, "--ttl", TTL_SECONDS) ?? TTL_SECONDS;
     const forSeconds = wholeNumber(o.for, "--for", null);
