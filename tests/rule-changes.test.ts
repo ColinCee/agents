@@ -94,10 +94,14 @@ test("an existing rule line moved into a settled trial is not new", () => {
 });
 
 test("a line split out of a longer one is not new, so only the reworded sentences go on trial", () => {
-  const long = "- Keep replies short. Use plain words. Commit only your paths.\n";
-  const split = "- Keep replies short. Commit only your paths.\n";
-  expect(untried({ "home/core.md": long }, { "home/core.md": split }, "")).toBeUndefined();
-  expect(
-    untried({ "home/core.md": long }, { "home/core.md": "- Keep replies short. Use short words.\n" }, ""),
-  ).toContain("new or reworded lines in home/core.md");
+  const long = { "home/core.md": "- Keep replies short. Use plain words. Commit only your paths.\n" };
+  const split = "- Keep replies short. Use plain words.\n- Commit only your paths.\n";
+  expect(untried(long, { "home/core.md": split }, "")).toBeUndefined();
+  for (const changed of [
+    "- Keep replies short. Use short words.\n",
+    "- Commit only your paths. Keep replies short.\n",
+    "- Keep replies short. Commit only your paths.\n",
+  ]) {
+    expect(untried(long, { "home/core.md": changed }, "")).toContain("new or reworded lines in home/core.md");
+  }
 });
