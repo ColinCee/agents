@@ -1,5 +1,5 @@
 // Check this repository against the rules in AGENTS.md and docs/writing-skills.md: every skill, and that no tracked
-// file holds the author's home folder or git email. Reports only: it changes nothing.
+// file holds a path in a user folder, or this machine's home folder or git email. Reports only: it changes nothing.
 import { spawnSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { homedir } from "node:os";
@@ -7,8 +7,8 @@ import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 
-const HELP = `Check every skill in this repository, and that no tracked file holds this machine's home folder or git
-email, against the rules in AGENTS.md and docs/writing-skills.md. Reports only.
+const HELP = `Check every skill in this repository, and that no tracked file holds a path in a user folder, or this
+machine's home folder or git email, against the rules in AGENTS.md and docs/writing-skills.md. Reports only.
 
   npm run validate -- [--root DIR] [--json]
 
@@ -47,7 +47,8 @@ const LINK = /\]\(([^)\s#]+)/g;
 const NOT_FOR_THE_BODY =
   /^#+\s*(changelog|installation|install|license|licence|todo)\b|\b(pip|npm|brew|apt(-get)?) install\b|\bTODO\b/im;
 const BACKSLASH_PATH = /\b(scripts|references|assets)\\\w/;
-const OWN_PATH = /[A-Za-z]:[\\/]+Users[\\/]|\/Users\/\w|\/home\/\w/;
+// A slash after a name or a dot starts a path inside something else (a link to this repository's home/ folder).
+const USER_FOLDER_PATH = /(?<![\w.-])(?:[A-Za-z]:[\\/]+Users[\\/]+\w|\/Users\/\w|\/home\/\w)/i;
 const AGENT_TOOLS =
   /\b(TodoWrite|AskUserQuestion|WebFetch|WebSearch|NotebookEdit|mcp__\w+|(Bash|Read|Edit|Write|Task|Grep|Glob) tool)\b/;
 const NODE_VERSION = /Node (\d+)/;
@@ -220,8 +221,6 @@ function checkText(skill: string, body: string, report: Report): void {
     const at = `${name}/${rel}`;
     if (BACKSLASH_PATH.test(text))
       report.error(at, "a path uses a backslash; use forward slashes, which work on every system");
-    const own = OWN_PATH.exec(text);
-    if (own) report.error(at, `holds a path on one person's machine (${own[0]}...); take it as an argument`);
     if (path.endsWith(".md")) {
       const tool = AGENT_TOOLS.exec(text);
       if (tool) report.error(at, `names one agent's tool (${tool[0]}); say what to do, not which tool does it`);
@@ -262,24 +261,26 @@ function checkTried(root: string, name: string, readme: string, report: Report):
     );
 }
 
-/** No tracked file holds this machine's home folder or the git email: the repository is public. */
+/** No tracked file holds a path in a user folder, nor this machine's home folder or git email: the repository is
+ * public. The home and email are this machine's, so in CI they are the runner's; the path pattern is what works there. */
 function checkPrivate(root: string, own: { home: string; email: string }, report: Report): void {
   const listed = spawnSync("git", ["ls-files", "-z"], { cwd: root, encoding: "utf8", windowsHide: true });
   if (listed.status !== 0) return;
   const normal = (text: string) => text.replace(/\\+/g, "/").toLowerCase();
   const home = normal(own.home).replace(/\/$/, "");
-  // A home one level deep (/root) is not a person's; any deeper one (/home/x, C:/Users/x) is.
+  // A home one level deep (/root) is not a person's; any deeper one is.
   const needles = [home.split("/").filter(Boolean).length >= 2 ? home : "", own.email.toLowerCase()].filter(Boolean);
-  if (!needles.length) return;
   for (const rel of listed.stdout.split("\0").filter(Boolean)) {
     const path = join(root, rel);
     if (!existsSync(path) || isDir(path)) continue;
     const text = read(path);
     if (text.includes("\0")) continue;
+    const userPath = USER_FOLDER_PATH.exec(text);
+    if (userPath)
+      report.error(rel, `holds a path in a user folder (${userPath[0]}...); the repository is public, so take it out`);
     const lower = normal(text);
-    for (const needle of needles)
-      if (lower.includes(needle))
-        report.error(rel, "holds this machine's home folder or git email; the repository is public, so take it out");
+    if (needles.some((needle) => lower.includes(needle)))
+      report.error(rel, "holds this machine's home folder or git email; the repository is public, so take it out");
   }
 }
 

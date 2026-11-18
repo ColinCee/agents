@@ -121,11 +121,38 @@ test("a script that writes files needs --apply", () => {
   expect(errors()).toEqual([]);
 });
 
-test("a tracked file holding the home folder or git email is refused", () => {
-  write(join(root, "docs/notes.md"), "Logs are in C:\\Users\\Someone\\logs; mail me@example.com\n");
+function track(): void {
   spawnSync("git", ["init", "-q"], { cwd: root, windowsHide: true });
   spawnSync("git", ["add", "."], { cwd: root, windowsHide: true });
-  expect(errors({ home: "C:\\Users\\someone", email: "" }).join("\n")).toMatch(/docs\/notes\.md: holds this machine/);
+}
+
+// Built here, so this file holds none of the paths it plants.
+const USERS = "Users";
+const HOME = "home";
+
+test("a user-folder path in any tracked file is refused, with no home or email known, as in CI", () => {
+  const planted = {
+    "docs/windows.md": `Logs are in C:\\${USERS}\\Someone\\logs`,
+    "src/escaped.json": `{ "log": "c:\\\\${USERS.toLowerCase()}\\\\someone\\\\logs" }`,
+    "tests/mac.test.ts": `const log = "/${USERS}/someone/logs";`,
+    ".github/linux.yml": `run: cat /${HOME}/someone/logs`,
+  };
+  for (const [rel, text] of Object.entries(planted)) write(join(root, rel), `${text}\n`);
+  track();
+  const found = errors().join("\n");
+  for (const rel of Object.keys(planted)) expect(found).toContain(`${rel}: holds a path in a user folder`);
+});
+
+test("a path to a folder named home inside something else is not a user folder", () => {
+  write(join(root, "docs/links.md"), `See [rules](../${HOME}/core.md), skills/${HOME}/x and agents-wt/${HOME}/a.md\n`);
+  track();
+  expect(errors()).toEqual([]);
+});
+
+test("a tracked file holding this machine's home folder or git email is refused", () => {
+  write(join(root, "docs/notes.md"), "Logs are in D:\\profile\\Someone\\logs; mail me@example.com\n");
+  track();
+  expect(errors({ home: "D:\\profile\\someone", email: "" }).join("\n")).toMatch(/docs\/notes\.md: holds this machine/);
   expect(errors({ home: "", email: "Me@example.com" }).join("\n")).toMatch(/docs\/notes\.md: holds this machine/);
   expect(errors({ home: "/root", email: "" })).toEqual([]);
 });
