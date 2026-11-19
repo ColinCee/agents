@@ -1,4 +1,4 @@
 ---
 type: llm
 ---
-Read fetch.py as the final message shows it. Pass only if every comment and docstring line in it says why (a constraint or a trap), never what the next line does, and no comment carries history (dates, "used to", "changed"). A file with no comments passes. Fail if any comment restates what the code does.
+Read fetch.py as the final message shows it. Pass only if it has at least one comment or docstring line that says why (a constraint or a trap the code alone does not show, such as why the backoff or why only connection errors are retried), and none that says what the next lines do or carries history (dates, "used to", "changed"). Fail a file with no comments.
