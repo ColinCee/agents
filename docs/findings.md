@@ -4,8 +4,8 @@ One line per settled result about the author's agent rules, newest first, each l
 
 | Settled | Finding | Write-up |
 |---|---|---|
-| Nov 2026 | "Never end on an offer", even when the closing box asks for one: needless offer stops went from 16 to 14 per 100 labelled stops (180 and 311 stops), before and after; not working after two wordings, so the next change is a check | [#95](https://github.com/ColinCee/agents/pull/95) |
-| Nov 2026 | The plain-words line naming references from other sessions: his "what is that?" questions went from 3.7% to 5.3% of his messages (change +45%, +7 to +91), before and after; not working after three wordings | [#96](https://github.com/ColinCee/agents/pull/96) |
+| Nov 2026 | "Never end on an offer", even when the closing box asks for one: needless offer stops went from 16.1 to 14.5 per 100 labelled stops (10 to 12 Nov, 180 stops; 13 to 18 Nov, 311), no difference shown; not working after two wordings | [#95](https://github.com/ColinCee/agents/pull/95) |
+| Nov 2026 | The plain-words line naming references from other sessions: the author's "what is that?" questions went from 3.7% to 5.3% of the author's messages (change +45%, +7 to +91), before and after; not working after three wordings | [#96](https://github.com/ColinCee/agents/pull/96) |
 | Nov 2026 | shipping-prs asking a fresh review "for every pull request, a one-line follow-up included": pull requests merged with no fresh reviewer fell 49% (28 to 79), before and after | [#106](https://github.com/ColinCee/agents/pull/106) |
 | Nov 2026 | "About 75 words; over 150 only beside a picture": closing replies over 150 words went from 54% to 57% (change +7%, -12 to +28), before and after; not working after two wordings; removed, since a hook would fire on every reply and only the closing summary needs to be short | [#106](https://github.com/ColinCee/agents/pull/106) |
 | Nov 2026 | The line against pull request numbers in replies: a replay of 198 past moments cut them 72% (60 to 84), but real agents with the line broke it three times as often as the replay, so a replay cannot settle it; on trial | [#98](https://github.com/ColinCee/agents/pull/98) |
