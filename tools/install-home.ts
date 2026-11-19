@@ -94,12 +94,17 @@ function files(dir: string): string[] {
 const skillNames = (): string[] =>
   readdirSync(SKILLS).filter((name) => !name.startsWith(".") && existsSync(join(SKILLS, name, "SKILL.md")));
 
+// A skill's evals/ tests it from the repo; an installed copy never needs them.
+const isEval = (f: string): boolean => f.split(/[\\/]/)[0] === "evals";
+
 function skillTargets(): [string, Buffer][] {
   return skillNames().flatMap((name) =>
-    files(join(SKILLS, name)).map((f): [string, Buffer] => [
-      join(homedir(), ".claude", "skills", name, f),
-      readFileSync(join(SKILLS, name, f)),
-    ]),
+    files(join(SKILLS, name))
+      .filter((f) => !isEval(f))
+      .map((f): [string, Buffer] => [
+        join(homedir(), ".claude", "skills", name, f),
+        readFileSync(join(SKILLS, name, f)),
+      ]),
   );
 }
 
