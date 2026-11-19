@@ -3,3 +3,4 @@ __pycache__/
 jobs/
 node_modules/
 dist/
+skills/*/evals/results/

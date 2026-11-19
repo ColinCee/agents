@@ -58,7 +58,8 @@ const NODE_VERSION = /Node (\d+)/;
 const IMPORTS = /(?:^|\n)\s*(?:import|export)[^"'`;]*?from\s*["']([^"']+)["']|\bimport\(\s*["']([^"']+)["']\s*\)/g;
 const CACHES = new Set(["__pycache__", ".ruff_cache", ".pytest_cache", "node_modules"]);
 // What a skill folder may hold; anything else would ship with it, since `npx skills add` copies the whole folder.
-const SKILL_PARTS = new Set(["SKILL.md", "scripts", "references", "assets"]);
+// evals/ is where `claude plugin eval` looks for a skill's test cases.
+const SKILL_PARTS = new Set(["SKILL.md", "scripts", "references", "assets", "evals"]);
 const TYPESCRIPT = /\.(ts|mts|cts|tsx)$/;
 const WRITES = /\b(writeFile|appendFile|rm|rmdir|unlink|rename|mkdir|cp|copyFile|createWriteStream)(Sync)?\(/;
 const UNTRIED = /not yet tried/i;
@@ -242,7 +243,7 @@ function checkLayout(skill: string, report: Report): void {
     if (!SKILL_PARTS.has(entry) || isFolder === (entry === "SKILL.md"))
       report.error(
         `${name}/${entry}`,
-        "a skill folder holds only SKILL.md, scripts/, references/ and assets/; skills sit flat under skills/",
+        "a skill folder holds only SKILL.md, scripts/, references/, assets/ and evals/; skills sit flat under skills/",
       );
   }
   for (const path of files(skill))

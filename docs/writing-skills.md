@@ -23,6 +23,7 @@ skills/<name>/
   scripts/        code the agent runs
   references/     text the agent reads only when SKILL.md says to
   assets/         templates and other files used in the output
+  evals/          test cases: `claude plugin eval skills/<name>` runs each with and without the skill
 ```
 
 ## SKILL.md
