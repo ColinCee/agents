@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted. A game session with jobs running has not been measured yet; the game rule below rests on a frame-timing probe, not a game.
+Retired for agents on 2026-11-20: they run jobs directly at full speed, since run-job's holds (a false "game on", a game window left open to playtest) slowed his feedback loop more than shared load did, and he pauses jobs himself when he games. The command and its band stay installed but unused.
 
 ## Context
 
