@@ -4,7 +4,7 @@
  *
  * `run-job run -- COMMAND` with no `--res` shares the machine: the command runs at below-normal priority, so a game or
  * anything the user does wins the CPU, and it waits only until the cores and RAM it used on its earlier runs are free
- * (`cpu` and `ram` are pools shared by size). It learns those, and whether it opens a window, by watching each run.
+ * (`cpu` and `ram` are pools shared by size). It learns those by watching each run.
  * Headless jobs held one at a time queue behind each other while most cores sit idle.
  *
  * A program about to start a heavy job takes the resources it needs in one step (all or none), renews the lease
@@ -187,9 +187,9 @@ export type System = {
   sleep: (ms: number) => void;
   /** Drop this process to below-normal priority; what it starts from then on inherits it. */
   lowerPriority: () => void;
-  /** Report a process tree's RAM (GB), the CPU seconds its processes have used so far, and whether any of it shows a
-   * window, about once a second, until stopped. */
-  watchTree: (pid: number, sample: (gb: number, cpuSeconds: number, window: boolean) => void) => () => void;
+  /** Report a process tree's RAM (GB) and the CPU seconds its processes have used so far, about once a second, until
+   * stopped. */
+  watchTree: (pid: number, sample: (gb: number, cpuSeconds: number) => void) => () => void;
   /** Logical processors: the size of the `cpu` pool while nobody plays. */
   cores: () => number;
 };
@@ -271,9 +271,8 @@ export const realSystem: System = {
   $mine = @($all | ? { $ids.Contains([int]$_.ProcessId) })
   foreach ($p in $mine) { $cpu[[int]$p.ProcessId] = ($p.KernelModeTime + $p.UserModeTime) / 1e7 }
   $ws = ($mine | Measure-Object WorkingSetSize -Sum).Sum
-  $w = @(Get-Process -Id @($ids) -EA Ignore | ? { $_.MainWindowHandle -ne 0 }).Count -gt 0
-  "$($ws / 1GB) $(($cpu.Values | Measure-Object -Sum).Sum) $w"; Start-Sleep -Milliseconds 1000 }`
-        : `r=${pid}; while kill -0 $r 2>/dev/null; do ps -A -o pid=,ppid=,rss= | awk -v r=$r '{p[$1]=$2; m[$1]=$3} END {s[r]=1; do {c=0; for (i in p) if (!(i in s) && (p[i] in s)) {s[i]=1; c=1}} while (c); for (i in s) t+=m[i]; print t/1048576, 0, "False"}'; sleep 1; done`;
+  "$($ws / 1GB) $(($cpu.Values | Measure-Object -Sum).Sum)"; Start-Sleep -Milliseconds 1000 }`
+        : `r=${pid}; while kill -0 $r 2>/dev/null; do ps -A -o pid=,ppid=,rss= | awk -v r=$r '{p[$1]=$2; m[$1]=$3} END {s[r]=1; do {c=0; for (i in p) if (!(i in s) && (p[i] in s)) {s[i]=1; c=1}} while (c); for (i in s) t+=m[i]; print t/1048576, 0}'; sleep 1; done`;
     const sampler =
       process.platform === "win32"
         ? spawn("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command", script], { windowsHide: true })
@@ -283,9 +282,8 @@ export const realSystem: System = {
       const lines = (rest + chunk).split(/\r?\n/);
       rest = lines.pop() ?? "";
       for (const line of lines) {
-        const [gb, cpu, window] = line.trim().split(" ");
-        if (Number.isFinite(Number(gb)) && Number.isFinite(Number(cpu)))
-          sample(Number(gb), Number(cpu), window === "True");
+        const [gb, cpu] = line.trim().split(" ");
+        if (Number.isFinite(Number(gb)) && Number.isFinite(Number(cpu))) sample(Number(gb), Number(cpu));
       }
     });
     sampler.on("error", () => {}); // no sampler: the job runs, and nothing is learned from it
@@ -1144,8 +1142,9 @@ export const MARGIN = 1.25; // a run can peak above the last few
 const RUNS_KEPT = 5;
 
 /** What earlier runs of one command showed: their RAM peaks, the cores each used when busy (`busyCores`), and
- * whether any of it ever opened a window. */
-export type Learned = { peaks: number[]; cores?: number[]; window: boolean; runs: number; last: string };
+ * how often it ran. A job that opens a window or a game says so with `--res gpu`: a window cannot be told apart
+ * from a console reliably, and a console taken for one put every check back behind the GPU lock. */
+export type Learned = { peaks: number[]; cores?: number[]; runs: number; last: string };
 const learnedPath = () => join(home(), "learned.json");
 
 /** The command as its runs share it: a path keeps only its last part, so a temp folder or a worktree's folder does
@@ -1166,26 +1165,23 @@ export function readLearned(): Record<string, Learned> {
   }
 }
 
-/** What a shared run asks for: RAM by its highest recent peak, cores by its busiest recent run, and the GPU too once a
- * run of it showed a window, since a window or a game cannot share the card the way processes share cores. */
+/** What a shared run asks for: RAM by its highest recent peak, and cores by its busiest recent run. */
 export function sharedWants(learned: Learned | undefined): Want[] {
   const peak = learned !== undefined && learned.peaks.length > 0 ? Math.max(...learned.peaks) : UNKNOWN_GB / MARGIN;
   const cores = learned?.cores !== undefined && learned.cores.length > 0 ? Math.max(...learned.cores) : UNKNOWN_CORES;
-  const pools: Want[] = [
+  return [
     { resource: CPU, gb: Math.max(0.1, round1(cores)) },
     { resource: RAM, gb: Math.ceil(peak * MARGIN * 10) / 10 },
   ];
-  return learned?.window === true ? [{ resource: "gpu", gb: null }, ...pools] : pools;
 }
 
-export type Run = { peakGb: number; cores: number | null; window: boolean };
+export type Run = { peakGb: number; cores: number | null };
 
 export function learn(old: Learned | undefined, run: Run, now: number): Learned {
   const cores = run.cores === null ? (old?.cores ?? []) : [...(old?.cores ?? []), round1(run.cores)];
   return {
     peaks: [...(old?.peaks ?? []), Math.round(run.peakGb * 1000) / 1000].slice(-RUNS_KEPT),
     cores: cores.slice(-RUNS_KEPT),
-    window: (old?.window ?? false) || run.window,
     runs: (old?.runs ?? 0) + 1,
     last: iso(now),
   };
@@ -1225,7 +1221,6 @@ export async function runShared(
   const key = commandKey(command);
   sys.lowerPriority();
   let peak = 0;
-  let window = false;
   let started = 0;
   const cpu: Sample[] = [];
   const code = await runUnder(
@@ -1244,10 +1239,9 @@ export async function runShared(
     (pid) => {
       started = sys.now();
       cpu.push({ at: started, seconds: 0 });
-      return sys.watchTree(pid, (gb, used, shown) => {
+      return sys.watchTree(pid, (gb, used) => {
         peak = Math.max(peak, gb);
         cpu.push({ at: sys.now(), seconds: used });
-        window ||= shown;
       });
     },
   );
@@ -1255,7 +1249,7 @@ export async function runShared(
   // its RAM peak still counts.
   const timed = sys.now() - started >= 1000 && cpu.some((s) => s.seconds > 0);
   const cores = timed ? busyCores(cpu) : null;
-  if (peak > 0) saveLearned(key, { peakGb: peak, cores, window }, sys);
+  if (peak > 0) saveLearned(key, { peakGb: peak, cores }, sys);
   return code;
 }
 
@@ -1428,7 +1422,7 @@ ${home()}).
   run-job -- COMMAND [ARGS]              (or: run-job run [--name N] [--wait S] -- COMMAND [ARGS])
       Run COMMAND sharing the machine: at below-normal priority, so the user's game or work keeps the CPU. It
       waits (up to S seconds, default 3600) only until the cores and RAM its earlier runs used are free
-      (${UNKNOWN_CORES} cores and ${UNKNOWN_GB} GB the first time), and for the GPU once a run of it opened a window.
+      (${UNKNOWN_CORES} cores and ${UNKNOWN_GB} GB the first time).
       Use this for builds, tests and anything headless; name resources with --res only for a GPU job, a game
       or a window.
   run-job take --name N --res R[:SIZE] [--res ...] [--label R=TEXT] [--note T] [--status T] [--pid P] [--wait S] [--for S]

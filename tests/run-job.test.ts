@@ -37,7 +37,7 @@ type Fake = System & {
   parents: Map<number, { name: string; ppid: number }>;
   stopped: number[];
   lowered: number;
-  tree: { gb: number; cpu: number; seconds: number; window: boolean };
+  tree: { gb: number; cpu: number; seconds: number };
 };
 
 function fake(): Fake {
@@ -71,10 +71,10 @@ function fake(): Fake {
       f.lowered += 1;
     },
     // A run of `seconds` that used `cpu` CPU seconds in all.
-    tree: { gb: 0.8, cpu: 21, seconds: 10, window: false },
+    tree: { gb: 0.8, cpu: 21, seconds: 10 },
     watchTree: (_pid, sample) => {
       f.clock += f.tree.seconds * 1000;
-      sample(f.tree.gb, f.tree.cpu, f.tree.window);
+      sample(f.tree.gb, f.tree.cpu);
       return () => {};
     },
     cores: () => 16,
@@ -617,33 +617,28 @@ describe("run-job -- COMMAND shares the machine", () => {
     expect(await main(["run", "--wait", "0", "--", ...exit0], () => {}, sys)).toBe(1);
   });
 
-  test("a command that opened a window takes the GPU from its next run on", async () => {
-    sys.living.add(process.pid);
-    sys.tree = { gb: 3, cpu: 5, seconds: 10, window: true };
-    await main(["--", ...exit0], () => {}, sys);
-    expect(asks()).toEqual([
-      { resource: "gpu", gb: null },
-      { resource: "cpu", gb: 0.5 },
-      { resource: "ram", gb: 3.8 },
-    ]);
+  test("a command learned as windowed by the old window guess no longer takes the GPU", () => {
+    // What a console under `mise run check` taught it: every check then waited behind the GPU lock.
+    const old = { peaks: [0.9], cores: [3.8], window: true, runs: 40, last: "2026-11-20T01:07:03.711Z" };
+    expect(sharedWants(old).map((w) => w.resource)).toEqual(["cpu", "ram"]);
   });
 
   test("a run too short to time keeps the cores learned before", async () => {
     sys.living.add(process.pid);
     await main(["--", ...exit0], () => {}, sys);
-    sys.tree = { gb: 0.8, cpu: 0.1, seconds: 0.2, window: false };
+    sys.tree = { gb: 0.8, cpu: 0.1, seconds: 0.2 };
     await main(["--", ...exit0], () => {}, sys);
     expect(readLearned()[commandKey(exit0)]?.cores).toEqual([2.1]);
   });
 
   test("cores and RAM asked for follow the busiest of the last five runs", () => {
-    let l = learn(undefined, { peakGb: 6, cores: 8, window: false }, 0);
-    for (let i = 0; i < 4; i++) l = learn(l, { peakGb: 1, cores: 2, window: false }, 0);
+    let l = learn(undefined, { peakGb: 6, cores: 8 }, 0);
+    for (let i = 0; i < 4; i++) l = learn(l, { peakGb: 1, cores: 2 }, 0);
     expect(sharedWants(l)).toEqual([
       { resource: "cpu", gb: 8 },
       { resource: "ram", gb: 7.5 },
     ]);
-    l = learn(l, { peakGb: 1, cores: 2, window: false }, 0); // the big run is now six runs ago
+    l = learn(l, { peakGb: 1, cores: 2 }, 0); // the big run is now six runs ago
     expect(sharedWants(l)).toEqual([
       { resource: "cpu", gb: 2 },
       { resource: "ram", gb: 1.3 },
