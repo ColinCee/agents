@@ -58,6 +58,7 @@ export const RAM = "ram";
 export const CPU = "cpu";
 const POOLS = [RAM, CPU];
 const GAME_SHARE = 4; // while a game is on, shared jobs get this fraction of the threads
+const STARVE_SECONDS = 120;
 export const RAM_RESERVE_GB = 8; // Windows, the desktop and a browser: never handed out as a share of the pool
 export const LOADING_SECONDS = 120; // a RAM share taken this recently may not be in use yet: counted as used anyway
 export const GPU_BUSY_GB = 6; // Windows' desktop alone holds 3.3 GB of the card (measured 15 Oct); a model or a game far more
@@ -287,6 +288,7 @@ export const realSystem: System = {
           sample(Number(gb), Number(cpu), window === "True");
       }
     });
+    sampler.on("error", () => {}); // no sampler: the job runs, and nothing is learned from it
     return () => sampler.kill();
   },
   cores: () => availableParallelism(),
@@ -687,15 +689,17 @@ function blocked(state: State, wants: Want[], sys: System): string | null {
     // Nobody holds the GPU but something uses it: a program that took no lock, or the owner playing a game.
     if (BLOCK_UNLOCKED_GPU && want.resource === "gpu" && others.length === 0 && (state.gpu_used_gb ?? 0) > GPU_BUSY_GB)
       return `the GPU is in use without a lock (${Math.round(state.gpu_used_gb ?? 0)} GB)`;
-    if (others.length === 0) continue;
-    const by = others.map((h) => h.name).join(", ");
     if (want.resource === CPU && want.gb !== null) {
       const used = others.reduce((sum, h) => sum + (h.wants.find((w) => w.resource === CPU)?.gb ?? 0), 0);
       const pool = cpuPool(state, sys);
-      if (used + want.gb > pool)
-        return `${round1(used)} of ${pool} cores in use by ${by}${pool < sys.cores() ? " (a game is on)" : ""}`;
+      const playing = pool < sys.cores();
+      // Alone, a job starts however many threads it used, unless that would take more than a game leaves.
+      if ((others.length > 0 || playing) && used + want.gb > pool)
+        return `${round1(used)} of ${pool} cores in use${others.length > 0 ? ` by ${others.map((h) => h.name).join(", ")}` : ""}${playing ? " (a game is on)" : ""}`;
       continue;
     }
+    if (others.length === 0) continue;
+    const by = others.map((h) => h.name).join(", ");
     if (want.resource !== RAM || want.gb === null) return `held by ${by}`;
     const declared = others.reduce((sum, h) => sum + ramOf(h.wants), 0);
     if (declared + want.gb > ramGb(sys)) return `held by ${by}`;
@@ -736,9 +740,16 @@ export function takeOnce(args: TakeArgs, sys: System = realSystem): Answer {
     const cools = (name: string) => state.cooldowns.some((c) => c.name === name);
     const me = state.waiting.find(isMe);
     // First come, first served among those who want a resource this taker wants; a waiter in its cooldown is not
-    // served. One queue, not one per resource: a waiter for RAM can keep a later GPU-only taker waiting too.
+    // served. One queue, not one per resource: a waiter for RAM can keep a later GPU-only taker waiting too. A shared
+    // job (one asking for cores) that cannot start now holds nobody back, so a big job waiting out a game does not
+    // stall the small ones, until it has waited STARVE_SECONDS with no game on.
     const before = me === undefined ? state.waiting : state.waiting.slice(0, state.waiting.indexOf(me));
-    const behind = before.some((w) => !cools(w.name) && shares(w.wants, args.wants));
+    const playing = cpuPool(state, sys) < sys.cores();
+    const blocks = (w: Waiter) =>
+      !w.wants.some((x) => x.resource === CPU) ||
+      blocked(state, w.wants, sys) === null ||
+      (!playing && now - ms(w.since) > STARVE_SECONDS * 1000);
+    const behind = before.some((w) => !cools(w.name) && shares(w.wants, args.wants) && blocks(w));
     const cooling = cools(args.name);
     const why = blocked(state, args.wants, sys);
     if (why === null && !behind && !cooling) {
@@ -1066,7 +1077,7 @@ export async function runUnder(
         timer = setInterval(() => {
           if (renew({ ...who, ttl: args.ttl, jobPid: child.pid ?? null }, sys).outcome === "lost" && !warned) {
             warned = true;
-            out("lease: the lease was taken back (freed by hand, or lapsed); the command keeps running.");
+            out("run-job: the lease was taken back (freed by hand, or lapsed); the command keeps running.");
           }
         }, RENEW_SECONDS * 1000);
       });
@@ -1091,7 +1102,7 @@ export async function runUnder(
 
 // --- sharing the machine ---------------------------------------------------------------------------------------
 
-// A command never measured is counted as a headless test run of a mid-size project: Cardusion's check peaks at
+// A command never measured is counted as a headless test run of a mid-size project: one such check peaks at
 // 0.8 GB and keeps about 4 threads busy.
 export const UNKNOWN_GB = 2;
 export const UNKNOWN_CORES = 4;
@@ -1150,6 +1161,8 @@ function saveLearned(key: string, run: Run, sys: System): void {
   withState(sys, () => {
     const all = readLearned();
     all[key] = learn(all[key], run, sys.now());
+    // Commands with arguments that change every run (a message, a temp file) would otherwise pile up.
+    for (const [k, v] of Object.entries(all)) if (sys.now() - ms(v.last) > FORGET_DAYS * 86_400_000) delete all[k];
     const temp = `${learnedPath()}.${process.pid}.tmp`;
     writeFileSync(temp, `${JSON.stringify(all, null, 1)}\n`);
     renameSync(temp, learnedPath());
@@ -1204,8 +1217,10 @@ export async function runShared(
       });
     },
   );
-  // A run shorter than two samples says little about its cores; its RAM peak still counts.
-  const cores = sys.now() - started >= 1000 ? busyCores(cpu) : null;
+  // A run shorter than two samples says little about its cores, and outside Windows the sampler reads no CPU time;
+  // its RAM peak still counts.
+  const timed = sys.now() - started >= 1000 && cpu.some((s) => s.seconds > 0);
+  const cores = timed ? busyCores(cpu) : null;
   if (peak > 0) saveLearned(key, { peakGb: peak, cores, window }, sys);
   return code;
 }
@@ -1279,7 +1294,7 @@ export function main(
         const wants = wantsFrom(o, "run");
         return runUnder(
           {
-            name: need(o.name, "--name"),
+            name: o.name ?? sharedName(commandKey(parsed.positionals)),
             pid: process.pid,
             wants,
             labels: parseLabels(o.label),

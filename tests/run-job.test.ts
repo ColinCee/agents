@@ -455,7 +455,7 @@ describe("the GPU in use without a lock", () => {
   });
 });
 
-describe("lease run", () => {
+describe("run-job run --res", () => {
   const job = { name: "job", pid: process.pid, wants: [{ resource: "gpu", gb: null }], note: "", ttl: 120 };
 
   test("runs the command under the lease, declares it as the job, frees it after, and passes its exit code on", async () => {
@@ -570,8 +570,29 @@ describe("run-job -- COMMAND shares the machine", () => {
     expect(busyCores(s.slice(0, 1))).toBeNull();
   });
 
-  test("a job alone always starts, however many cores it used", () => {
+  test("a job alone starts however many cores it used, unless a game is on", () => {
     expect(shared("big-build", 300, 40).outcome).toBe("taken");
+    free({ name: "big-build", pid: 300 }, sys);
+    sys.gpu_ = 9;
+    expect(shared("big-build", 300, 6).outcome).toBe("held"); // more than the quarter a game leaves
+    expect(shared("small", 400, 4).outcome).toBe("taken");
+  });
+
+  test("a big job that cannot start lets small ones pass, until it has waited two minutes", () => {
+    const job = (name: string, pid: number, cores: number) =>
+      takeOnce({ name, pid, wants: [{ resource: "cpu", gb: cores }], note: "", ttl: 1000 }, sys).outcome;
+    expect(job("busy", 100, 12)).toBe("taken");
+    expect(job("big", 200, 6)).toBe("held");
+    expect(job("small", 300, 1)).toBe("taken");
+    sys.clock += 121_000;
+    job("big", 200, 6); // still asking
+    expect(job("small-2", 900, 1)).toBe("behind");
+  });
+
+  test("a GPU job needs no --name: it is named after its program", async () => {
+    sys.living.add(process.pid);
+    expect(await main(["run", "--res", "gpu", "--", ...exit0], () => {}, sys)).toBe(0);
+    expect(events()).toContain("take node");
   });
 
   test("waits when RAM is short", async () => {
@@ -627,7 +648,7 @@ const wantWords_ = (wants: { resource: string; gb: number | null }[]) =>
   wants.map((w) => (w.gb === null ? w.resource : `${w.resource}:${w.gb}`)).join(" ");
 
 describe("who holds a lease taken without --pid", () => {
-  test("is the caller of the Windows cmd.exe shim, not the shim, which exits with lease", () => {
+  test("is the caller of the Windows cmd.exe shim, not the shim, which exits with run-job", () => {
     sys.parents.set(process.ppid, { name: "cmd.exe", ppid: 300 });
     expect(main(["take", "--name", "spike", "--res", "gpu"], () => {}, sys)).toBe(0);
     const out: string[] = [];
