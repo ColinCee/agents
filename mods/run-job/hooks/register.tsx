@@ -3,7 +3,7 @@ import { atom, read, update } from "claude-code";
 import type { Band } from "../types";
 import { bandOf } from "./band";
 
-const band = atom({ plugin: "lease", key: "band" } as const, null);
+const band = atom({ plugin: "run-job", key: "band" } as const, null);
 
 const TONE = { ok: "success", stuck: "error", unlocked: "warning" } as const;
 const EVERY_MS = 5_000; // one small file read: cheap, and a lease changes on the scale of seconds
@@ -28,7 +28,7 @@ async function refresh($: EngineInterface): Promise<void> {
   if (text !== null && !measuring && !(now_ - measured < STALE_MS)) {
     measuring = true;
     void $.process
-      .run(["node", `${dir}/lease.mjs`, "show"], { timeoutMs: 30_000 })
+      .run(["node", `${dir}/run-job.mjs`, "show"], { timeoutMs: 30_000 })
       .catch(() => null)
       .finally(() => {
         measuring = false;
@@ -39,7 +39,7 @@ async function refresh($: EngineInterface): Promise<void> {
   if (JSON.stringify(now) !== JSON.stringify(next)) await update($, band, () => next);
 }
 
-// Shows only: taking and freeing are the agents' and programs' work, through the lease command.
+// Shows only: taking and freeing are the agents' and programs' work, through the run-job command.
 export const register: Register = (on) => {
   on("session.start", async ($, e, next) => {
     await refresh($);
@@ -51,7 +51,7 @@ export const register: Register = (on) => {
     const shown: Band | null = await read($, band);
     if (e.props.hasSurvey || shown === null) return next(e);
     const { Box, Text } = $.ui.resolve(e);
-    if (shown.unreadable) return <Text color="error">lease: the state file cannot be read; run lease show</Text>;
+    if (shown.unreadable) return <Text color="error">run-job: the state file cannot be read; run run-job show</Text>;
     return (
       <Box>
         <Text wrap="truncate-end">

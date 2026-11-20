@@ -38,10 +38,10 @@ const forms = {
 };
 const bench = { name: "bench", pid: 200, wants: [{ resource: "ram", gb: 10 }], note: "", since: "x", seen: "x" };
 
-test("one row: free and leased RAM, each holder, the GPU, who waits; stuck ones first and said once at the end", async () => {
+test("one row: free and reserved RAM, each holder, the GPU, who waits; stuck ones first and said once at the end", async () => {
   const band = bandOf(state([strata, forms], [bench]), NOW);
   expect(band?.parts).toEqual([
-    { key: "ram", text: "RAM 1 GB free, 40 leased", tone: "ok" },
+    { key: "ram", text: "RAM 1 GB free, 40 reserved", tone: "ok" },
     { key: "form-filling-agent/300", text: "WEB Form filler !", tone: "stuck" },
     { key: "cortex/100", text: "GPU Strata", tone: "ok" },
     { key: "waiting", text: "waiting: bench", tone: "ok" },
@@ -60,7 +60,7 @@ test("one row: free and leased RAM, each holder, the GPU, who waits; stuck ones 
     problem: "",
   });
   const held = JSON.stringify({ ...JSON.parse(state([strata])), gpu_used_gb: 23 });
-  expect(bandOf(held, NOW)?.parts.map((p) => p.text)).toEqual(["RAM 1 GB free, 40 leased", "GPU Strata"]); // not "no lock"
+  expect(bandOf(held, NOW)?.parts.map((p) => p.text)).toEqual(["RAM 1 GB free, 40 reserved", "GPU Strata"]); // not "no lock"
   expect(bandOf(null, NOW)).toBe(null);
   expect(bandOf("{broken", NOW)?.unreadable).toBe(true);
 });
@@ -68,7 +68,7 @@ test("one row: free and leased RAM, each holder, the GPU, who waits; stuck ones 
 test("a RAM holder shows its status after its name, and the GPU shows free", async () => {
   const builds = { ...strata, name: "build-vm", note: "a VM for builds, with a long note", status: "1/2" };
   const band = bandOf(state([{ ...builds, wants: [{ resource: "ram", gb: 12 }] }]), NOW);
-  expect(band?.parts.map((p) => p.text)).toEqual(["RAM 1 GB free, 12 leased", "build-vm 1/2", "GPU ·"]);
+  expect(band?.parts.map((p) => p.text)).toEqual(["RAM 1 GB free, 12 reserved", "build-vm 1/2", "GPU ·"]);
 });
 
 test("two holders stuck alike say it once; a long status is cut; a stale measurement shows no GPU", async () => {
@@ -97,7 +97,7 @@ test("the band draws the row on every surface, and nothing when nothing is held"
   on("session.start", async (_$, e) => ({ cwd: e.cwd }));
   on("ui.render", async ($, e) => $.ui.resolve(e).Text({ children: "engine" })); // what the engine draws when the band passes
   const band = {
-    plugin: "lease",
+    plugin: "run-job",
     component: "AbovePrompt",
     props: {
       hasSurvey: false,

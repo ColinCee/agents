@@ -3,20 +3,29 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { beforeEach, describe, expect, test } from "vitest";
 import {
+  busyCores,
+  commandKey,
   forceFree,
   free,
+  learn,
   legacyWants,
   main,
   parseState,
+  readLearned,
   readLog,
   renew,
+  runShared,
   runUnder,
   type System,
+  sharedName,
+  sharedWants,
   show,
   take,
   takeOnce,
+  UNKNOWN_CORES,
+  UNKNOWN_GB,
   words,
-} from "../src/lease/lease.mjs";
+} from "../src/run-job/run-job.mjs";
 
 type Fake = System & {
   freeGb_: number;
@@ -26,6 +35,8 @@ type Fake = System & {
   starts: Map<number, string>;
   parents: Map<number, { name: string; ppid: number }>;
   stopped: number[];
+  lowered: number;
+  tree: { gb: number; cpu: number; seconds: number; window: boolean };
 };
 
 function fake(): Fake {
@@ -52,6 +63,18 @@ function fake(): Fake {
     sleep: (ms) => {
       f.clock += ms;
     },
+    lowered: 0,
+    lowerPriority: () => {
+      f.lowered += 1;
+    },
+    // A run of `seconds` that used `cpu` CPU seconds in all.
+    tree: { gb: 0.8, cpu: 21, seconds: 10, window: false },
+    watchTree: (_pid, sample) => {
+      f.clock += f.tree.seconds * 1000;
+      sample(f.tree.gb, f.tree.cpu, f.tree.window);
+      return () => {};
+    },
+    cores: () => 16,
   };
   return f;
 }
@@ -411,7 +434,7 @@ describe("the first version's file and callers", () => {
     expect(run("take", "--name", "f", "--pid", "300", "--res", "browser", "--label", "browser=WEB").code).toBe(0);
     expect(show(sys).view.resources[0]?.label).toBe("WEB");
     expect(run("take", "--name", "x", "--res", "ram").out).toMatch(/needs a size/);
-    expect(run("take", "--name", "x", "--res", "gpu:4").out).toMatch(/only ram is shared by size/);
+    expect(run("take", "--name", "x", "--res", "gpu:4").out).toMatch(/only ram and cpu are shared by size/);
     expect(run("take", "--name", "x", "--res", "GPU").code).toBe(2);
     expect(run("take", "--name", "x", "--res", "gpu", "--gb", "4").out).toMatch(/not both/);
     expect(run("take", "--name", "x", "--res", "gpu", "--label", "gpu=toolong").code).toBe(2);
@@ -479,6 +502,124 @@ describe("one holder, several jobs", () => {
     takeOnce({ name: "bench", pid: 200, wants: [{ resource: "ram", gb: 30 }], note: "", ttl: 120 }, sys);
     expect(takeOnce(cortex, sys).outcome).toBe("held"); // 30 + 40 is past the 55 GB pool
     expect(show(sys).view.holds.find((h) => h.name === "cortex")?.wants).toEqual(gpuOnly.wants);
+  });
+});
+
+describe("run-job -- COMMAND shares the machine", () => {
+  const exit0 = [process.execPath, "-e", "process.exit(0)"];
+  const asks = () => sharedWants(readLearned()[commandKey(exit0)]);
+  const shared = (name: string, pid: number, cores: number) =>
+    takeOnce(
+      {
+        name,
+        pid,
+        wants: [
+          { resource: "cpu", gb: cores },
+          { resource: "ram", gb: 1 },
+        ],
+        note: "",
+        ttl: 120,
+      },
+      sys,
+    );
+
+  test("runs at lower priority, asks the first time for the unknown amount, and learns cores and RAM", async () => {
+    sys.living.add(process.pid);
+    expect(asks()).toEqual([
+      { resource: "cpu", gb: UNKNOWN_CORES },
+      { resource: "ram", gb: UNKNOWN_GB },
+    ]);
+    expect(await main(["--", ...exit0], () => {}, sys)).toBe(0);
+    expect(sys.lowered).toBe(1);
+    expect(asks()).toEqual([
+      { resource: "cpu", gb: 2.1 }, // 21 CPU seconds over 10 s
+      { resource: "ram", gb: 1 }, // 0.8 GB × 1.25
+    ]);
+  });
+
+  test("jobs run side by side while their cores fit, beside a GPU holder", async () => {
+    sys.living.add(process.pid);
+    takeOnce({ name: "game", pid: 200, wants: [{ resource: "gpu", gb: null }], note: "", ttl: 120 }, sys);
+    shared("mise", 300, 11.9);
+    expect(await main(["run", "--wait", "0", "--", ...exit0], () => {}, sys)).toBe(0); // 11.9 + 4 of 16
+  });
+
+  test("waits while the cores other jobs used would leave too few", async () => {
+    sys.living.add(process.pid);
+    shared("mise", 300, 12.5);
+    expect(await runShared(exit0, { wait: 0, ttl: 120, forSeconds: null }, sys, () => {})).toBe(1);
+    expect(readLog(5).map((l) => l.detail)).toContain("cpu:4 ram:2: 12.5 of 16 cores in use by mise");
+  });
+
+  test("while a game uses the GPU, jobs share a quarter of the threads", async () => {
+    sys.living.add(process.pid);
+    sys.gpu_ = 9; // nothing of ours holds the GPU: someone is playing
+    shared("mise", 300, 1);
+    expect(await runShared(exit0, { wait: 0, ttl: 120, forSeconds: null }, sys, () => {})).toBe(1);
+    expect(readLog(5).map((l) => l.detail)).toContain("cpu:4 ram:2: 1 of 4 cores in use by mise (a game is on)");
+    takeOnce({ name: "shots", pid: 200, wants: [{ resource: "gpu", gb: null }], note: "", ttl: 120 }, sys);
+    expect(await runShared(exit0, { wait: 0, ttl: 120, forSeconds: null }, sys, () => {})).toBe(0); // our own GPU job
+  });
+
+  test("busy cores are the 90th percentile of the rate between samples, not the average", () => {
+    const s = [0, 1, 1, 1, 1, 1, 1, 1, 1, 9, 9].map((_c, i, all) => ({
+      at: i * 1000,
+      seconds: all.slice(0, i + 1).reduce((a, b) => a + b, 0),
+    })); // ten seconds: eight at one core, two at nine
+    expect(busyCores(s)).toBe(9);
+    expect(busyCores(s.slice(0, 1))).toBeNull();
+  });
+
+  test("a job alone always starts, however many cores it used", () => {
+    expect(shared("big-build", 300, 40).outcome).toBe("taken");
+  });
+
+  test("waits when RAM is short", async () => {
+    sys.living.add(process.pid);
+    sys.freeGb_ = 1;
+    takeOnce({ name: "big", pid: 200, wants: [{ resource: "ram", gb: 50 }], note: "", ttl: 120 }, sys);
+    expect(await main(["run", "--wait", "0", "--", ...exit0], () => {}, sys)).toBe(1);
+  });
+
+  test("a command that opened a window takes the GPU from its next run on", async () => {
+    sys.living.add(process.pid);
+    sys.tree = { gb: 3, cpu: 5, seconds: 10, window: true };
+    await main(["--", ...exit0], () => {}, sys);
+    expect(asks()).toEqual([
+      { resource: "gpu", gb: null },
+      { resource: "cpu", gb: 0.5 },
+      { resource: "ram", gb: 3.8 },
+    ]);
+  });
+
+  test("a run too short to time keeps the cores learned before", async () => {
+    sys.living.add(process.pid);
+    await main(["--", ...exit0], () => {}, sys);
+    sys.tree = { gb: 0.8, cpu: 0.1, seconds: 0.2, window: false };
+    await main(["--", ...exit0], () => {}, sys);
+    expect(readLearned()[commandKey(exit0)]?.cores).toEqual([2.1]);
+  });
+
+  test("cores and RAM asked for follow the busiest of the last five runs", () => {
+    let l = learn(undefined, { peakGb: 6, cores: 8, window: false }, 0);
+    for (let i = 0; i < 4; i++) l = learn(l, { peakGb: 1, cores: 2, window: false }, 0);
+    expect(sharedWants(l)).toEqual([
+      { resource: "cpu", gb: 8 },
+      { resource: "ram", gb: 7.5 },
+    ]);
+    l = learn(l, { peakGb: 1, cores: 2, window: false }, 0); // the big run is now six runs ago
+    expect(sharedWants(l)).toEqual([
+      { resource: "cpu", gb: 2 },
+      { resource: "ram", gb: 1.3 },
+    ]);
+  });
+
+  test("runs in other folders are one command; another test file is another", () => {
+    const a = commandKey(["C:\\Temp\\claude\\abc\\scratchpad\\gut.ps1", "-Select", "fit_test.gd"]);
+    expect(a).toBe(commandKey(["D:/wt/other/scratchpad/gut.ps1", "-Select", "fit_test.gd"]));
+    expect(a).not.toBe(commandKey(["D:/wt/other/scratchpad/gut.ps1", "-Select", "look_test.gd"]));
+    expect(sharedName(commandKey(["mise", "run", "check"]))).toBe("mise");
+    expect(sharedName(commandKey(["C:\\Tools\\Godot_v4.7.2_console.exe", "--headless"]))).toBe("godot-v4-7-2-console");
   });
 });
 

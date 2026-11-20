@@ -1,0 +1,5 @@
+{
+  "name": "run-job-local",
+  "owner": { "name": "ColinCee" },
+  "plugins": [{ "name": "run-job", "source": "./" }]
+}

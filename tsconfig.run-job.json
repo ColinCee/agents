@@ -2,10 +2,10 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "noEmit": false,
-    "rootDir": "src/lease",
-    "outDir": "dist/lease",
+    "rootDir": "src/run-job",
+    "outDir": "dist/run-job",
     "newLine": "lf",
     "removeComments": false
   },
-  "include": ["src/lease"]
+  "include": ["src/run-job"]
 }
