@@ -800,8 +800,10 @@ export function takeOnce(args: TakeArgs, sys: System = realSystem): Answer {
       !w.wants.some((x) => x.resource === CPU) ||
       blocked(state, w.wants, sys, w.urgent) === null ||
       (!playing && now - ms(w.since) > STARVE_SECONDS * 1000);
-    // An urgent taker waits behind no ordinary waiter while nobody plays.
-    const ahead = (w: Waiter) => !args.urgent || playing || w.urgent === true;
+    // An urgent taker waits behind no ordinary job waiting for cores while nobody plays; one waiting for RAM or the
+    // GPU still goes first.
+    const ahead = (w: Waiter) =>
+      !args.urgent || playing || w.urgent === true || !w.wants.some((x) => x.resource === CPU);
     const behind = before.some((w) => ahead(w) && !cools(w.name) && shares(w.wants, args.wants) && blocks(w));
     const cooling = cools(args.name);
     const why = blocked(state, args.wants, sys, args.urgent);
@@ -1241,7 +1243,9 @@ export async function runShared(
   sys: System = realSystem,
   out: (text: string) => void = console.error,
 ): Promise<number> {
-  const key = commandKey(command);
+  // An ordinary run at idle priority can be starved and so measure fewer cores than it needs: urgent runs of the
+  // same command learn apart from it.
+  const key = commandKey(command) + (o.urgent === true ? " --urgent" : "");
   sys.lowerPriority(o.urgent === true);
   let peak = 0;
   let started = 0;
@@ -1350,6 +1354,7 @@ export function main(
             },
             sys,
           );
+        if (o.urgent === true) throw new Usage("--urgent is for shared jobs, not with --res or --gb");
         const wants = wantsFrom(o, "run");
         return runUnder(
           {

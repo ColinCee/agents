@@ -638,6 +638,44 @@ describe("run-job -- COMMAND shares the machine", () => {
     expect(urgent("check", 900, 4)).toBe("taken");
   });
 
+  test("an urgent job still waits behind a job waiting for RAM", () => {
+    sys.freeGb_ = 1;
+    takeOnce({ name: "model", pid: 100, wants: [{ resource: "ram", gb: 50 }], note: "", ttl: 1000 }, sys);
+    expect(
+      takeOnce({ name: "big", pid: 200, wants: [{ resource: "ram", gb: 20 }], note: "", ttl: 1000 }, sys).outcome,
+    ).toBe("held");
+    sys.clock += 121_000; // the model has loaded: its RAM counts as used, not as loading
+    sys.freeGb_ = 30;
+    const check = takeOnce(
+      {
+        name: "check",
+        pid: 900,
+        wants: [
+          { resource: "cpu", gb: 4 },
+          { resource: "ram", gb: 2 },
+        ],
+        note: "",
+        ttl: 1000,
+        urgent: true,
+      },
+      sys,
+    );
+    expect(check.outcome).toBe("behind");
+  });
+
+  test("--urgent with --res is refused, not ignored", async () => {
+    const lines: string[] = [];
+    expect(await main(["run", "--urgent", "--res", "gpu", "--", ...exit0], (t) => lines.push(t), sys)).toBe(2);
+    expect(lines.join(" ")).toContain("--urgent is for shared jobs");
+  });
+
+  test("urgent runs learn their cores apart from ordinary runs of the same command", async () => {
+    sys.living.add(process.pid);
+    await main(["run", "--urgent", "--", ...exit0], () => {}, sys);
+    expect(readLearned()[commandKey(exit0)]).toBeUndefined();
+    expect(readLearned()[`${commandKey(exit0)} --urgent`]?.cores).toEqual([2.1]);
+  });
+
   test("a job someone waits on runs at below-normal priority, a sweep at idle", async () => {
     sys.living.add(process.pid);
     expect(await main(["run", "--urgent", "--", ...exit0], () => {}, sys)).toBe(0);
