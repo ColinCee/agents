@@ -252,36 +252,9 @@ export const realSystem: System = {
   freeGb: () => freemem() / 2 ** 30,
   totalGb: () => totalmem() / 2 ** 30,
   // The card's total only: on Windows the driver does not say how much each process uses.
-  gpuUsedGb: () => {
-    const run = spawnSync("nvidia-smi", ["--query-gpu=memory.used", "--format=csv,noheader,nounits"], {
-      encoding: "utf8",
-      windowsHide: true,
-      timeout: 10_000,
-    });
-    if (run.status !== 0) return null;
-    const mib = run.stdout
-      .split("\n")
-      .filter((line) => line.trim() !== "")
-      .map(Number)
-      .filter(Number.isFinite);
-    return mib.length === 0 ? null : mib.reduce((a, b) => a + b, 0) / 1024;
-  },
-  gpuBusyPct: () => {
-    const run = spawnSync("nvidia-smi", ["--query-gpu=utilization.gpu", "--format=csv,noheader,nounits"], {
-      encoding: "utf8",
-      windowsHide: true,
-      timeout: 10_000,
-    });
-    const pct =
-      run.status === 0
-        ? run.stdout
-            .split("\n")
-            .filter((line) => line.trim() !== "")
-            .map(Number)
-            .filter(Number.isFinite)
-        : [];
-    return pct.length === 0 ? null : Math.max(...pct);
-  },
+  gpuUsedGb: () => readGpu()?.usedGb ?? null,
+  // From the same read as gpuUsedGb when it was just made: `tidy` asks for both under the state lock.
+  gpuBusyPct: () => (gpuRead !== null && Date.now() - gpuRead.at < 1000 ? gpuRead : readGpu())?.busyPct ?? null,
   sleep: (ms) => {
     Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
   },
@@ -320,6 +293,29 @@ export const realSystem: System = {
   },
   cores: () => availableParallelism(),
 };
+
+let gpuRead: { at: number; usedGb: number; busyPct: number } | null = null;
+
+/** One query for every card: memory in use (summed, GB) and how busy the busiest is (percent). */
+function readGpu(): { at: number; usedGb: number; busyPct: number } | null {
+  const run = spawnSync("nvidia-smi", ["--query-gpu=memory.used,utilization.gpu", "--format=csv,noheader,nounits"], {
+    encoding: "utf8",
+    windowsHide: true,
+    timeout: 10_000,
+  });
+  const cards = (run.status === 0 ? run.stdout.split("\n") : [])
+    .map((line) => line.split(",").map((x) => Number(x.trim())))
+    .filter(([mib, pct]) => Number.isFinite(mib) && Number.isFinite(pct)) as [number, number][];
+  gpuRead =
+    cards.length === 0
+      ? null
+      : {
+          at: Date.now(),
+          usedGb: cards.reduce((sum, [mib]) => sum + mib, 0) / 1024,
+          busyPct: Math.max(...cards.map(([, pct]) => pct)),
+        };
+  return gpuRead;
+}
 
 export function home(): string {
   return process.env.LEASES_HOME ?? join(homedir(), ".leases");
