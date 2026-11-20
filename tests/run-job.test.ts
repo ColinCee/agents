@@ -30,6 +30,7 @@ import {
 type Fake = System & {
   freeGb_: number;
   gpu_: number | null;
+  busy_: number | null;
   clock: number;
   living: Set<number>;
   starts: Map<number, string>;
@@ -43,6 +44,7 @@ function fake(): Fake {
   const f: Fake = {
     freeGb_: 41.2,
     gpu_: 0.8,
+    busy_: 6,
     clock: Date.parse("2026-10-15T12:00:00Z"),
     living: new Set([100, 200, 300, 900]),
     starts: new Map([[900, "start-of-900"]]),
@@ -60,6 +62,7 @@ function fake(): Fake {
     freeGb: () => f.freeGb_,
     totalGb: () => 63.7,
     gpuUsedGb: () => f.gpu_,
+    gpuBusyPct: () => f.busy_,
     sleep: (ms) => {
       f.clock += ms;
     },
@@ -559,6 +562,18 @@ describe("run-job -- COMMAND shares the machine", () => {
     expect(readLog(5).map((l) => l.detail)).toContain("cpu:4 ram:2: 1 of 4 cores in use by mise (a game is on)");
     takeOnce({ name: "shots", pid: 200, wants: [{ resource: "gpu", gb: null }], note: "", ttl: 120 }, sys);
     expect(await runShared(exit0, { wait: 0, ttl: 120, forSeconds: null }, sys, () => {})).toBe(0); // our own GPU job
+  });
+
+  test("a light game counts by how busy the card is, not its memory", () => {
+    sys.gpu_ = 5.9; // StarCraft II, measured
+    sys.busy_ = 38;
+    shared("mise", 300, 1);
+    expect(shared("check", 400, 4).outcome).toBe("held");
+    sys.busy_ = 7; // a dip between frames, or the game just closed
+    expect(shared("check", 400, 4).outcome).toBe("held");
+    sys.clock += 61_000;
+    sys.living.add(300);
+    expect(shared("check", 400, 4).outcome).toBe("taken"); // a minute with no game seen
   });
 
   test("busy cores are the 90th percentile of the rate between samples, not the average", () => {
