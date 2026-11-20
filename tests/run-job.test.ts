@@ -31,6 +31,7 @@ type Fake = System & {
   freeGb_: number;
   gpu_: number | null;
   busy_: number | null;
+  game_: string | null;
   clock: number;
   living: Set<number>;
   starts: Map<number, string>;
@@ -45,6 +46,7 @@ function fake(): Fake {
     freeGb_: 41.2,
     gpu_: 0.8,
     busy_: 6,
+    game_: null,
     clock: Date.parse("2026-10-15T12:00:00Z"),
     living: new Set([100, 200, 300, 900]),
     starts: new Map([[900, "start-of-900"]]),
@@ -63,6 +65,7 @@ function fake(): Fake {
     totalGb: () => 63.7,
     gpuUsedGb: () => f.gpu_,
     gpuBusyPct: () => f.busy_,
+    game: () => f.game_,
     sleep: (ms) => {
       f.clock += ms;
     },
@@ -557,9 +560,10 @@ describe("run-job -- COMMAND shares the machine", () => {
   test("while a game uses the GPU, jobs share a quarter of the threads", async () => {
     sys.living.add(process.pid);
     sys.gpu_ = 9; // nothing of ours holds the GPU: someone is playing
+    sys.game_ = "SC2_x64";
     shared("mise", 300, 1);
     expect(await runShared(exit0, { wait: 0, ttl: 120, forSeconds: null }, sys, () => {})).toBe(1);
-    expect(readLog(5).map((l) => l.detail)).toContain("cpu:4 ram:2: 1 of 4 cores in use by mise (a game is on)");
+    expect(readLog(5).map((l) => l.detail)).toContain("cpu:4 ram:2: 1 of 4 cores in use by mise (SC2_x64 is on)");
     takeOnce({ name: "shots", pid: 200, wants: [{ resource: "gpu", gb: null }], note: "", ttl: 120 }, sys);
     expect(await runShared(exit0, { wait: 0, ttl: 120, forSeconds: null }, sys, () => {})).toBe(0); // our own GPU job
   });
@@ -567,6 +571,7 @@ describe("run-job -- COMMAND shares the machine", () => {
   test("a light game counts by how busy the card is, not its memory", () => {
     sys.gpu_ = 5.9; // StarCraft II, measured
     sys.busy_ = 38;
+    sys.game_ = "SC2_x64";
     shared("mise", 300, 1);
     expect(shared("check", 400, 4).outcome).toBe("held");
     sys.busy_ = 7; // a dip between frames, or the game just closed
@@ -585,12 +590,41 @@ describe("run-job -- COMMAND shares the machine", () => {
     expect(busyCores(s.slice(0, 1))).toBeNull();
   });
 
-  test("a job alone starts however many cores it used, unless a game is on", () => {
+  test("a job alone starts however many cores it used, on what a game leaves while one is on", () => {
     expect(shared("big-build", 300, 40).outcome).toBe("taken");
     free({ name: "big-build", pid: 300 }, sys);
     sys.gpu_ = 9;
-    expect(shared("big-build", 300, 6).outcome).toBe("held"); // more than the quarter a game leaves
-    expect(shared("small", 400, 4).outcome).toBe("taken");
+    sys.game_ = "SC2_x64";
+    expect(shared("big-build", 300, 4.2).outcome).toBe("taken");
+    expect(shared("small", 400, 1).outcome).toBe("held"); // 4 of the 4 a game leaves
+  });
+
+  test("a busy card is no game unless a program Windows knows as a game runs", () => {
+    // a video and a live wallpaper, no game open
+    sys.gpu_ = 3.8;
+    sys.busy_ = 24;
+    expect(shared("ladder-sweep", 300, 4.2).outcome).toBe("taken");
+    expect(shared("check", 400, 11.8).outcome).toBe("taken"); // 4.2 + 11.8 of all 16 cores
+  });
+
+  test("a game is looked for at most every 15 seconds, and seen as gone once it closes", () => {
+    let looks = 0;
+    sys.game = () => {
+      looks++;
+      return sys.game_;
+    };
+    sys.busy_ = 38;
+    sys.game_ = "SC2_x64";
+    shared("mise", 300, 1);
+    expect(shared("check", 400, 4).outcome).toBe("held");
+    expect(looks).toBe(1);
+    sys.game_ = null; // closed
+    sys.clock += 16_000;
+    shared("check", 400, 4);
+    expect(looks).toBe(2);
+    sys.clock += 61_000;
+    sys.living.add(300);
+    expect(shared("check", 400, 4).outcome).toBe("taken");
   });
 
   test("a big job that cannot start lets small ones pass, until it has waited two minutes", () => {
@@ -621,6 +655,7 @@ describe("run-job -- COMMAND shares the machine", () => {
 
   test("while a game is on, an urgent job waits like any job", () => {
     sys.gpu_ = 9;
+    sys.game_ = "SC2_x64";
     sys.living.add(1000);
     shared("sweep", 1000, 2);
     expect(urgent("check", 300, 3)).toBe("held"); // 2 + 3 of the 4 a game leaves
