@@ -36,7 +36,7 @@ type Fake = System & {
   starts: Map<number, string>;
   parents: Map<number, { name: string; ppid: number }>;
   stopped: number[];
-  lowered: number;
+  lowered: boolean[];
   tree: { gb: number; cpu: number; seconds: number };
 };
 
@@ -66,9 +66,9 @@ function fake(): Fake {
     sleep: (ms) => {
       f.clock += ms;
     },
-    lowered: 0,
-    lowerPriority: () => {
-      f.lowered += 1;
+    lowered: [],
+    lowerPriority: (urgent) => {
+      f.lowered.push(urgent);
     },
     // A run of `seconds` that used `cpu` CPU seconds in all.
     tree: { gb: 0.8, cpu: 21, seconds: 10 },
@@ -533,7 +533,7 @@ describe("run-job -- COMMAND shares the machine", () => {
       { resource: "ram", gb: UNKNOWN_GB },
     ]);
     expect(await main(["--", ...exit0], () => {}, sys)).toBe(0);
-    expect(sys.lowered).toBe(1);
+    expect(sys.lowered).toEqual([false]); // idle priority
     expect(asks()).toEqual([
       { resource: "cpu", gb: 2.1 }, // 21 CPU seconds over 10 s
       { resource: "ram", gb: 1 }, // 0.8 GB × 1.25
@@ -602,6 +602,54 @@ describe("run-job -- COMMAND shares the machine", () => {
     sys.clock += 121_000;
     job("big", 200, 6); // still asking
     expect(job("small-2", 900, 1)).toBe("behind");
+  });
+
+  const urgent = (name: string, pid: number, cores: number) =>
+    takeOnce({ name, pid, wants: [{ resource: "cpu", gb: cores }], note: "", ttl: 1000, urgent: true }, sys).outcome;
+
+  test("an urgent job counts only urgent jobs' cores, so a sweep filling every core does not hold a check back", () => {
+    for (let i = 0; i <= 16; i++) sys.living.add(1000 + i);
+    sys.living.add(2000);
+    sys.living.add(400);
+    for (let i = 0; i < 16; i++) shared(`sweep-${i}`, 1000 + i, 1);
+    expect(shared("sweep-16", 2000, 1).outcome).toBe("held");
+    expect(urgent("check", 300, 8)).toBe("taken");
+    expect(urgent("check-2", 400, 8)).toBe("taken");
+    expect(urgent("check-3", 900, 1)).toBe("held"); // 16 of 16 urgent cores
+    expect(readLog(1)[0]?.detail).toContain("16 of 16 cores in use by check, check-2");
+  });
+
+  test("while a game is on, an urgent job waits like any job", () => {
+    sys.gpu_ = 9;
+    sys.living.add(1000);
+    shared("sweep", 1000, 2);
+    expect(urgent("check", 300, 3)).toBe("held"); // 2 + 3 of the 4 a game leaves
+    expect(urgent("small-check", 400, 2)).toBe("taken");
+  });
+
+  test("an urgent job waits behind no ordinary waiter, an ordinary job still does", () => {
+    const job = (name: string, pid: number, cores: number) =>
+      takeOnce({ name, pid, wants: [{ resource: "cpu", gb: cores }], note: "", ttl: 1000 }, sys).outcome;
+    expect(job("busy", 100, 12)).toBe("taken");
+    expect(job("big", 200, 6)).toBe("held");
+    sys.clock += 121_000;
+    job("big", 200, 6); // starved: it now holds later ordinary takers back
+    expect(job("small", 300, 1)).toBe("behind");
+    expect(urgent("check", 900, 4)).toBe("taken");
+  });
+
+  test("a job someone waits on runs at below-normal priority, a sweep at idle", async () => {
+    sys.living.add(process.pid);
+    expect(await main(["run", "--urgent", "--", ...exit0], () => {}, sys)).toBe(0);
+    expect(await main(["--", ...exit0], () => {}, sys)).toBe(0);
+    expect(sys.lowered).toEqual([true, false]);
+  });
+
+  test("an urgent hold survives the file", () => {
+    expect(urgent("check", 300, 4)).toBe("taken");
+    expect(parseState(readFileSync(join(process.env.LEASES_HOME ?? "", "state.json"), "utf8")).holds[0]?.urgent).toBe(
+      true,
+    );
   });
 
   test("a GPU job needs no --name: it is named after its program", async () => {
