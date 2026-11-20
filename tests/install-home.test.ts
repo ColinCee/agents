@@ -65,7 +65,7 @@ test("installs the rule trials for the hook, gives Codex their rules, and remove
   expect(codex.startsWith(RULES)).toBe(true);
   for (const f of trials) {
     const on = /^## On\n([\s\S]*?)(?=^## |(?![\s\S]))/m
-      .exec(readFileSync(join(HOME, "trials", f), "utf8"))?.[1]
+      .exec(readFileSync(join(HOME, "trials", f), "utf8").replaceAll("\r\n", "\n"))?.[1]
       ?.trim();
     expect(on && codex.includes(on)).toBeTruthy();
   }
