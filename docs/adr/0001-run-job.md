@@ -26,7 +26,7 @@ The failures are one wall-clock speed-budget test in that project, which fails u
 
 ## Decision
 
-`run-job -- COMMAND` starts every headless job at below-normal priority, admitted by two pools: RAM (its highest recent peak × 1.25) and CPU threads (its 90th-percentile busy threads over recent runs). Both are learned by watching each run, so no agent estimates anything. While nobody plays, the CPU pool is every thread, because every queue finished the batch later than running all at once. While something uses the GPU that no job of ours holds (a game), the pool is a quarter of the threads, because low priority does not stop a job's thread slowing the game's thread on the same core. A job that once opened a window takes the GPU exclusively from its next run on. GPU jobs and game windows keep the exclusive lock (`--res gpu`).
+`run-job -- COMMAND` starts every headless job at below-normal priority, admitted by two pools: RAM (its highest recent peak × 1.25) and CPU threads (its 90th-percentile busy threads over recent runs). Both are learned by watching each run, so no agent estimates anything. While nobody plays, the CPU pool is every thread, because every queue finished the batch later than running all at once. While something uses the GPU that no job of ours holds (a game), the pool is a quarter of the threads, because low priority does not stop a job's thread slowing the game's thread on the same core. GPU jobs and game windows keep the exclusive lock, and say so with `--res gpu`: guessing a window from the processes counted a console as one, and that put every check back behind the GPU lock.
 
 What lost:
 - **One exclusive lock for everything:** 229 minutes of queueing in two hours.
