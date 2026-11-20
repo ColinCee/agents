@@ -8,7 +8,7 @@ Only on a computer of his (the Windows PC, the MacBook), not in the cloud.
 | When | Read or do |
 |---|---|
 | A GPU job, or a game or game test | Ask first. Stop yours when he wants to game |
-| A build, test run, simulation or other heavy job | `run-job -- <command>`: it runs beside other jobs on spare capacity and holds back while he games |
+| A build, test run, simulation or screenshot job | Run it directly at full speed, even while a game is open; he pauses or stops it himself |
 | Taking a port or other shared resource | Check what is in use; tell other running sessions. Each preview server keeps one fixed port, in the project's `.claude/launch.json`, so he approves it once. Stop servers you started once nobody uses them |
 | A recurring task that takes long or uses a lot of compute | Run it overnight while he sleeps (a GPU job still follows the GPU row) |
 | A skill, these rules or a hook merged | `npm run install-home -- --apply` in the agents repo; `~/.claude` copies are overwritten at every install and by `npx skills add` |

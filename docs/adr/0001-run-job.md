@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted. A game session with jobs running has not been measured yet; the game rule below rests on a frame-timing probe, not a game.
+Retired for agents on 2026-11-20: they run jobs directly at full speed, since run-job's holds (a false "game on", a game window left open to playtest) slowed his feedback loop more than shared load did, and he pauses jobs himself when he games. The command and its band stay installed but unused.
 
 ## Context
 
@@ -39,7 +39,7 @@ What lost:
 
 ## Consequences
 
-- Agents run heavy work as `run-job -- <command>`; `lease` stays as a second name for the same file until its callers in other repositories move.
+- (Retired, see Status.) Agents run heavy work as `run-job -- <command>`; `lease` stays as a second name for the same file until its callers in other repositories move.
 - Wall-clock speed tests flake under load; projects keep them out of the per-commit check or give them room.
 - Each job starts one sampler process, whose process query takes about 0.17 s, once a second.
 - Outside Windows the sampler reads RAM only, so jobs there are admitted by RAM and the unmeasured thread count.
