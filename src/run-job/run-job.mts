@@ -2,8 +2,9 @@
  * run-job: runs heavy jobs side by side on this machine's spare capacity, and locks what cannot be shared (the GPU, a
  * browser ...), kept in a small file, with no server.
  *
- * `run-job run -- COMMAND` with no `--res` shares the machine: the command runs at below-normal priority, so a game or
- * anything the user does wins the CPU, and it waits only until the cores and RAM it used on its earlier runs are free
+ * `run-job run -- COMMAND` with no `--res` shares the machine: the command runs at idle priority (below-normal with
+ * `--urgent`, for a job someone waits on), so a game or anything the user does wins the CPU, and it waits only until
+ * the cores and RAM it used on its earlier runs are free
  * (`cpu` and `ram` are pools shared by size). It learns those by watching each run.
  * Headless jobs held one at a time queue behind each other while most cores sit idle.
  *
@@ -90,8 +91,18 @@ export type Hold = {
   status: string;
   job: Job | null;
   orphaned: string | null;
+  /** Someone waits on it, as on a commit check: it counts only other urgent jobs' cores (`blocked`). */
+  urgent?: boolean;
 };
-export type Waiter = { name: string; pid: number; wants: Want[]; note: string; since: string; seen: string };
+export type Waiter = {
+  name: string;
+  pid: number;
+  wants: Want[];
+  note: string;
+  since: string;
+  seen: string;
+  urgent?: boolean;
+};
 export type Cooldown = { name: string; until: string };
 export type Resource = { name: string; label: string; used: string };
 export type State = {
@@ -185,8 +196,8 @@ export type System = {
   gpuUsedGb: () => number | null;
   gpuBusyPct: () => number | null;
   sleep: (ms: number) => void;
-  /** Drop this process to below-normal priority; what it starts from then on inherits it. */
-  lowerPriority: () => void;
+  /** Drop this process to below-normal priority (`urgent`) or idle; what it starts from then on inherits it. */
+  lowerPriority: (urgent: boolean) => void;
   /** Report a process tree's RAM (GB) and the CPU seconds its processes have used so far, about once a second, until
    * stopped. */
   watchTree: (pid: number, sample: (gb: number, cpuSeconds: number) => void) => () => void;
@@ -258,7 +269,8 @@ export const realSystem: System = {
   sleep: (ms) => {
     Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
   },
-  lowerPriority: () => setPriority(process.pid, constants.priority.PRIORITY_BELOW_NORMAL),
+  lowerPriority: (urgent) =>
+    setPriority(process.pid, urgent ? constants.priority.PRIORITY_BELOW_NORMAL : constants.priority.PRIORITY_LOW),
   watchTree: (pid, sample) => {
     // One sampler for the job's life: starting PowerShell for each sample would cost more than many jobs.
     const script =
@@ -402,6 +414,7 @@ function parseHold(v: Json): Hold {
     status: str(v.status) ?? "",
     job: parseJob(v.job),
     orphaned: maybe(v.orphaned, "hold.orphaned"),
+    urgent: v.urgent === true,
   };
 }
 
@@ -414,6 +427,7 @@ function parseWaiter(v: Json, version: 1 | 2): Waiter {
     note: need(str(v.note), "waiter.note"),
     since: need(str(v.since), "waiter.since"),
     seen: need(str(v.seen), "waiter.seen"),
+    urgent: v.urgent === true,
   };
 }
 
@@ -694,6 +708,7 @@ export type TakeArgs = Who & {
   status?: string;
   ttl: number;
   forSeconds?: number | null;
+  urgent?: boolean;
 };
 
 const mine = (h: Hold, who: Who) => h.name === who.name && h.pid === who.pid;
@@ -714,7 +729,7 @@ export function cpuPool(state: State, sys: System): number {
 /** Why `wants` cannot be taken now, or null when it can. A whole resource needs nobody else on it. A share of RAM
  * needs room in the pool by what the holds declared, and, beside another RAM hold, that much RAM really free: a
  * holder often uses more than it declared (on 14 October a model said 40 GB and left 1 GB free). */
-function blocked(state: State, wants: Want[], sys: System): string | null {
+function blocked(state: State, wants: Want[], sys: System, urgent = false): string | null {
   const now = sys.now();
   for (const want of wants) {
     const others = state.holds.filter((h) => h.wants.some((w) => w.resource === want.resource));
@@ -722,12 +737,16 @@ function blocked(state: State, wants: Want[], sys: System): string | null {
     if (BLOCK_UNLOCKED_GPU && want.resource === "gpu" && others.length === 0 && (state.gpu_used_gb ?? 0) > GPU_BUSY_GB)
       return `the GPU is in use without a lock (${Math.round(state.gpu_used_gb ?? 0)} GB)`;
     if (want.resource === CPU && want.gb !== null) {
-      const used = others.reduce((sum, h) => sum + (h.wants.find((w) => w.resource === CPU)?.gb ?? 0), 0);
       const pool = cpuPool(state, sys);
       const playing = pool < sys.cores();
+      // An urgent job counts only other urgent ones: ordinary jobs run at idle priority, so they yield it their
+      // cores instead of a commit check queueing behind a sweep. While a game is on, every job counts, so the game
+      // keeps its share.
+      const rivals = urgent && !playing ? others.filter((h) => h.urgent === true) : others;
+      const used = rivals.reduce((sum, h) => sum + (h.wants.find((w) => w.resource === CPU)?.gb ?? 0), 0);
       // Alone, a job starts however many threads it used, unless that would take more than a game leaves.
-      if ((others.length > 0 || playing) && used + want.gb > pool)
-        return `${round1(used)} of ${pool} cores in use${others.length > 0 ? ` by ${others.map((h) => h.name).join(", ")}` : ""}${playing ? " (a game is on)" : ""}`;
+      if ((rivals.length > 0 || playing) && used + want.gb > pool)
+        return `${round1(used)} of ${pool} cores in use${rivals.length > 0 ? ` by ${rivals.map((h) => h.name).join(", ")}` : ""}${playing ? " (a game is on)" : ""}`;
       continue;
     }
     if (others.length === 0) continue;
@@ -760,7 +779,7 @@ export function takeOnce(args: TakeArgs, sys: System = realSystem): Answer {
           const had = held.wants.find((x) => x.resource === w.resource);
           return { resource: w.resource, gb: w.gb === null ? null : w.gb - (had?.gb ?? 0) };
         });
-        const why = blocked({ ...state, holds: state.holds.filter((x) => x !== held) }, growth, sys);
+        const why = blocked({ ...state, holds: state.holds.filter((x) => x !== held) }, growth, sys, held.urgent);
         if (why !== null) return { outcome: "held", view: view(state, sys) };
         for (const w of more) remember(state, w.resource, args.labels?.[w.resource] ?? null, now);
         held.wants = [...held.wants.filter((x) => !more.some((w) => w.resource === x.resource)), ...more];
@@ -779,11 +798,15 @@ export function takeOnce(args: TakeArgs, sys: System = realSystem): Answer {
     const playing = cpuPool(state, sys) < sys.cores();
     const blocks = (w: Waiter) =>
       !w.wants.some((x) => x.resource === CPU) ||
-      blocked(state, w.wants, sys) === null ||
+      blocked(state, w.wants, sys, w.urgent) === null ||
       (!playing && now - ms(w.since) > STARVE_SECONDS * 1000);
-    const behind = before.some((w) => !cools(w.name) && shares(w.wants, args.wants) && blocks(w));
+    // An urgent taker waits behind no ordinary job waiting for cores while nobody plays; one waiting for RAM or the
+    // GPU still goes first.
+    const ahead = (w: Waiter) =>
+      !args.urgent || playing || w.urgent === true || !w.wants.some((x) => x.resource === CPU);
+    const behind = before.some((w) => ahead(w) && !cools(w.name) && shares(w.wants, args.wants) && blocks(w));
     const cooling = cools(args.name);
-    const why = blocked(state, args.wants, sys);
+    const why = blocked(state, args.wants, sys, args.urgent);
     if (why === null && !behind && !cooling) {
       for (const w of args.wants) remember(state, w.resource, args.labels?.[w.resource] ?? null, now);
       const hold: Hold = {
@@ -798,6 +821,7 @@ export function takeOnce(args: TakeArgs, sys: System = realSystem): Answer {
         status: args.status ?? "",
         job: null,
         orphaned: null,
+        urgent: args.urgent === true,
       };
       state.holds.push(hold);
       state.waiting = state.waiting.filter((w) => !isMe(w));
@@ -814,6 +838,7 @@ export function takeOnce(args: TakeArgs, sys: System = realSystem): Answer {
         note: args.note,
         since: iso(now),
         seen: iso(now),
+        urgent: args.urgent === true,
       });
       log({
         event: "wait",
@@ -1214,12 +1239,14 @@ export function sharedName(key: string): string {
  * measured while it runs so the next run of it asks for the right amount. */
 export async function runShared(
   command: string[],
-  o: { name?: string; note?: string; wait: number; ttl: number; forSeconds: number | null },
+  o: { name?: string; note?: string; wait: number; ttl: number; forSeconds: number | null; urgent?: boolean },
   sys: System = realSystem,
   out: (text: string) => void = console.error,
 ): Promise<number> {
-  const key = commandKey(command);
-  sys.lowerPriority();
+  // An ordinary run at idle priority can be starved and so measure fewer cores than it needs: urgent runs of the
+  // same command learn apart from it.
+  const key = commandKey(command) + (o.urgent === true ? " --urgent" : "");
+  sys.lowerPriority(o.urgent === true);
   let peak = 0;
   let started = 0;
   const cpu: Sample[] = [];
@@ -1231,6 +1258,7 @@ export async function runShared(
       note: o.note ?? key.slice(0, 60),
       ttl: o.ttl,
       forSeconds: o.forSeconds,
+      urgent: o.urgent === true,
     },
     o.wait,
     command,
@@ -1316,9 +1344,17 @@ export function main(
         if (o.res === undefined && o.gb === undefined)
           return runShared(
             parsed.positionals,
-            { name: o.name, note: o.note, wait: wholeNumber(o.wait, "--wait", 3600) ?? 3600, ttl, forSeconds },
+            {
+              name: o.name,
+              note: o.note,
+              wait: wholeNumber(o.wait, "--wait", 3600) ?? 3600,
+              ttl,
+              forSeconds,
+              urgent: o.urgent === true,
+            },
             sys,
           );
+        if (o.urgent === true) throw new Usage("--urgent is for shared jobs, not with --res or --gb");
         const wants = wantsFrom(o, "run");
         return runUnder(
           {
@@ -1412,6 +1448,7 @@ function parseCli(args: string[]) {
       cooldown: { type: "string" },
       lines: { type: "string" },
       json: { type: "boolean" },
+      urgent: { type: "boolean" },
     },
   });
 }
@@ -1419,10 +1456,12 @@ function parseCli(args: string[]) {
 const HELP = `run-job: runs heavy jobs side by side on spare capacity, and locks what cannot be shared (state and log in
 ${home()}).
 
-  run-job -- COMMAND [ARGS]              (or: run-job run [--name N] [--wait S] -- COMMAND [ARGS])
-      Run COMMAND sharing the machine: at below-normal priority, so the user's game or work keeps the CPU. It
+  run-job -- COMMAND [ARGS]              (or: run-job run [--name N] [--urgent] [--wait S] -- COMMAND [ARGS])
+      Run COMMAND sharing the machine: at idle priority, so the user's game or work keeps the CPU. It
       waits (up to S seconds, default 3600) only until the cores and RAM its earlier runs used are free
-      (${UNKNOWN_CORES} cores and ${UNKNOWN_GB} GB the first time).
+      (${UNKNOWN_CORES} cores and ${UNKNOWN_GB} GB the first time). --urgent, for a job someone waits on such as
+      a commit check: below-normal priority, and only other urgent jobs' cores count, so a sweep yields it its
+      cores; while a game is on it waits like any job.
       Use this for builds, tests and anything headless; name resources with --res only for a GPU job, a game
       or a window.
   run-job take --name N --res R[:SIZE] [--res ...] [--label R=TEXT] [--note T] [--status T] [--pid P] [--wait S] [--for S]
