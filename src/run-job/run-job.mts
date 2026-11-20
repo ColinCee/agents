@@ -60,8 +60,9 @@ export const CPU = "cpu";
 const POOLS = [RAM, CPU];
 const GAME_SHARE = 4; // while a game is on, shared jobs get this fraction of the threads
 const STARVE_SECONDS = 120;
-const GAME_GPU_BUSY_PCT = 20; // the desktop, a browser and video calls keep the card under 10%; StarCraft II, 25-43%
+const GAME_GPU_BUSY_PCT = 20; // StarCraft II, 25-43%; but a video under a live wallpaper, 21-53% too
 const GAME_GONE_SECONDS = 60;
+const GAME_CHECK_SECONDS = 15; // listing the processes takes half a second, under the lock
 export const RAM_RESERVE_GB = 8; // Windows, the desktop and a browser: never handed out as a share of the pool
 export const LOADING_SECONDS = 120; // a RAM share taken this recently may not be in use yet: counted as used anyway
 export const GPU_BUSY_GB = 6; // Windows' desktop alone holds 3.3 GB of the card (measured 15 Oct); a model or a game far more
@@ -116,8 +117,11 @@ export type State = {
   gpu_used_gb: number | null;
   /** How busy the card's cores were at the last read, in percent; null where it cannot be read. */
   gpu_busy_pct?: number | null;
-  /** When a read last looked like a game: the card busy or full while nothing of ours held it. */
+  /** When a read last looked like a game: the card busy or full while nothing of ours held it, and a game ran. */
   game_seen?: string | null;
+  /** The game found running at the last look (`game_checked`), or null. */
+  game?: string | null;
+  game_checked?: string | null;
   measured: string | null;
 };
 
@@ -177,8 +181,9 @@ export type View = {
   gpu_used_gb: number | null;
   /** How busy the card's cores were at the last read, in percent; null where it cannot be read. */
   gpu_busy_pct?: number | null;
-  /** When a read last looked like a game: the card busy or full while nothing of ours held it. */
+  /** When a read last looked like a game: the card busy or full while nothing of ours held it, and a game ran. */
   game_seen?: string | null;
+  game?: string | null;
   measured: string | null;
 };
 export type Answer = { outcome: Outcome; view: View };
@@ -195,6 +200,8 @@ export type System = {
   totalGb: () => number;
   gpuUsedGb: () => number | null;
   gpuBusyPct: () => number | null;
+  /** A running program Windows has recorded as a game, or null. */
+  game: () => string | null;
   sleep: (ms: number) => void;
   /** Drop this process to below-normal priority (`urgent`) or idle; what it starts from then on inherits it. */
   lowerPriority: (urgent: boolean) => void;
@@ -266,6 +273,20 @@ export const realSystem: System = {
   gpuUsedGb: () => readGpu()?.usedGb ?? null,
   // From the same read as gpuUsedGb when it was just made: `tidy` asks for both under the state lock.
   gpuBusyPct: () => (gpuRead !== null && Date.now() - gpuRead.at < 1000 ? gpuRead : readGpu())?.busyPct ?? null,
+  // Windows notes each program it sees run as a game (for Game Mode and Game Bar). Elsewhere none is found: a game
+  // missed costs it some frames to idle-priority jobs; a game wrongly seen costs every job three quarters of the CPU.
+  game: () => {
+    if (process.platform !== "win32") return null;
+    const script = String.raw`$g = @{}; Get-ItemProperty 'HKCU:\System\GameConfigStore\Children\*' -EA Ignore | % { if ($_.MatchedExeFullPath) { $g[[IO.Path]::GetFileNameWithoutExtension($_.MatchedExeFullPath).ToLower()] = 1 } }
+Get-Process | ? { $g.ContainsKey($_.ProcessName.ToLower()) } | Select-Object -First 1 -ExpandProperty ProcessName`;
+    const run = spawnSync("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command", script], {
+      encoding: "utf8",
+      windowsHide: true,
+      timeout: 20_000,
+    });
+    const name = run.status === 0 ? run.stdout.trim() : "";
+    return name === "" ? null : name;
+  },
   sleep: (ms) => {
     Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
   },
@@ -489,6 +510,9 @@ export function parseState(text: string): State {
     gpu_busy_pct:
       raw.gpu_busy_pct === null || raw.gpu_busy_pct === undefined ? null : need(num(raw.gpu_busy_pct), "gpu_busy_pct"),
     game_seen: raw.game_seen === null || raw.game_seen === undefined ? null : need(str(raw.game_seen), "game_seen"),
+    game: raw.game === null || raw.game === undefined ? null : need(str(raw.game), "game"),
+    game_checked:
+      raw.game_checked === null || raw.game_checked === undefined ? null : need(str(raw.game_checked), "game_checked"),
     measured: measured === null ? null : need(str(measured), "measured"),
   };
 }
@@ -605,8 +629,15 @@ export function tidy({ state, sys, log }: Ops): void {
   state.gpu_used_gb = gpu === null ? null : Math.round(gpu * 10) / 10;
   state.gpu_busy_pct = sys.gpuBusyPct();
   const gpuHeld = state.holds.some((h) => h.wants.some((w) => w.resource === "gpu"));
-  if (!gpuHeld && ((state.gpu_used_gb ?? 0) > GPU_BUSY_GB || (state.gpu_busy_pct ?? 0) > GAME_GPU_BUSY_PCT))
-    state.game_seen = iso(now);
+  // A busy card alone is no game: a video or a live wallpaper keeps it as busy as a light game. So a busy card also
+  // needs a game running, looked for only then, and at most every GAME_CHECK_SECONDS by all callers together.
+  if (!gpuHeld && ((state.gpu_used_gb ?? 0) > GPU_BUSY_GB || (state.gpu_busy_pct ?? 0) > GAME_GPU_BUSY_PCT)) {
+    if (state.game_checked == null || now - ms(state.game_checked) >= GAME_CHECK_SECONDS * 1000) {
+      state.game = sys.game();
+      state.game_checked = iso(now);
+    }
+    if (state.game != null) state.game_seen = iso(now);
+  }
   state.measured = iso(now);
   state.holds = state.holds.filter((h) => {
     const lapsed = now > ms(h.expires);
@@ -694,6 +725,7 @@ export function view(state: State, sys: System): View {
     gpu_used_gb: state.gpu_used_gb,
     gpu_busy_pct: state.gpu_busy_pct ?? null,
     game_seen: state.game_seen ?? null,
+    game: state.game ?? null,
     measured: state.measured,
   };
 }
@@ -715,8 +747,8 @@ const mine = (h: Hold, who: Who) => h.name === who.name && h.pid === who.pid;
 const shares = (a: Want[], b: Want[]) => a.some((x) => b.some((y) => x.resource === y.resource));
 
 /** The cores shared jobs may count on. Below-normal priority does not keep a game smooth by itself: a job's thread on
- * the other half of a core the game uses still slows it. So while something uses the GPU without a lock (a game, as
- * nothing of ours holds it), jobs share a quarter of the threads; otherwise all of them, since running everything
+ * the other half of a core the game uses still slows it. So while a game uses the GPU (`tidy`), jobs share a quarter
+ * of the threads; otherwise all of them, since running everything
  * at once finished six checks sooner than any queue. A light game holds little of the card's memory (StarCraft II:
  * under 6 GB, as much as the desktop and a browser) but keeps its cores busy, so either counts (`tidy`). Its load
  * swings from frame to frame, so a game counts as on for GAME_GONE_SECONDS after a read last saw one. */
@@ -744,9 +776,9 @@ function blocked(state: State, wants: Want[], sys: System, urgent = false): stri
       // keeps its share.
       const rivals = urgent && !playing ? others.filter((h) => h.urgent === true) : others;
       const used = rivals.reduce((sum, h) => sum + (h.wants.find((w) => w.resource === CPU)?.gb ?? 0), 0);
-      // Alone, a job starts however many threads it used, unless that would take more than a game leaves.
-      if ((rivals.length > 0 || playing) && used + want.gb > pool)
-        return `${round1(used)} of ${pool} cores in use${rivals.length > 0 ? ` by ${rivals.map((h) => h.name).join(", ")}` : ""}${playing ? " (a game is on)" : ""}`;
+      // A job needing more than the pool counts as the whole pool, so alone it starts on what there is, never waits.
+      if (used + Math.min(want.gb, pool) > pool)
+        return `${round1(used)} of ${pool} cores in use${rivals.length > 0 ? ` by ${rivals.map((h) => h.name).join(", ")}` : ""}${playing ? ` (${state.game ?? "a game"} is on)` : ""}`;
       continue;
     }
     if (others.length === 0) continue;
