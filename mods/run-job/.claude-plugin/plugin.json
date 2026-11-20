@@ -1,0 +1,6 @@
+{
+  "name": "run-job",
+  "version": "0.3.0",
+  "description": "Shows the run-job command's state in one row: free and reserved RAM, each holder and its status, the GPU; red when stuck",
+  "types": "./types/index.d.ts"
+}

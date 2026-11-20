@@ -1,6 +1,0 @@
-{
-  "name": "lease",
-  "version": "0.2.0",
-  "description": "Shows the shared locks (the lease command) in one row: free and leased RAM, each holder and its status, the GPU; red when stuck",
-  "types": "./types/index.d.ts"
-}

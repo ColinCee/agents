@@ -1,6 +1,6 @@
 import type { Band, Part, Tone } from "../types";
 
-// Read, never written: the lease command owns the file and its lock. Both its versions are read, so the band works
+// Read, never written: the run-job command owns the file and its lock. Both its versions are read, so the band works
 // whichever was installed first.
 
 type Json = null | boolean | number | string | Json[] | { [key: string]: Json };
@@ -13,8 +13,8 @@ const num = (v: Json | undefined): number | null => (typeof v === "number" && Nu
 const objs = (v: Json | undefined): Obj[] => (Array.isArray(v) ? v.filter(isObj) : []);
 
 const FRESH_MS = 5 * 60_000; // a measurement older than this is not shown: nobody has run the command since
-const LATE_MS = 60_000; // two missed renewals, as the lease command counts it
-const GPU_BUSY_GB = 6; // as the lease command counts it: Windows' desktop alone holds 3.3 GB of the card
+const LATE_MS = 60_000; // two missed renewals, as the run-job command counts it
+const GPU_BUSY_GB = 6; // as the run-job command counts it: Windows' desktop alone holds 3.3 GB of the card
 const NAME_MAX = 16; // a holder's note when it is this short, else its name: the row stays one line
 const STATUS_MAX = 12; // a holder's status, so a long one cannot push the GPU off the row
 
@@ -34,7 +34,7 @@ const PROBLEM = {
   over: "over the time it gave",
 } as const;
 
-/** The band for the state file's text at `now`: one row of short parts (free and leased RAM, each holder, the GPU, who
+/** The band for the state file's text at `now`: one row of short parts (free and reserved RAM, each holder, the GPU, who
  * waits) with anything wrong said once at its end, or null when nothing is held and the GPU is quiet (no band). */
 export function bandOf(text: string | null, now: number): Band | null {
   if (text === null) return null;
@@ -87,8 +87,8 @@ export function bandOf(text: string | null, now: number): Band | null {
   const parts: Part[] = [];
   const free = num(raw.free_gb);
   if (free !== null && fresh) {
-    const leased = holds.reduce((sum, x) => sum + (x.wants.find((w) => w.resource === "ram")?.gb ?? 0), 0);
-    const text = `RAM ${Math.round(free)} GB free${leased > 0 ? `, ${Math.round(leased)} leased` : ""}`;
+    const reserved = holds.reduce((sum, x) => sum + (x.wants.find((w) => w.resource === "ram")?.gb ?? 0), 0);
+    const text = `RAM ${Math.round(free)} GB free${reserved > 0 ? `, ${Math.round(reserved)} reserved` : ""}`;
     parts.push({ key: "ram", text, tone: "ok" });
   }
   parts.push(...holders.map((x) => x.part));

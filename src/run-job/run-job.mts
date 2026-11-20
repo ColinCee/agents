@@ -1,24 +1,30 @@
 /**
- * lease: shared locks on this machine's resources (the GPU, big RAM, a browser ...), kept in a small file, with no
- * server.
+ * run-job: runs heavy jobs side by side on this machine's spare capacity, and locks what cannot be shared (the GPU, a
+ * browser ...), kept in a small file, with no server.
+ *
+ * `run-job run -- COMMAND` with no `--res` shares the machine: the command runs at below-normal priority, so a game or
+ * anything the user does wins the CPU, and it waits only until the cores and RAM it used on its earlier runs are free
+ * (`cpu` and `ram` are pools shared by size). It learns those, and whether it opens a window, by watching each run.
+ * Headless jobs held one at a time queue behind each other while most cores sit idle.
  *
  * A program about to start a heavy job takes the resources it needs in one step (all or none), renews the lease
  * while the job runs and frees it after. A lease is never stuck: it lapses when its holder stops renewing, frees at
  * once when the holder's process is gone, and anyone can force it free (`free --force`). Every take, free, lapse and
  * forced free is a line in the log, so "who did what when" has an answer.
  *
- * Resources are named by whoever takes them; nothing is listed in advance. `ram` is a pool shared by size (`ram:10`
- * is 10 GB of it); every other resource has one holder at a time. A take with `--gb` and no `--res` means
+ * Resources are named by whoever takes them; nothing is listed in advance. `ram` and `cpu` are pools shared by size
+ * (`ram:10` is 10 GB of it, `cpu:2` two cores); every other resource has one holder at a time. A take with `--gb` and no `--res` means
  * `gpu ram:<gb>`, what the first version of this command locked.
  *
- *   lease take --name N (--res R[:GB] ... | --gb G) [--label R=TEXT] [--note T] [--status T] [--pid P] [--wait S]
+ *   run-job run -- COMMAND [ARGS]
+ *   run-job take --name N (--res R[:GB] ... | --gb G) [--label R=TEXT] [--note T] [--status T] [--pid P] [--wait S]
  *     [--for S]
- *   lease run --name N (--res R[:GB] ... | --gb G) [--note T] [--wait S] [--for S] -- COMMAND [ARGS]
- *   lease renew --name N [--pid P] [--job-pid J] [--for S] [--status T]
- *   lease free --name N [--pid P]
- *   lease free --force [--name N [--pid P]] [--stop-job] [--by WHO] [--cooldown S]
- *   lease show
- *   lease log [--lines N]
+ *   run-job run --name N (--res R[:GB] ... | --gb G) [--note T] [--wait S] [--for S] -- COMMAND [ARGS]
+ *   run-job renew --name N [--pid P] [--job-pid J] [--for S] [--status T]
+ *   run-job free --name N [--pid P]
+ *   run-job free --force [--name N [--pid P]] [--stop-job] [--by WHO] [--cooldown S]
+ *   run-job show
+ *   run-job log [--lines N]
  *
  * Exit codes: 0 done, 1 held by another (or behind a waiter, or cooling down), 2 bad arguments or an error,
  * 3 not yours (the lease was freed, lapsed or taken by another).
@@ -38,7 +44,7 @@ import {
   writeFileSync,
   writeSync,
 } from "node:fs";
-import { freemem, homedir, totalmem } from "node:os";
+import { availableParallelism, constants, freemem, homedir, setPriority, totalmem } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { parseArgs } from "node:util";
@@ -49,6 +55,10 @@ export const LATE_SECONDS = 2 * RENEW_SECONDS; // two missed renewals: shown as 
 export const WAITER_SECONDS = 150; // a waiter polls every few seconds; one not seen for this long has given up
 export const POLL_SECONDS = 3;
 export const RAM = "ram";
+export const CPU = "cpu";
+const POOLS = [RAM, CPU];
+const GAME_SHARE = 4; // while a game is on, shared jobs get this fraction of the threads
+const STARVE_SECONDS = 120;
 export const RAM_RESERVE_GB = 8; // Windows, the desktop and a browser: never handed out as a share of the pool
 export const LOADING_SECONDS = 120; // a RAM share taken this recently may not be in use yet: counted as used anyway
 export const GPU_BUSY_GB = 6; // Windows' desktop alone holds 3.3 GB of the card (measured 15 Oct); a model or a game far more
@@ -164,6 +174,13 @@ export type System = {
   totalGb: () => number;
   gpuUsedGb: () => number | null;
   sleep: (ms: number) => void;
+  /** Drop this process to below-normal priority; what it starts from then on inherits it. */
+  lowerPriority: () => void;
+  /** Report a process tree's RAM (GB), the CPU seconds its processes have used so far, and whether any of it shows a
+   * window, about once a second, until stopped. */
+  watchTree: (pid: number, sample: (gb: number, cpuSeconds: number, window: boolean) => void) => () => void;
+  /** Logical processors: the size of the `cpu` pool while nobody plays. */
+  cores: () => number;
 };
 
 export const realSystem: System = {
@@ -241,6 +258,40 @@ export const realSystem: System = {
   sleep: (ms) => {
     Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
   },
+  lowerPriority: () => setPriority(process.pid, constants.priority.PRIORITY_BELOW_NORMAL),
+  watchTree: (pid, sample) => {
+    // One sampler for the job's life: starting PowerShell for each sample would cost more than many jobs.
+    const script =
+      process.platform === "win32"
+        ? // A process's CPU time is kept from its last sample, since a finished process drops out of the list.
+          `$r=${pid}; $cpu = @{}; while (Get-Process -Id $r -EA Ignore) {
+  $all = Get-CimInstance Win32_Process -Property ProcessId,ParentProcessId,WorkingSetSize,KernelModeTime,UserModeTime
+  $ids = [Collections.Generic.HashSet[int]]::new(); [void]$ids.Add($r); $n = -1
+  while ($ids.Count -ne $n) { $n = $ids.Count; foreach ($p in $all) { if ($ids.Contains([int]$p.ParentProcessId)) { [void]$ids.Add([int]$p.ProcessId) } } }
+  $mine = @($all | ? { $ids.Contains([int]$_.ProcessId) })
+  foreach ($p in $mine) { $cpu[[int]$p.ProcessId] = ($p.KernelModeTime + $p.UserModeTime) / 1e7 }
+  $ws = ($mine | Measure-Object WorkingSetSize -Sum).Sum
+  $w = @(Get-Process -Id @($ids) -EA Ignore | ? { $_.MainWindowHandle -ne 0 }).Count -gt 0
+  "$($ws / 1GB) $(($cpu.Values | Measure-Object -Sum).Sum) $w"; Start-Sleep -Milliseconds 1000 }`
+        : `r=${pid}; while kill -0 $r 2>/dev/null; do ps -A -o pid=,ppid=,rss= | awk -v r=$r '{p[$1]=$2; m[$1]=$3} END {s[r]=1; do {c=0; for (i in p) if (!(i in s) && (p[i] in s)) {s[i]=1; c=1}} while (c); for (i in s) t+=m[i]; print t/1048576, 0, "False"}'; sleep 1; done`;
+    const sampler =
+      process.platform === "win32"
+        ? spawn("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command", script], { windowsHide: true })
+        : spawn("sh", ["-c", script]);
+    let rest = "";
+    sampler.stdout?.setEncoding("utf8").on("data", (chunk: string) => {
+      const lines = (rest + chunk).split(/\r?\n/);
+      rest = lines.pop() ?? "";
+      for (const line of lines) {
+        const [gb, cpu, window] = line.trim().split(" ");
+        if (Number.isFinite(Number(gb)) && Number.isFinite(Number(cpu)))
+          sample(Number(gb), Number(cpu), window === "True");
+      }
+    });
+    sampler.on("error", () => {}); // no sampler: the job runs, and nothing is learned from it
+    return () => sampler.kill();
+  },
+  cores: () => availableParallelism(),
 };
 
 export function home(): string {
@@ -559,6 +610,8 @@ export function health(h: Hold, now: number): Health {
   return "ok";
 }
 
+const round1 = (n: number) => Math.round(n * 10) / 10;
+
 /** The pool `ram` may hand out: what the machine has, less what it needs for itself. */
 const ramGb = (sys: System) => Math.max(0, Math.floor(sys.totalGb() - RAM_RESERVE_GB));
 
@@ -616,6 +669,16 @@ export type TakeArgs = Who & {
 const mine = (h: Hold, who: Who) => h.name === who.name && h.pid === who.pid;
 const shares = (a: Want[], b: Want[]) => a.some((x) => b.some((y) => x.resource === y.resource));
 
+/** The cores shared jobs may count on. Below-normal priority does not keep a game smooth by itself: a job's thread on
+ * the other half of a core the game uses still slows it. So while something uses the GPU without a lock (a game, as
+ * nothing of ours holds it), jobs share a quarter of the threads; otherwise all of them, since running everything
+ * at once finished six checks sooner than any queue. */
+export function cpuPool(state: State, sys: System): number {
+  const gpuHeld = state.holds.some((h) => h.wants.some((w) => w.resource === "gpu"));
+  const playing = !gpuHeld && (state.gpu_used_gb ?? 0) > GPU_BUSY_GB;
+  return playing ? Math.max(1, Math.floor(sys.cores() / GAME_SHARE)) : sys.cores();
+}
+
 /** Why `wants` cannot be taken now, or null when it can. A whole resource needs nobody else on it. A share of RAM
  * needs room in the pool by what the holds declared, and, beside another RAM hold, that much RAM really free: a
  * holder often uses more than it declared (on 14 October a model said 40 GB and left 1 GB free). */
@@ -626,6 +689,15 @@ function blocked(state: State, wants: Want[], sys: System): string | null {
     // Nobody holds the GPU but something uses it: a program that took no lock, or the owner playing a game.
     if (BLOCK_UNLOCKED_GPU && want.resource === "gpu" && others.length === 0 && (state.gpu_used_gb ?? 0) > GPU_BUSY_GB)
       return `the GPU is in use without a lock (${Math.round(state.gpu_used_gb ?? 0)} GB)`;
+    if (want.resource === CPU && want.gb !== null) {
+      const used = others.reduce((sum, h) => sum + (h.wants.find((w) => w.resource === CPU)?.gb ?? 0), 0);
+      const pool = cpuPool(state, sys);
+      const playing = pool < sys.cores();
+      // Alone, a job starts however many threads it used, unless that would take more than a game leaves.
+      if ((others.length > 0 || playing) && used + want.gb > pool)
+        return `${round1(used)} of ${pool} cores in use${others.length > 0 ? ` by ${others.map((h) => h.name).join(", ")}` : ""}${playing ? " (a game is on)" : ""}`;
+      continue;
+    }
     if (others.length === 0) continue;
     const by = others.map((h) => h.name).join(", ");
     if (want.resource !== RAM || want.gb === null) return `held by ${by}`;
@@ -668,9 +740,16 @@ export function takeOnce(args: TakeArgs, sys: System = realSystem): Answer {
     const cools = (name: string) => state.cooldowns.some((c) => c.name === name);
     const me = state.waiting.find(isMe);
     // First come, first served among those who want a resource this taker wants; a waiter in its cooldown is not
-    // served. One queue, not one per resource: a waiter for RAM can keep a later GPU-only taker waiting too.
+    // served. One queue, not one per resource: a waiter for RAM can keep a later GPU-only taker waiting too. A shared
+    // job (one asking for cores) that cannot start now holds nobody back, so a big job waiting out a game does not
+    // stall the small ones, until it has waited STARVE_SECONDS with no game on.
     const before = me === undefined ? state.waiting : state.waiting.slice(0, state.waiting.indexOf(me));
-    const behind = before.some((w) => !cools(w.name) && shares(w.wants, args.wants));
+    const playing = cpuPool(state, sys) < sys.cores();
+    const blocks = (w: Waiter) =>
+      !w.wants.some((x) => x.resource === CPU) ||
+      blocked(state, w.wants, sys) === null ||
+      (!playing && now - ms(w.since) > STARVE_SECONDS * 1000);
+    const behind = before.some((w) => !cools(w.name) && shares(w.wants, args.wants) && blocks(w));
     const cooling = cools(args.name);
     const why = blocked(state, args.wants, sys);
     if (why === null && !behind && !cooling) {
@@ -917,11 +996,11 @@ function parseWant(text: string): Want {
       `--res takes a lowercase name with an optional size, such as gpu or ram:10, not ${JSON.stringify(text)}`,
     );
   if (gb === undefined) {
-    if (name === RAM) throw new Usage("--res ram needs a size in GB, such as ram:10");
+    if (POOLS.includes(name)) throw new Usage(`--res ${name} needs a size, such as ram:10 or cpu:2`);
     return { resource: name, gb: null };
   }
-  if (name !== RAM) throw new Usage(`only ram is shared by size; --res ${name} takes no :GB`);
-  return { resource: name, gb: wholeNumber(gb, "--res ram:GB", 0) ?? 0 };
+  if (!POOLS.includes(name)) throw new Usage(`only ram and cpu are shared by size; --res ${name} takes no :size`);
+  return { resource: name, gb: wholeNumber(gb, `--res ${name}:size`, 0) ?? 0 };
 }
 
 /** A resource named to give back: its name, any size after it ignored. */
@@ -966,10 +1045,11 @@ export async function runUnder(
   command: string[],
   sys: System = realSystem,
   out: (text: string) => void = console.error,
+  onChild: (pid: number) => () => void = () => () => {},
 ): Promise<number> {
   const answer = take(args, waitSeconds, sys);
   if (answer.outcome !== "taken" && answer.outcome !== "renewed") {
-    out(`lease: not given (${answer.outcome}): ${words(answer.view)}`);
+    out(`run-job: not given (${answer.outcome}): ${words(answer.view)}`);
     return 1;
   }
   const who = { name: args.name, pid: args.pid };
@@ -980,7 +1060,9 @@ export async function runUnder(
     let tried = false;
     let timer: NodeJS.Timeout | null = null;
     let warned = false;
+    let unwatch = () => {};
     const finish = (code: number) => {
+      unwatch();
       if (timer) clearInterval(timer);
       process.removeListener("SIGINT", stopChild);
       process.removeListener("SIGTERM", stopChild);
@@ -990,11 +1072,12 @@ export async function runUnder(
     const stopChild = () => child.kill();
     const watch = () => {
       child.once("spawn", () => {
+        if (child.pid !== undefined) unwatch = onChild(child.pid);
         renew({ ...who, ttl: args.ttl, jobPid: child.pid ?? null }, sys);
         timer = setInterval(() => {
           if (renew({ ...who, ttl: args.ttl, jobPid: child.pid ?? null }, sys).outcome === "lost" && !warned) {
             warned = true;
-            out("lease: the lease was taken back (freed by hand, or lapsed); the command keeps running.");
+            out("run-job: the lease was taken back (freed by hand, or lapsed); the command keeps running.");
           }
         }, RENEW_SECONDS * 1000);
       });
@@ -1006,7 +1089,7 @@ export async function runUnder(
           watch();
           return;
         }
-        out(`lease: could not start ${command[0]}: ${error.message}`);
+        out(`run-job: could not start ${command[0]}: ${error.message}`);
         finish(127);
       });
       child.once("exit", (code, signal) => finish(code ?? (signal ? 1 : 0)));
@@ -1017,7 +1100,150 @@ export async function runUnder(
   });
 }
 
-/** The process that ran `lease`. On Windows the `lease.cmd` shim runs node from its own cmd.exe, which exits as soon
+// --- sharing the machine ---------------------------------------------------------------------------------------
+
+// A command never measured is counted as a headless test run of a mid-size project: one such check peaks at
+// 0.8 GB and keeps about 4 threads busy.
+export const UNKNOWN_GB = 2;
+export const UNKNOWN_CORES = 4;
+export const MARGIN = 1.25; // a run can peak above the last few
+const RUNS_KEPT = 5;
+
+/** What earlier runs of one command showed: their RAM peaks, the cores each used when busy (`busyCores`), and
+ * whether any of it ever opened a window. */
+export type Learned = { peaks: number[]; cores?: number[]; window: boolean; runs: number; last: string };
+const learnedPath = () => join(home(), "learned.json");
+
+/** The command as its runs share it: a path keeps only its last part, so a temp folder or a worktree's folder does
+ * not make every run a new command. */
+export function commandKey(command: string[]): string {
+  return command
+    .map((word) => (/[\\/]/.test(word) ? (word.split(/[\\/]/).filter(Boolean).pop() ?? word) : word))
+    .join(" ")
+    .toLowerCase();
+}
+
+export function readLearned(): Record<string, Learned> {
+  if (!existsSync(learnedPath())) return {};
+  try {
+    return JSON.parse(readFileSync(learnedPath(), "utf8")) as Record<string, Learned>;
+  } catch {
+    return {}; // a torn or hand-broken file costs only what was learned
+  }
+}
+
+/** What a shared run asks for: RAM by its highest recent peak, cores by its busiest recent run, and the GPU too once a
+ * run of it showed a window, since a window or a game cannot share the card the way processes share cores. */
+export function sharedWants(learned: Learned | undefined): Want[] {
+  const peak = learned !== undefined && learned.peaks.length > 0 ? Math.max(...learned.peaks) : UNKNOWN_GB / MARGIN;
+  const cores = learned?.cores !== undefined && learned.cores.length > 0 ? Math.max(...learned.cores) : UNKNOWN_CORES;
+  const pools: Want[] = [
+    { resource: CPU, gb: Math.max(0.1, round1(cores)) },
+    { resource: RAM, gb: Math.ceil(peak * MARGIN * 10) / 10 },
+  ];
+  return learned?.window === true ? [{ resource: "gpu", gb: null }, ...pools] : pools;
+}
+
+export type Run = { peakGb: number; cores: number | null; window: boolean };
+
+export function learn(old: Learned | undefined, run: Run, now: number): Learned {
+  const cores = run.cores === null ? (old?.cores ?? []) : [...(old?.cores ?? []), round1(run.cores)];
+  return {
+    peaks: [...(old?.peaks ?? []), Math.round(run.peakGb * 1000) / 1000].slice(-RUNS_KEPT),
+    cores: cores.slice(-RUNS_KEPT),
+    window: (old?.window ?? false) || run.window,
+    runs: (old?.runs ?? 0) + 1,
+    last: iso(now),
+  };
+}
+
+function saveLearned(key: string, run: Run, sys: System): void {
+  withState(sys, () => {
+    const all = readLearned();
+    all[key] = learn(all[key], run, sys.now());
+    // Commands with arguments that change every run (a message, a temp file) would otherwise pile up.
+    for (const [k, v] of Object.entries(all)) if (sys.now() - ms(v.last) > FORGET_DAYS * 86_400_000) delete all[k];
+    const temp = `${learnedPath()}.${process.pid}.tmp`;
+    writeFileSync(temp, `${JSON.stringify(all, null, 1)}\n`);
+    renameSync(temp, learnedPath());
+  });
+}
+
+/** A hold's name from the command's program: `mise run check` holds as `mise`. */
+export function sharedName(key: string): string {
+  const program = (key.split(" ")[0] ?? "").replace(/\.(exe|cmd|bat|ps1|mjs|js|py)$/, "");
+  return (
+    program
+      .replace(/[^a-z0-9-]/g, "-")
+      .replace(/^-+/, "")
+      .slice(0, 32) || "job"
+  );
+}
+
+/** Run a command sharing the machine: below-normal priority, admitted by the cores and RAM its earlier runs used, and
+ * measured while it runs so the next run of it asks for the right amount. */
+export async function runShared(
+  command: string[],
+  o: { name?: string; note?: string; wait: number; ttl: number; forSeconds: number | null },
+  sys: System = realSystem,
+  out: (text: string) => void = console.error,
+): Promise<number> {
+  const key = commandKey(command);
+  sys.lowerPriority();
+  let peak = 0;
+  let window = false;
+  let started = 0;
+  const cpu: Sample[] = [];
+  const code = await runUnder(
+    {
+      name: o.name ?? sharedName(key),
+      pid: process.pid,
+      wants: sharedWants(readLearned()[key]),
+      note: o.note ?? key.slice(0, 60),
+      ttl: o.ttl,
+      forSeconds: o.forSeconds,
+    },
+    o.wait,
+    command,
+    sys,
+    out,
+    (pid) => {
+      started = sys.now();
+      cpu.push({ at: started, seconds: 0 });
+      return sys.watchTree(pid, (gb, used, shown) => {
+        peak = Math.max(peak, gb);
+        cpu.push({ at: sys.now(), seconds: used });
+        window ||= shown;
+      });
+    },
+  );
+  // A run shorter than two samples says little about its cores, and outside Windows the sampler reads no CPU time;
+  // its RAM peak still counts.
+  const timed = sys.now() - started >= 1000 && cpu.some((s) => s.seconds > 0);
+  const cores = timed ? busyCores(cpu) : null;
+  if (peak > 0) saveLearned(key, { peakGb: peak, cores, window }, sys);
+  return code;
+}
+
+/** CPU seconds a job's processes had used by a moment. */
+export type Sample = { at: number; seconds: number };
+
+/** The cores a job uses in its busy phases: the 90th percentile of its rate between samples. Its average hides the
+ * bursts, and jobs started together burst together. */
+export function busyCores(samples: Sample[]): number | null {
+  const rates: number[] = [];
+  for (let i = 1; i < samples.length; i++) {
+    const a = samples[i - 1];
+    const b = samples[i];
+    if (a !== undefined && b !== undefined && b.at > a.at)
+      rates.push(Math.max(0, b.seconds - a.seconds) / ((b.at - a.at) / 1000));
+  }
+  if (rates.length === 0) return null;
+  rates.sort((x, y) => x - y);
+  return rates[Math.min(rates.length - 1, Math.floor(rates.length * 0.9))] ?? null;
+}
+
+/** The process that ran `run-job`. On Windows the `run-job.cmd` shim runs node from its own cmd.exe, which exits as soon
  * as lease does: holding the lease for it freed every hold within seconds as "holder gone", so the holder is the
  * shim's caller instead. */
 export function caller(sys: System, ppid: number = process.ppid): number {
@@ -1030,12 +1256,13 @@ export function main(
   out: (text: string) => void = console.log,
   sys: System = realSystem,
 ): number | Promise<number> {
+  if (argv[0] === "--") return main(["run", ...argv], out, sys);
   const [command, ...rest] = argv;
   let parsed: ReturnType<typeof parseCli>;
   try {
     parsed = parseCli(rest);
   } catch (error) {
-    out(`lease: ${(error as Error).message}. See lease --help.`);
+    out(`run-job: ${(error as Error).message}. See run-job --help.`);
     return 2;
   }
   const o = parsed.values;
@@ -1057,11 +1284,17 @@ export function main(
     switch (command) {
       case "run": {
         if (parsed.positionals.length === 0)
-          throw new Usage("run needs the command after --, such as lease run --name job --res gpu -- python train.py");
+          throw new Usage("run needs the command after --, such as run-job run -- npm test");
+        if (o.res === undefined && o.gb === undefined)
+          return runShared(
+            parsed.positionals,
+            { name: o.name, note: o.note, wait: wholeNumber(o.wait, "--wait", 3600) ?? 3600, ttl, forSeconds },
+            sys,
+          );
         const wants = wantsFrom(o, "run");
         return runUnder(
           {
-            name: need(o.name, "--name"),
+            name: o.name ?? sharedName(commandKey(parsed.positionals)),
             pid: process.pid,
             wants,
             labels: parseLabels(o.label),
@@ -1123,7 +1356,7 @@ export function main(
     out(json ? JSON.stringify(answer) : `${answer.outcome}: ${words(answer.view)}`);
     return EXIT[answer.outcome];
   } catch (error) {
-    out(`lease: ${(error as Error).message}${error instanceof Usage ? ". See lease --help." : ""}`);
+    out(`run-job: ${(error as Error).message}${error instanceof Usage ? ". See run-job --help." : ""}`);
     return 2;
   }
 }
@@ -1155,27 +1388,34 @@ function parseCli(args: string[]) {
   });
 }
 
-const HELP = `lease: shared locks on this machine's resources (state and log in ${home()}).
+const HELP = `run-job: runs heavy jobs side by side on spare capacity, and locks what cannot be shared (state and log in
+${home()}).
 
-  lease take --name N --res R[:GB] [--res ...] [--label R=TEXT] [--note T] [--status T] [--pid P] [--wait S] [--for S]
-      Take every resource named, or none, for process P (default: the caller). ram is shared by size
-      (ram:10 is 10 GB); any other name, such as gpu or browser, has one holder. --gb G alone means
+  run-job -- COMMAND [ARGS]              (or: run-job run [--name N] [--wait S] -- COMMAND [ARGS])
+      Run COMMAND sharing the machine: at below-normal priority, so the user's game or work keeps the CPU. It
+      waits (up to S seconds, default 3600) only until the cores and RAM its earlier runs used are free
+      (${UNKNOWN_CORES} cores and ${UNKNOWN_GB} GB the first time), and for the GPU once a run of it opened a window.
+      Use this for builds, tests and anything headless; name resources with --res only for a GPU job, a game
+      or a window.
+  run-job take --name N --res R[:SIZE] [--res ...] [--label R=TEXT] [--note T] [--status T] [--pid P] [--wait S] [--for S]
+      Take every resource named, or none, for process P (default: the caller). ram and cpu are shared by size
+      (ram:10 is 10 GB, cpu:2 two cores); any other name, such as gpu or browser, has one holder. --gb G alone means
       --res gpu --res ram:G. Held: wait up to S seconds (default 0), listed as a waiter. --for says how long
       the job should take; past it the lease shows as stuck, and stays held. Taking again renews it.
-  lease renew --name N [--pid P] [--job-pid J] [--for S] [--status T]
+  run-job renew --name N [--pid P] [--job-pid J] [--for S] [--status T]
       Keep it: every ${RENEW_SECONDS} s; it lapses ${TTL_SECONDS} s after the last renewal. --job-pid declares the
       process doing the heavy work, which "free --stop-job" may stop and whose life keeps an orphaned lease held.
       --status (here or on take) is a few words on how the work goes, shown after the holder's name in the band.
-  lease free --name N [--pid P] [--res R ...]
-      Give it back; with --res, only those resources (lease free --name N --res ram), keeping the rest.
-  lease free --force [--name N [--pid P]] [--stop-job] [--by WHO] [--cooldown S]
+  run-job free --name N [--pid P] [--res R ...]
+      Give it back; with --res, only those resources (run-job free --name N --res ram), keeping the rest.
+  run-job free --force [--name N [--pid P]] [--stop-job] [--by WHO] [--cooldown S]
       Free N's lease (with no --name: the GPU's holder, else the oldest) whoever you are; --stop-job also
       stops the job it declared (nothing else); --cooldown keeps it from taking again for S seconds.
-  lease run --name N --res R[:GB] ... [--note T] [--wait S] [--for S] -- COMMAND [ARGS]
+  run-job run --name N --res R[:GB] ... [--note T] [--wait S] [--for S] -- COMMAND [ARGS]
       Take the lease, run COMMAND as its job, renew it while COMMAND runs and free it when COMMAND ends,
       however it ends. Exits with COMMAND's code, or 1 when the lease was not given within S seconds.
-  lease show                             Who holds what, how it is doing, who waits, free RAM.
-  lease log [--lines N]                  The last N events (default 30).
+  run-job show                             Who holds what, how it is doing, who waits, free RAM.
+  run-job log [--lines N]                  The last N events (default 30).
 
   --json prints a form a program can read. Exit codes: 0 done, 1 held by another, behind a waiter or cooling
   down, 2 bad arguments or an error, 3 not yours (freed, lapsed or taken by another).`;
