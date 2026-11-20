@@ -62,7 +62,7 @@ const GAME_SHARE = 4; // while a game is on, shared jobs get this fraction of th
 const STARVE_SECONDS = 120;
 const GAME_GPU_BUSY_PCT = 20; // StarCraft II, 25-43%; but a video under a live wallpaper, 21-53% too
 const GAME_GONE_SECONDS = 60;
-const GAME_CHECK_SECONDS = 15; // listing the processes takes half a second, under the lock
+const GAME_CHECK_SECONDS = 15; // listing the processes takes 0.5-3 s, under the lock
 export const RAM_RESERVE_GB = 8; // Windows, the desktop and a browser: never handed out as a share of the pool
 export const LOADING_SECONDS = 120; // a RAM share taken this recently may not be in use yet: counted as used anyway
 export const GPU_BUSY_GB = 6; // Windows' desktop alone holds 3.3 GB of the card (measured 15 Oct); a model or a game far more
@@ -282,7 +282,7 @@ Get-Process | ? { $g.ContainsKey($_.ProcessName.ToLower()) } | Select-Object -Fi
     const run = spawnSync("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command", script], {
       encoding: "utf8",
       windowsHide: true,
-      timeout: 20_000,
+      timeout: 5_000, // it runs under the lock, which others take as stale after LOCK_STALE_MS
     });
     const name = run.status === 0 ? run.stdout.trim() : "";
     return name === "" ? null : name;
@@ -748,8 +748,7 @@ const shares = (a: Want[], b: Want[]) => a.some((x) => b.some((y) => x.resource 
 
 /** The cores shared jobs may count on. Below-normal priority does not keep a game smooth by itself: a job's thread on
  * the other half of a core the game uses still slows it. So while a game uses the GPU (`tidy`), jobs share a quarter
- * of the threads; otherwise all of them, since running everything
- * at once finished six checks sooner than any queue. A light game holds little of the card's memory (StarCraft II:
+ * of the threads; otherwise all of them, since running everything at once finished six checks sooner than any queue. A light game holds little of the card's memory (StarCraft II:
  * under 6 GB, as much as the desktop and a browser) but keeps its cores busy, so either counts (`tidy`). Its load
  * swings from frame to frame, so a game counts as on for GAME_GONE_SECONDS after a read last saw one. */
 export function cpuPool(state: State, sys: System): number {
