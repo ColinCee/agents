@@ -39,7 +39,7 @@ What lost:
 
 ## Consequences
 
-- Agents run heavy work as `run-job -- <command>`; `lease` stays as a second name for the same file until its callers in other repositories move.
+- (Retired, see Status.) Agents run heavy work as `run-job -- <command>`; `lease` stays as a second name for the same file until its callers in other repositories move.
 - Wall-clock speed tests flake under load; projects keep them out of the per-commit check or give them room.
 - Each job starts one sampler process, whose process query takes about 0.17 s, once a second.
 - Outside Windows the sampler reads RAM only, so jobs there are admitted by RAM and the unmeasured thread count.
