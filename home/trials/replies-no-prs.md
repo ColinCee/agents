@@ -1,5 +1,5 @@
 ---
-status: testing
+status: settled
 measures: replies-no-prs
 started: 2026-11-13
 ---

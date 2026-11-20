@@ -1,5 +1,5 @@
 ---
-status: testing
+status: settled
 measures: tables
 started: 2026-11-19
 ---

@@ -1,5 +1,5 @@
 ---
-status: testing
+status: settled
 measures: close-processes
 started: 2026-11-19
 ---
