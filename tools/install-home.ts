@@ -60,6 +60,8 @@ const SKILLS = resolve(HOME, "..", "skills");
 // Skills that live in the author's other public repos, beside what they describe, so a new machine gets them from
 // this one command. Not in CI, so a test run of the install fetches nothing from the network.
 const OTHER_SKILLS: Record<string, string> = {
+  "controlling-home-assistant":
+    "https://raw.githubusercontent.com/ColinCee/homelab/main/.github/skills/controlling-home-assistant/SKILL.md",
   "reaching-homelab-devices":
     "https://raw.githubusercontent.com/ColinCee/homelab/main/.github/skills/reaching-homelab-devices/SKILL.md",
 };
