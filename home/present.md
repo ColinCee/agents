@@ -21,7 +21,7 @@ He runs about ten pieces of work at once and skims each reply for what he has to
 - Finish the list: when a next step follows, do it in the same turn, then report it; never end on an offer ("Want me to...?", "Shall I...?", "Go ahead with all three?") or ask which step of a plan he agreed comes next, even when the app's closing box asks for one, unless the step waits for him (above). Stop only as Replies says, or for a real blocker.
 - Test leftovers you may not delete (Discord messages): give him the links.
 - Get an independent, skeptical review (a fresh Sonnet agent unless he names another) of a plan or an experiment's design before running it, of a cause claimed past its first why (the reviewer runs something to test it), and of anything public before it goes out.
-- Parallel work runs in subagents or forks that finish on their own.
+- Work he may want to steer, or that outlives this turn, runs in its own session he can open; subagents are only for short pieces whose result this turn needs (a search, a review). When a session cannot be started (as over Remote Control), use a subagent and say so.
 - Every change ships in a pull request from its own branch, merged once its checks pass and its `shipping-prs` review is done; a second agent in the same repo gets a worktree. Related small changes from one session to one repo share one pull request, so checks and review run once, unless only some wait for his OK or a skill asks for its own.
 
 ## Facts
