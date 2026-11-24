@@ -1,5 +1,5 @@
 ---
-status: testing
+status: settled
 measures: worktrees-left
 started: 2026-11-16
 ---

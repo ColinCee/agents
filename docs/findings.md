@@ -4,6 +4,7 @@ One line per settled result about the author's agent rules, newest first, each l
 
 | Settled | Finding | Write-up |
 |---|---|---|
+| Nov 2026 | Removing each worktree once its pull request is merged or closed: worktrees left on disk fell 93% (67 to 100), a 1.5% miss rate with the line against 20% without, 16 to 23 Nov (15 tasks with, 11 without at the last look); works, settled | [Rule trials](keep-going.md) |
 | Nov 2026 | A CI check that fails a rule edit with no trial: of the 14 pull requests changing rules since, 7 passed with a stated exception instead of a trial; can't tell, with no like-for-like count from before | [#126](https://github.com/ColinCee/agents/pull/126) |
 | Nov 2026 | The Done line naming what the whole session still has open: the author asked whether a session was done in about 1% of messages before and after (change +12%, -62% to +277%); can't tell | [#125](https://github.com/ColinCee/agents/pull/125) |
 | Nov 2026 | "Never end on an offer", even when the closing box asks for one: needless offer stops went from 16.1 to 14.5 per 100 labelled stops (10 to 12 Nov, 180 stops; 13 to 18 Nov, 311), no difference shown; not working after two wordings | [#95](https://github.com/ColinCee/agents/pull/95) |
