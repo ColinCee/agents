@@ -253,6 +253,7 @@ describe("require-skill hook", () => {
       ["D:\\repo\\src\\a.ts", "writing-comments"],
       ["D:\\repo\\deploy.yml", "writing-comments"],
       [`${linuxHome}/repo/src/a.py`, "writing-comments"],
+      ["D:\\repo\\game\\card.gd", "writing-comments"],
       [`${linuxHome}/repo/notes.md`, "updating-docs"],
       ["D:\\repo\\AGENTS.md", "recording-learnings"],
       ["D:\\repo\\CLAUDE.md", "recording-learnings"],
