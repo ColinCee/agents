@@ -44,7 +44,7 @@ const commit = git("commit\\b");
 const measuring = /(^|[;&|(\n]\s*)(hyperfine\b|(npm|pnpm) run bench\b)/;
 // Docs and code in a project, since code carries comments; not the app's memory, plans or scratch files.
 const isDoc =
-  /\.(md|py|[cm]?[jt]sx?|ya?ml|sh|ps1|css|html|sql|toml|go|rs|java|kt|swift|cs|c|cpp|h|rb|php)$/i.test(file) &&
+  /\.(md|py|[cm]?[jt]sx?|ya?ml|sh|ps1|css|html|sql|toml|go|rs|java|kt|swift|cs|c|cpp|h|rb|php|gd|gdshader)$/i.test(file) &&
   !/\/\.claude\/(projects|plans)\/|\/AppData\/Local\/Temp\/|^\/tmp\/|\/scratchpad\/|\/node_modules\/|lock\.ya?ml$|\.min\.|\.d\.ts$/i.test(file);
 // Agent rules, skills and their references, decision records, and the agents repo's home/ (its rules and this hook).
 // A Linux /home/ path does not match: only home/core.md, present.md, local.md, home/hooks/ and home/trials/ do.
