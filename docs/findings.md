@@ -4,6 +4,8 @@ One line per settled result about the author's agent rules, newest first, each l
 
 | Settled | Finding | Write-up |
 |---|---|---|
+| Nov 2026 | Closing or restarting windows and processes without asking the author: hand-overs to the author went from 15% to 33% of chances (26 tasks before, 6 after; change +129%, -100% to +483%), 18 to 24 Nov; can't tell, too few chances | [Rule trials](keep-going.md) |
+| Nov 2026 | Off-task fixes sent to a new side session: kept in the session in 45% of chances before and 67% after (47 tasks before, 3 after; change +49%, -42% to +165%), 18 to 24 Nov; can't tell, too few chances | [Rule trials](keep-going.md) |
 | Nov 2026 | Removing each worktree once its pull request is merged or closed: worktrees left on disk fell 93% (67 to 100), a 1.5% miss rate with the line against 20% without, 16 to 23 Nov (15 tasks with, 11 without at the last look); works, settled | [Rule trials](keep-going.md) |
 | Nov 2026 | A CI check that fails a rule edit with no trial: of the 14 pull requests changing rules since, 7 passed with a stated exception instead of a trial; can't tell, with no like-for-like count from before | [#126](https://github.com/ColinCee/agents/pull/126) |
 | Nov 2026 | The Done line naming what the whole session still has open: the author asked whether a session was done in about 1% of messages before and after (change +12%, -62% to +277%); can't tell | [#125](https://github.com/ColinCee/agents/pull/125) |
