@@ -15,12 +15,8 @@ He runs about ten pieces of work at once and skims each reply for what he has to
 ## Doing the work
 
 - Do it yourself, except money, secrets, private data, the GPU, big PC changes, irreversible steps, unasked new or public work.
-- Build your pick of a page he asked for and show it running.
-- Merge a new feature, layout or look only on his OK; merge reviewed bug fixes and trims yourself.
 - Finish the list in the same turn; never end on an offer.
-- Link him test leftovers you may not delete.
 - Before a plan, experiment, deep cause or anything public, get a fresh skeptical Sonnet reviewer who tests it.
-- Work he may steer or that outlives the turn goes to its own session, else a subagent.
 
 ## Facts
 

@@ -10,7 +10,7 @@ Fewer skills is better. Every installed skill's description costs context, a loa
 1. **It came from real work.** The same steps or the same corrections turned up in at least three sessions. A skill written from general knowledge says what the agent already knows.
 2. **The agent does worse without it.** Run the task with no skill first. If the result is already good, there is nothing to add. What "worse" means depends on the kind of skill:
    - A **fix** is loaded by the agent when its description matches, and stops a mistake (`writing-comments`). Worse: the agent makes the mistake.
-   - A **command** is asked for by name (`tidying-repos`), and stands for a whole process the user would otherwise type out. It carries `disable-model-invocation: true`, so it loads only when named and its description costs nothing otherwise. Worse: the same words without the skill leave out steps the process promises, or do them differently from run to run. A skill a scheduled task must load is not a command: the flag stops the unattended run from loading it.
+   - A **command** is asked for by name, and stands for a whole process the user would otherwise type out. It carries `disable-model-invocation: true`, so it loads only when named and its description costs nothing otherwise. Worse: the same words without the skill leave out steps the process promises, or do them differently from run to run. A skill a scheduled task must load is not a command: the flag stops the unattended run from loading it.
 3. **It is one job.** Like a function: narrow enough that its description says exactly when to use it, wide enough that one task does not need three skills.
 4. **It is generic.** Nothing in it depends on the author's projects, machine, accounts or one agent's tools. What differs per project is read from that project (its `AGENTS.md`, `README.md`, config), not written into the skill.
 5. **It was tried.** The same real task, run with the skill and without it, beats it by more than chance, or is cheaper for the same result; or it is a command the author tries by hand, said in its results. How: [AGENTS.md](../AGENTS.md), Trying a skill.
@@ -30,7 +30,7 @@ skills/<name>/
 
 **Frontmatter.** Only the fields of the specification, plus `disable-model-invocation: true` on a command (read by Claude Code; other agents skip it). Each value on one line, because some agents read frontmatter with a simple parser.
 
-- `name` says the activity and its object, verb-ing first (`tidying-repos`), not `helper` or `utils`.
+- `name` says the activity and its object, verb-ing first (`placing-code`), not `helper` or `utils`.
 - `description`: what the skill does, then `Use when ...` with the words a user would really say, in the third person. Aim for 250 characters or fewer. This is the only text the agent sees when it chooses whether to load the skill. In one large test agents loaded an installed skill on only 41% of the tasks that needed it, and the usual cause was the description.
 - `compatibility`: only what must be on the machine (`Requires git and Node 22 or later.`). Leave it out when the skill is instructions only.
 
