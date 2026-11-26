@@ -1,7 +1,7 @@
 ---
 status: testing
-measures: long-replies, long-no-picture, link-opened, done-asks, term-asks, wake-set
-started: 2026-11-30
+measures: long-no-picture, link-opened, done-asks, term-asks, wake-set
+started: 2026-11-27
 ---
 ## Off
 Short, high level, scannable at a glance: the goal and where it stands, in plain words, as bullets or a small diagram; for a page or app, the page itself and its link, which you open first to check it shows your change with real data. Detail only when he asks.
