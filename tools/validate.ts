@@ -36,6 +36,7 @@ const FIELDS = new Set([
 ]);
 const NODE_FLOOR = 22; // the oldest Node release line still given security fixes
 const HELP_TIMEOUT_MS = 30_000; // --help only prints, so longer than this means it is waiting for input
+const RULE_WORDS = 30; // the author's rule: each every-turn rule is one short sentence
 const CONTENTS_OVER = 100; // lines; an agent may read only the top of a longer reference file
 
 const NAME = /^[a-z0-9]+(-[a-z0-9]+)*$/;
@@ -339,6 +340,46 @@ function checkScripts(root: string, skill: string, fields: Fields, report: Repor
   }
 }
 
+/** Each rule line in home/*.md (a bullet or a table row) and each trial's `## On` line is one sentence of at most
+ * RULE_WORDS words. */
+function checkRules(root: string, report: Report): void {
+  const at = (dir: string) =>
+    isDir(join(root, dir))
+      ? readdirSync(join(root, dir))
+          .filter((n) => n.endsWith(".md"))
+          .map((n) => `${dir}/${n}`)
+      : [];
+  const rules = (path: string): string[] => {
+    const text = read(join(root, path));
+    if (path.includes("/trials/"))
+      return ((text.split(/^## On\s*$/m)[1] ?? "").split(/^## /m)[0] ?? "")
+        .split(/\r?\n/)
+        .map((l) => l.trim())
+        .filter(Boolean);
+    const lines = text.split(/\r?\n/);
+    const separator = (l = "") => /^\|[\s|:-]*\|?\s*$/.test(l);
+    // A table's header is the row above its separator; every other row, and every list item, is a rule.
+    return lines
+      .filter((l, i) => (/^\|/.test(l) ? !separator(l) && !separator(lines[i + 1]) : /^\s*([-*]|\d+\.)\s/.test(l)))
+      .map((l) =>
+        l
+          .replace(/^\s*([-*]|\d+\.)\s+/, "")
+          .replace(/^\||\|\s*$/g, "")
+          .replace(/\s*\|\s*/g, ": ")
+          .trim(),
+      );
+  };
+  for (const path of [...at("home"), ...at("home/trials")])
+    for (const rule of rules(path)) {
+      const words = rule.split(/\s+/).length;
+      if (words > RULE_WORDS || /[.!?]\s+[A-Z`"(\d*]/.test(rule.replace(/\b(e\.g|i\.e|vs)\./g, "$1")))
+        report.error(
+          path,
+          `"${rule.slice(0, 50)}..." is ${words} words; make each rule one sentence of ${RULE_WORDS} words at most`,
+        );
+    }
+}
+
 /** The author's identifiers on this machine, which no tracked file may hold. */
 function ownIdentifiers(root: string): { home: string; email: string } {
   const email = spawnSync("git", ["config", "user.email"], { cwd: root, encoding: "utf8", windowsHide: true });
@@ -370,6 +411,7 @@ export function check(root: string, own = ownIdentifiers(root)): Report {
       report.error("README.md", `does not list ${name}; add a row to the table of skills`);
     else checkTried(root, name, readme, report);
   }
+  checkRules(root, report);
   checkPrivate(root, own, report);
   return report;
 }
