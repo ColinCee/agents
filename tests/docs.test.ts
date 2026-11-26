@@ -76,7 +76,8 @@ function docProblems(repo: Repo, path: string, text: string): string[] {
   return found;
 }
 
-/** Docs and ADRs named in a doc's text or in a code file's comments (not its strings). */
+/** Docs and decision records named in a doc's text or in a code file's comments (not its strings). A record is named
+ * by its area, never a number, so deleting one renumbers nothing and leaves no reference meaning another. */
 function namedRecords(repo: Repo, path: string, text: string): string[] {
   const found: string[] = [];
   const where = isDoc(path) ? [text] : (text.match(/\/\/[^\n]*|\/\*[\s\S]*?\*\//g) ?? []);
@@ -84,18 +85,21 @@ function namedRecords(repo: Repo, path: string, text: string): string[] {
     if (!isDoc(path))
       for (const [doc] of part.matchAll(/\bdocs\/[\w./-]+\.md\b/g))
         if (!repo.tracked.has(doc)) found.push(`${path}: names ${doc}, which is gone`);
-    for (const n of firsts(part, /\bADR (\d{4})\b/g))
-      if (![...repo.tracked].some((file) => file.startsWith(`docs/adr/${n}-`) && file.endsWith(".md")))
-        found.push(`${path}: names ADR ${n}, which is gone`);
+    for (const [name] of part.matchAll(/\bADR[ -]?\d+\b/g))
+      found.push(`${path}: names ${name}; name a decision record by its area, docs/adr/<area>.md`);
   }
   return found;
 }
 
 function problems(repo: Repo): string[] {
-  return [...repo.files].flatMap(([path, text]) => [
-    ...(isDoc(path) ? docProblems(repo, path, text) : []),
-    ...namedRecords(repo, path, text),
-  ]);
+  const numbered = [...repo.tracked].filter((file) => /^docs\/adr\/\d/.test(file));
+  return [
+    ...numbered.map((file) => `${file}: a decision record named by number; name it docs/adr/<area>.md`),
+    ...[...repo.files].flatMap(([path, text]) => [
+      ...(isDoc(path) ? docProblems(repo, path, text) : []),
+      ...namedRecords(repo, path, text),
+    ]),
+  ];
 }
 
 function docsWords(repo: Repo): number {
@@ -133,7 +137,7 @@ describe("this repository's docs", () => {
 describe("the check fails on", () => {
   const repo = (files: Record<string, string>): Repo => ({
     files: new Map(Object.entries(files)),
-    tracked: new Set([...Object.keys(files), "src/app.ts", "docs/adr/0001-run-job.md"]),
+    tracked: new Set([...Object.keys(files), "src/app.ts", "docs/adr/run-job.md"]),
     tasks: new Set(["check"]),
   });
 
@@ -163,11 +167,17 @@ describe("the check fails on", () => {
     ]);
   });
 
-  test("a code comment naming a doc or ADR that is gone, but not a string", () => {
-    const code = '// see docs/gone.md and ADR 0002\n/* ADR 0001 */\nconst s = "docs/also-gone.md";';
-    expect(problems(repo({ "src/app.ts": code }))).toEqual([
-      "src/app.ts: names docs/gone.md, which is gone",
-      "src/app.ts: names ADR 0002, which is gone",
+  test("a code comment naming a doc that is gone, but not a string", () => {
+    const code = '// see docs/gone.md and docs/adr/run-job.md\nconst s = "docs/also-gone.md";';
+    expect(problems(repo({ "src/app.ts": code }))).toEqual(["src/app.ts: names docs/gone.md, which is gone"]);
+  });
+
+  test("a decision record named or referred to by number", () => {
+    const files = { "docs/adr/0002-x.md": "# X", "README.md": "See ADR 0001.", "src/app.ts": "/* ADR-3 */" };
+    expect(problems(repo(files))).toEqual([
+      "docs/adr/0002-x.md: a decision record named by number; name it docs/adr/<area>.md",
+      "README.md: names ADR 0001; name a decision record by its area, docs/adr/<area>.md",
+      "src/app.ts: names ADR-3; name a decision record by its area, docs/adr/<area>.md",
     ]);
   });
 
