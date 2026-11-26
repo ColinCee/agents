@@ -1,5 +1,5 @@
 ---
-status: testing
+status: settled
 measures: ui-skill
 started: 2026-11-19
 ---

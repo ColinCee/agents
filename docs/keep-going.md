@@ -4,7 +4,7 @@ How a change to an agent rule is tested and then tracked, and how often agents s
 
 ## Testing a rule
 
-A skill change is tested the same day by its `evals/` cases (`claude plugin eval skills/<name>`, with and without the skill; an old version by running its commit). A new wording is first replayed on past moments (hours), then put on trial for a random half of tasks, looked at when its smaller group reaches 10, 20 and 40 tasks and last on day 7. [agent-experiments](https://github.com/ColinCee/agent-experiments) counts each rule's misses from the user's `measures/measures.sql`, takes the looks, gives the verdicts, runs replays and draws the daily overview page; how and why: its [architecture](https://github.com/ColinCee/agent-experiments/blob/main/docs/architecture.md). When to run it: [reviewing-sessions](../skills/reviewing-sessions/SKILL.md), step 6. CI (`npm run rule-changes`) fails a pull request that adds or rewords a line in `home/` outside a trial, or settles one untested.
+A skill change is tested the same day by its `evals/` cases (`claude plugin eval skills/<name>`, with and without the skill; an old version by running its commit). A new wording is first replayed on past moments (hours), then put on trial: every task gets it, and its mistake rate since against before gives the verdict on its third day of real use (a day the user typed to an agent), never later. A mistake with under 2 chances a day is too rare for three days, so its replay, run on day 1, decides. [agent-experiments](https://github.com/ColinCee/agent-experiments) counts each rule's misses from the user's `measures/measures.sql`, gives the verdicts, runs replays and draws the daily overview page; how and why: its [architecture](https://github.com/ColinCee/agent-experiments/blob/main/docs/architecture.md). When to run it: [reviewing-sessions](../skills/reviewing-sessions/SKILL.md), step 6. CI (`npm run rule-changes`) fails a pull request that adds or rewords a line in `home/` outside a trial, or settles one untested; `daily` exits 1 for a trial still testing after its verdict.
 
 Data stays in `~/.claude/keep-going/`, never in this repository: it is the user's own sessions. `backup.toml` lists it for the user's nightly PC backup.
 
@@ -25,8 +25,8 @@ Data stays in `~/.claude/keep-going/`, never in this repository: it is the user'
 
   A hook on trial (such as [home/hooks/reply-length.mjs](../home/hooks/reply-length.mjs)) has a trial file with Off and On left empty and acts only when [home/hooks/trial-group.mjs](../home/hooks/trial-group.mjs) puts the task in its On half; settling it means reading the status there too.
 
-  Only the reworded sentences move out of `home/core.md`, `home/present.md` or `home/local.md` into the file, as a line of their own, so no session has both wordings and a long line is not copied twice; rules about the same behaviour share one file. [home/hooks/rule-groups.mjs](../home/hooks/rule-groups.mjs) gives each task its half at session start, from a hash of the trial's name and the task (its worktree, else the session), so trials split tasks independently and a restart keeps its group. Subagents get the same; Codex, which runs no hook, always gets `On`. Never put a rule that guards money, data or a destructive step in a trial, unless a hook also enforces it: half the sessions go without it.
-- **Settled.** A trial that works, one that could not reach a verdict within about a month (its line came from the user's corrections, so it stays on and is still counted), or an older rule with a measure, gets `status: settled`: every task gets `On`, except about 1 in 10, which never get a settled rule and stay the comparison group, so a new model shows whether each rule still earns its place.
+  Only the reworded sentences move out of `home/core.md`, `home/present.md` or `home/local.md` into the file, as a line of their own, so no session has both wordings and a long line is not copied twice; rules about the same behaviour share one file. [home/hooks/rule-groups.mjs](../home/hooks/rule-groups.mjs) gives every session and subagent each trial's `On` at start, and stamps its task (its worktree, else the session); Codex, which runs no hook, gets `On` too.
+- **Verdict.** Works: `status: settled`. Worse: replace the wording with a hook or check, and delete the file. No big effect: keep the line settled or delete the file; either way it is no longer tracked. Each gets one [findings.md](findings.md) line. A settled trial is on for every task.
 - **Limits.** A session working in this repository can read both wordings. A continued session outside a worktree may draw another group, and is then left out.
 
 ## Needless stops
@@ -50,7 +50,7 @@ Out of scope: subagents' stops, agents other than Claude Code.
 
 ## Why this method
 
-Checked on the user's sessions of October and November 2026, for three counted mistakes; the rest is in the [architecture's method](https://github.com/ColinCee/agent-experiments/blob/main/docs/architecture.md#method).
+Checked on the user's sessions of October and November 2026; the rest is in the [architecture's method](https://github.com/ColinCee/agent-experiments/blob/main/docs/architecture.md#method).
 
-- **Before and after is not a test.** The earlier rule (the rate fell by half after the fix) said "working" at about 1 in 4 made-up fix dates, because days differ more than fixes do.
-- **Three looks, not a daily check.** On random halves with no real difference, checking every day at 1 in 20 passed about 30% of the time.
+- **Three days, before and after, not a holdout.** The holdout, a share of tasks kept without each rule, brought a few tasks a week, while most measures needed 80 to 320, so most rules never got a verdict.
+- **The price: about 1 in 4 false calls.** Made-up change dates, away from real changes, were called works 20% and worse 7% of the time, since rates drift from week to week. A replay, or a second change to the same line, checks a verdict that matters.
