@@ -23,6 +23,8 @@ Data stays in `~/.claude/keep-going/`, never in this repository: it is the user'
   The new line.
   ```
 
+  A hook on trial (such as [home/hooks/reply-length.mjs](../home/hooks/reply-length.mjs)) has a trial file with Off and On left empty and acts only when [home/hooks/trial-group.mjs](../home/hooks/trial-group.mjs) puts the task in its On half; settling it means reading the status there too.
+
   Only the reworded sentences move out of `home/core.md`, `home/present.md` or `home/local.md` into the file, as a line of their own, so no session has both wordings and a long line is not copied twice; rules about the same behaviour share one file. [home/hooks/rule-groups.mjs](../home/hooks/rule-groups.mjs) gives each task its half at session start, from a hash of the trial's name and the task (its worktree, else the session), so trials split tasks independently and a restart keeps its group. Subagents get the same; Codex, which runs no hook, always gets `On`. Never put a rule that guards money, data or a destructive step in a trial, unless a hook also enforces it: half the sessions go without it.
 - **Settled.** A trial that works, one that could not reach a verdict within about a month (its line came from the user's corrections, so it stays on and is still counted), or an older rule with a measure, gets `status: settled`: every task gets `On`, except about 1 in 10, which never get a settled rule and stay the comparison group, so a new model shows whether each rule still earns its place.
 - **Limits.** A session working in this repository can read both wordings. A continued session outside a worktree may draw another group, and is then left out.

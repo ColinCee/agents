@@ -47,6 +47,9 @@ const SOURCES = ["core.md", "present.md", "local.md"].map((f) => join(HOME, f));
 const HOOK = join(HOME, "hooks", "require-skill.mjs");
 // The hook that gives each session its half of every rule trial (docs/keep-going.md), and the trials it reads.
 const GROUPS_HOOK = join(HOME, "hooks", "rule-groups.mjs");
+// What both it and a hook on trial import to find a task's half; the hook that tells an agent its last reply ran long.
+const TRIAL_GROUP = join(HOME, "hooks", "trial-group.mjs");
+const REPLY_HOOK = join(HOME, "hooks", "reply-length.mjs");
 const TRIALS = join(HOME, "trials");
 const trialNames = (): string[] => (existsSync(TRIALS) ? readdirSync(TRIALS).filter((f) => f.endsWith(".md")) : []);
 /** A trial's rule as agents with no hook get it: always on. */
@@ -147,6 +150,7 @@ function settingsTarget(): [string, Buffer] {
   // Subagents get the same trial rules as the session that started them.
   place("SessionStart", "rule-groups.mjs");
   place("SubagentStart", "rule-groups.mjs");
+  place("UserPromptSubmit", "reply-length.mjs");
   settings.autoMemoryEnabled = false;
   const want = Buffer.from(`${JSON.stringify(settings, null, 2)}\n`);
   // Same settings in other formatting count as matching, so a hand-formatted file is left alone.
@@ -207,6 +211,8 @@ async function main(): Promise<number> {
     [join(homedir(), ".codex", "AGENTS.md"), codex],
     [join(homedir(), ".claude", "hooks", "require-skill.mjs"), readFileSync(HOOK)],
     [join(homedir(), ".claude", "hooks", "rule-groups.mjs"), readFileSync(GROUPS_HOOK)],
+    [join(homedir(), ".claude", "hooks", "trial-group.mjs"), readFileSync(TRIAL_GROUP)],
+    [join(homedir(), ".claude", "hooks", "reply-length.mjs"), readFileSync(REPLY_HOOK)],
     ...trials.map(([f, body]): [string, Buffer] => [join(homedir(), ".claude", "trials", f), body]),
     ...skillTargets(),
   ];

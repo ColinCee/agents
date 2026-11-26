@@ -6,17 +6,15 @@ import { createHash } from "node:crypto";
 import { readdirSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
+import { share as shareOf, taskOf } from "./trial-group.mjs";
 
 const HOLDOUT = 0.1; // share of tasks that never get a settled rule: the standing comparison group
 
 try {
   const input = JSON.parse(readFileSync(0, "utf8"));
   const claude = join(homedir(), ".claude");
-  // A task keeps its groups across restarts: the desktop app gives each task a worktree, whose name outlives the
-  // session id.
-  const task =
-    /[\\/]\.claude[\\/]worktrees[\\/]([^\\/]+)/.exec(String(input.cwd ?? ""))?.[1] ?? String(input.session_id ?? "");
-  const share = (key) => createHash("sha256").update(`${key}:${task}`).digest().readUInt32BE(0) / 2 ** 32;
+  const task = taskOf(input);
+  const share = (key) => shareOf(key, task);
   const read = (path) => {
     try {
       return readFileSync(path, "utf8");
