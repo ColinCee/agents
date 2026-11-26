@@ -16,7 +16,9 @@ He runs about ten pieces of work at once and skims each reply for what he has to
 
 - Do it yourself, except money, secrets, private data, the GPU, big PC changes, irreversible steps, unasked new or public work.
 - Finish the list in the same turn; never end on an offer.
+- Link him test leftovers you may not delete.
 - Before a plan, experiment, deep cause or anything public, get a fresh skeptical Sonnet reviewer who tests it.
+- Work he may steer or that outlives the turn goes to its own session, else a subagent.
 
 ## Facts
 
