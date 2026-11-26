@@ -18,6 +18,3 @@ Every turn reads this, unattended agents included; a project's `AGENTS.md` wins 
 - Private records go in the `notes` repository.
 - Logic is typed and tested; a shell script only calls one program.
 - New tooling: uv, ruff, ty; TypeScript, Biome, Vitest; one `AGENTS.md`, no `CLAUDE.md`.
-
-## Facts
-

@@ -16,7 +16,7 @@ Agents fix the file in front of them, so a repository's layout drifts: a `script
    - A unit, config or Dockerfile sits beside the program it runs or configures.
    - What several jobs use lives once, where all of them import it, never a copy per job.
    - A subfolder earns its place when its files use each other more than the rest. Prefer fewer, flatter folders; three levels at most.
-4. **Find duplicates and dead files**: two files or functions doing one job, two copies of one list, constant or config, and files nothing uses or runs. Plan one home for each and plan deleting the dead.
+4. **Find duplicates and dead files**: two files or functions doing one job, two copies of one list, constant or config, and files nothing uses or runs. Plan one home for each and plan deleting the dead. Build only what is needed, one way per job.
 5. **Check the plan**: count the uses that cross a top-level folder before and after; the new layout crosses fewer, and no two folders import each other. A big file doing several jobs is split in its own change (`references/splitting.md`), not in this pass.
 6. **Write it down**: a table of folders and their jobs, then every move as old path → new path. The layout ships with a test that keeps it: it fails on a top-level folder missing from the table, a catch-all name, a single-use file away from its user, or a test away from its code. Without one, the next agent undoes the layout.
 

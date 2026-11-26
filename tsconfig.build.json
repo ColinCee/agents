@@ -1,0 +1,11 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "rootDir": "src/skills",
+    "outDir": "skills",
+    "newLine": "lf",
+    "removeComments": false
+  },
+  "include": ["src/skills"]
+}
