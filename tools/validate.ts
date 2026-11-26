@@ -352,15 +352,26 @@ function checkRules(root: string, report: Report): void {
   const rules = (path: string): string[] => {
     const text = read(join(root, path));
     const lines = path.includes("/trials/")
-      ? (text.split(/^## On\s*$/m)[1] ?? "").split(/^## /m)[0].split(/\r?\n/)
+      ? ((text.split(/^## On\s*$/m)[1] ?? "").split(/^## /m)[0]?.split(/\r?\n/) ?? [])
       : text.split(/\r?\n/).filter((l) => /^- /.test(l) || (/^\|/.test(l) && !/^\|[\s|:-]*$|^\| When \|/.test(l)));
-    return lines.map((l) => l.replace(/^- /, "").replace(/^\||\|$/g, "").replace(/\s*\|\s*/g, ": ").trim()).filter(Boolean);
+    return lines
+      .map((l) =>
+        l
+          .replace(/^- /, "")
+          .replace(/^\||\|$/g, "")
+          .replace(/\s*\|\s*/g, ": ")
+          .trim(),
+      )
+      .filter(Boolean);
   };
   for (const path of [...at("home"), ...at("home/trials")])
     for (const rule of rules(path)) {
       const words = rule.split(/\s+/).length;
       if (words > RULE_WORDS || /[.!?]\s+[A-Z`"(]/.test(rule))
-        report.error(path, `"${rule.slice(0, 50)}..." is ${words} words; make each rule one sentence of ${RULE_WORDS} words at most`);
+        report.error(
+          path,
+          `"${rule.slice(0, 50)}..." is ${words} words; make each rule one sentence of ${RULE_WORDS} words at most`,
+        );
     }
 }
 
