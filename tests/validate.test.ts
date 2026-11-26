@@ -163,23 +163,21 @@ test("a tracked file holding this machine's home folder or git email is refused"
 });
 
 test("a rule of more than one sentence or 30 words is refused, in home files and trials", () => {
+  const words = (n: number) => "word ".repeat(n).trim();
   write(
     join(root, "home/core.md"),
-    "# Rules\n\n| When | Read or do |\n|---|---|\n| Testing | Run it |\n\n- Keep it short.\n- Keep it short. Then stop.\n",
+    `# Rules\n\n| Where | Do |\n|---|---|\n| Testing | ${words(28)} |\n| Long | ${words(30)} |\n\n- Keep it short, e.g. This.\n- ${words(30)}\n`,
   );
+  write(join(root, "home/present.md"), "\n# More\n\n* Keep it short. Then stop.\n");
   write(
     join(root, "home/trials/long.md"),
-    `---
-status: testing
----
-## Off
-Old. Two sentences.
-## On
-${"word ".repeat(31)}
-`,
+    `---\nstatus: testing\n---\n## Off\nOld. Two sentences. ${words(40)}\n## On\nNew. Two sentences.\n${words(31)}\n`,
   );
+  write(join(root, "home/trials/hook.md"), "---\nstatus: testing\n---\n## Off\n\n## On\n");
   expect(errors()).toEqual([
-    expect.stringMatching(/^home\/core\.md: "Keep it short\. Then stop\./),
+    expect.stringMatching(/^home\/core\.md: "Long: .* is 31 words/),
+    expect.stringMatching(/^home\/present\.md: "Keep it short\. Then stop\./),
+    expect.stringMatching(/^home\/trials\/long\.md: "New\. Two sentences\./),
     expect.stringMatching(/^home\/trials\/long\.md: .* is 31 words/),
   ]);
 });

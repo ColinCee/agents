@@ -351,23 +351,28 @@ function checkRules(root: string, report: Report): void {
       : [];
   const rules = (path: string): string[] => {
     const text = read(join(root, path));
-    const lines = path.includes("/trials/")
-      ? ((text.split(/^## On\s*$/m)[1] ?? "").split(/^## /m)[0]?.split(/\r?\n/) ?? [])
-      : text.split(/\r?\n/).filter((l) => /^- /.test(l) || (/^\|/.test(l) && !/^\|[\s|:-]*$|^\| When \|/.test(l)));
+    if (path.includes("/trials/"))
+      return ((text.split(/^## On\s*$/m)[1] ?? "").split(/^## /m)[0] ?? "")
+        .split(/\r?\n/)
+        .map((l) => l.trim())
+        .filter(Boolean);
+    const lines = text.split(/\r?\n/);
+    const separator = (l = "") => /^\|[\s|:-]*\|?\s*$/.test(l);
+    // A table's header is the row above its separator; every other row, and every list item, is a rule.
     return lines
+      .filter((l, i) => (/^\|/.test(l) ? !separator(l) && !separator(lines[i + 1]) : /^\s*([-*]|\d+\.)\s/.test(l)))
       .map((l) =>
         l
-          .replace(/^- /, "")
-          .replace(/^\||\|$/g, "")
+          .replace(/^\s*([-*]|\d+\.)\s+/, "")
+          .replace(/^\||\|\s*$/g, "")
           .replace(/\s*\|\s*/g, ": ")
           .trim(),
-      )
-      .filter(Boolean);
+      );
   };
   for (const path of [...at("home"), ...at("home/trials")])
     for (const rule of rules(path)) {
       const words = rule.split(/\s+/).length;
-      if (words > RULE_WORDS || /[.!?]\s+[A-Z`"(]/.test(rule))
+      if (words > RULE_WORDS || /[.!?]\s+[A-Z`"(\d*]/.test(rule.replace(/\b(e\.g|i\.e|vs)\./g, "$1")))
         report.error(
           path,
           `"${rule.slice(0, 50)}..." is ${words} words; make each rule one sentence of ${RULE_WORDS} words at most`,
