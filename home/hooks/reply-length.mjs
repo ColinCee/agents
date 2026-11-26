@@ -3,6 +3,7 @@
 // Two wordings of a word cap did not shorten replies. A Stop hook could not help either: the long reply is already on
 // his screen when the turn stops, so a rewrite would only add a second reply under it.
 import { closeSync, openSync, readSync, statSync } from "node:fs";
+import { pathToFileURL } from "node:url";
 import { trialOn } from "./trial-group.mjs";
 
 // About what fits on his screen without scrolling; the long-replies measure in agent-experiments uses the same limit.
@@ -60,15 +61,18 @@ export function closingWords(entries) {
     .reduce((sum, b) => sum + String(b.text).split(/\s+/).filter(Boolean).length, 0);
 }
 
-try {
-  const input = JSON.parse(await new Response(process.stdin).text());
-  if (trialOn("reply-length", input) && input.transcript_path) {
-    const words = closingWords(tail(input.transcript_path));
-    if (words > LIMIT) {
-      const additionalContext = `Your last closing reply to the user was ${words} words, over the ${LIMIT} he reads without scrolling. Keep this one under ${LIMIT} words: leave out what he did not ask for.`;
-      console.log(JSON.stringify({ hookSpecificOutput: { hookEventName: "UserPromptSubmit", additionalContext } }));
+// Run as the hook, not when a test imports it.
+if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
+  try {
+    const input = JSON.parse(await new Response(process.stdin).text());
+    if (trialOn("reply-length", input) && input.transcript_path) {
+      const words = closingWords(tail(input.transcript_path));
+      if (words > LIMIT) {
+        const additionalContext = `Your last closing reply to the user was ${words} words, over the ${LIMIT} he reads without scrolling. Keep this one under ${LIMIT} words: leave out what he did not ask for.`;
+        console.log(JSON.stringify({ hookSpecificOutput: { hookEventName: "UserPromptSubmit", additionalContext } }));
+      }
     }
+  } catch {
+    // A failure here must never block what the user typed.
   }
-} catch {
-  // A failure here must never block what the user typed.
 }

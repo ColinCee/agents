@@ -67,7 +67,8 @@ test("installs the rule trials for the hook, gives Codex their rules, and remove
     const on = /^## On\n([\s\S]*?)(?=^## |(?![\s\S]))/m
       .exec(readFileSync(join(HOME, "trials", f), "utf8").replaceAll("\r\n", "\n"))?.[1]
       ?.trim();
-    expect(on && codex.includes(on)).toBeTruthy();
+    // A hook on trial has no rule text to give.
+    if (on) expect(codex.includes(on)).toBe(true);
   }
   install(home);
 });
