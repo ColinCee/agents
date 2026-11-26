@@ -30,14 +30,15 @@ What an agent learns goes in git, where every machine gets it, never in Claude C
 
 ## Decision records
 
-A decision record (ADR) is only for a decision where options were tried or measured: it keeps what lost and why, so no one runs the comparison again. A choice nobody weighed gets a comment in the code, or nothing; a current design is described by the architecture overview (`updating-docs`), not by a record.
+The current code is the record of what a system does. A decision record (ADR) keeps only what code cannot: options that were tried or measured and lost, so no one runs the comparison again, and the traps. A choice nobody weighed gets a comment in the code, or nothing.
 
-- Where: `docs/adr/NNNN-area.md`, named for the system or area, not the choice, in the repository that owns the system the decision changes, numbered from 0001. A decision across repositories lives with the main system; the others link to it. Personal notes hold general lessons that link to it, never the record.
-- Shape: one page under Status, Context, Decision and Consequences. Evidence (method, results, charts) goes in `docs/adr/NNNN-area/` beside it; raw data and test harnesses stay out of the repository. The plan to carry it out goes in issues.
-- Status: proposed or accepted; deprecated once the system is gone.
-- Editing: a changed decision, or new evidence, rewrites that area's record and evidence folder in place, never a new record beside it; git keeps the old versions. Records already split across one area merge into one, and the rest are deleted. The record's Context keeps why earlier options were dropped. Facts that move (today's figures, how to run it) live in the operational documents the record links to.
+- Where: `docs/adr/NNNN-area.md`, one per system or area, in the repository that owns it, numbered from 0001. A decision across repositories lives with the main system; the others, and personal notes, link to it.
+- Shape: one line on what was chosen, then "Lost, and why" (each option that lost, with the number that proves it) and "Traps" (what the code cannot show). No status, migration steps or history, and no timings or tables the code or tests hold. Evidence longer than a line goes in `docs/adr/NNNN-area/`; raw data and harnesses stay out of the repository.
+- Editing: new evidence or a changed choice rewrites that area's record in place, never a new one beside it; records split across one area merge into one.
+- Deleting: a record whose system is gone, or whose method a test or the code now holds, is deleted, and its traps move into a comment in that code.
 
 ## Gotchas
 
-- One monitoring decision grew three records, each superseding the last, so no single page said what stood or why. Fold new findings into the one record for that area.
+- One monitoring decision grew three records, each superseding the last, so no single page said what stood or why.
+- A game's records held status, history and timing tables; two were deleted, a speed test and another record already holding their numbers.
 - Agents wrote a record for every choice; two of one repository's five described a design nobody had compared, and were deleted as waste. No comparison run, no record.
