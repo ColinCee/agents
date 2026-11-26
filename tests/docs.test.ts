@@ -8,7 +8,7 @@ import { describe, expect, test } from "vitest";
 // remark-validate-links does only that part too, and no tool checks the rest.
 
 // Set at today's count; lower it when docs/ shrinks, never raise it.
-const DOCS_WORD_CAP = 5_042;
+const DOCS_WORD_CAP = 5_037;
 
 type Repo = { files: Map<string, string>; tracked: Set<string>; tasks: Set<string> };
 
