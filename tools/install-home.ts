@@ -200,7 +200,12 @@ async function main(): Promise<number> {
   }
   const text = Buffer.concat(sources.map((p) => readFileSync(p)));
   const trials = trialNames().map((f): [string, Buffer] => [f, readFileSync(join(TRIALS, f))]);
-  const trialRules = trials.map(([, body]) => onText(body.toString("utf8"))).filter(Boolean);
+  const trialRules = trials.flatMap(([, body]) =>
+    onText(body.toString("utf8"))
+      .split("\n")
+      .map((l) => l.trim())
+      .filter(Boolean),
+  );
   const codex = trialRules.length
     ? Buffer.concat([text, Buffer.from(`\n## Rules on trial\n\n${trialRules.map((r) => `- ${r}`).join("\n")}\n`)])
     : text;
