@@ -14,7 +14,7 @@ Skills, instructions and tools for coding agents.
 | [shipping-prs](skills/shipping-prs/SKILL.md) | by itself | Takes a pull request from opened to merged: tests, a fresh review, every comment answered, then the merge. Used daily; [its review angles found no more bugs than a plain review](bench/shipping-prs/README.md), so they are read only for risky changes. |
 | [searching-before-building](skills/searching-before-building/SKILL.md) | by itself; the hook asks for it before a new code file | Before anything is built, asks a fresh agent only which maintained tool, library or built-in rule already does each job. Not yet tried on its own. |
 | [comparing-options](skills/comparing-options/SKILL.md) | by itself | Decides from evidence: one question, the ground truth, a fair repeated comparison; and the loop for making something faster. |
-| [fixing-bugs](skills/fixing-bugs/SKILL.md) | by itself | Fixes a bug at its cause: reproduces it first as a failing test, names the class of bug, fixes every instance the standard way, and proves the fix by undoing it. Not yet tried on its own. |
+| [fixing-bugs](skills/fixing-bugs/SKILL.md) | by itself | Fixes a bug at its cause: reproduces it first as a failing test, names the class of bug, fixes every instance the standard way, and proves it with the cheapest run that could fail. Not yet tried on its own. |
 | [reviewing-sessions](skills/reviewing-sessions/SKILL.md) | by itself, or `/reviewing-sessions` | Finds what you keep correcting, typed or edited by hand in the agent's text, fixes each where it belongs, and measures whether the fix works. |
 
 ```bash
