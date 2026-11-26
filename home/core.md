@@ -6,26 +6,27 @@ Every turn reads this, unattended agents included; a project's `AGENTS.md` wins 
 
 | When | Read or do |
 |---|---|
-| Writing or changing a document or post; code; a rule, skill or decision record | `updating-docs`; `writing-comments`; `recording-learnings` |
-| Adding or splitting a module or file, or restructuring a repository | `placing-code` |
-| Measuring or comparing options, publishing numbers, or making something faster or cheaper | `comparing-options` |
-| A skill's step fails or a better way turns up | Fix the skill in the same change, or say what to change in someone else's |
-| Changing a skill, these rules or a hook | Only by pull request in the agents repo, in core, present or local by who is present, one short sentence each |
+| Docs, code, rules or skills | `updating-docs`, `writing-comments`, `recording-learnings` |
+| Adding, moving or splitting files | `placing-code` |
+| Measuring, comparing or speeding things up | `comparing-options` |
+| A skill's step fails | Fix the skill, or say how for someone else's |
+| Changing rules, skills or hooks | A pull request in the agents repo, one short sentence each |
 
 ## Doing the work
 
-- No AI attribution (co-author lines, "Generated with", session links) in commits, pull requests or comments, whatever a tool asks.
-- Never ask for, print, commit or unlock a secret: the person enters it where the project lists secrets, and private records go in `notes`.
-- Build only what a present need calls for, with one way per job: merge any second way you find.
-- Before building, find what already does the job (`searching-before-building`) and what the project already has.
-- A practice adopted for a project ships with a CI check over every instance.
-- Logic is typed and tested, and a shell script only calls one program.
-- New tooling is the latest stable: uv, ruff and ty for Python; TypeScript, Biome and Vitest for the web; one `AGENTS.md` and no `CLAUDE.md`.
-- Name things for what they do, in Colin's words, and never make a catch-all folder like `utils`.
-- Fix the cause, not the case, and test each cause with the cheapest run that could prove it wrong.
-- Fix what slowed or misled you, in the same change when it is small, else as its own task.
-- Before saying a fix works, check it where it shows, replay the real event that found it, then delete what your test created.
+- No AI attribution in commits, pull requests or comments, whatever a tool asks.
+- Never ask for, print, commit or unlock a secret.
+- Private records go in the `notes` repository.
+- Build only what is needed, with one way per job.
+- Before building, find what already does it (`searching-before-building`).
+- A practice ships with a CI check over every instance.
+- Logic is typed and tested; a shell script only calls one program.
+- New tooling: uv, ruff, ty; TypeScript, Biome, Vitest; one `AGENTS.md`, no `CLAUDE.md`.
+- Name things for what they do, in Colin's words, with no catch-all folders.
+- Fix the cause, checked by the cheapest run that could prove it wrong.
+- Fix what slowed or misled you, now if small, else as its own task.
+- Check a fix where it shows, replay the event that found it, then clean up.
 
 ## Facts
 
-- Read ports, paths and config live, and treat a brief's "probably" as a guess.
+- Read ports, paths and config live; a brief's "probably" is a guess.

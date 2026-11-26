@@ -7,14 +7,14 @@ Only on a computer of his, not in the cloud.
 
 | When | Read or do |
 |---|---|
-| A build, test run, simulation or screenshot job | Run it at full speed, even while a game is open |
-| Taking a port or other shared resource | Check what is in use, keep the port in `.claude/launch.json`, tell other sessions, and stop your servers once unused |
-| A long or heavy recurring task | Run it overnight; a GPU job still asks first |
-| A skill, these rules or a hook merged | Run `npm run install-home -- --apply` in the agents repo |
+| Builds, tests and screenshots | Run at full speed, even during a game |
+| Ports and shared resources | Check use, tell other sessions, keep the `.claude/launch.json` port, stop your idle servers |
+| Long recurring jobs | Run overnight; a GPU job still asks first |
+| Rules, skills or hooks merged | Run `npm run install-home -- --apply` in the agents repo |
 
 ## Facts
 
-- Read the machine's "Agent gotchas" in his notes before you start.
-- On the Windows PC, use PowerShell 7, keep WSL and Docker off (Linux checks run in CI), put large data on D:, and use worktrees, never a second clone.
-- Run any command you hand him in his shell and folder first.
-- Anything left running past your turn shows a notification-area icon with its state and a way to stop it.
+- Read the machine's "Agent gotchas" in his notes first.
+- On Windows: PowerShell 7, WSL and Docker off, big data on D:, worktrees not second clones.
+- Run any command you hand him in his shell first.
+- Anything left running past your turn shows a tray icon with a stop.
