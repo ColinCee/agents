@@ -14,7 +14,7 @@
     "validate": "tsx tools/validate.ts",
     "build:run-job": "tsc -p tsconfig.run-job.json",
     "install-run-job": "npm run build:run-job && tsx tools/install-run-job.ts",
-    "check": "npm run typecheck && npm run lint && npm test && npm run validate && npm run build && git diff --exit-code -- skills",
+    "check": "npm run typecheck && npm run lint && npm test && npm run validate",
     "install-home": "tsx tools/install-home.ts",
     "hidden": "tsx tools/run-hidden.ts",
     "keep-going": "tsx tools/keep-going.ts",

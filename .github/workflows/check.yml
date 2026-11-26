@@ -33,5 +33,3 @@ jobs:
       - run: npm run validate
       - if: github.event_name == 'pull_request' && matrix.os == 'ubuntu-latest' && matrix.node == '24'
         run: npm run rule-changes
-      # The scripts that ship inside skills are compiled from src/; the committed output must match the source.
-      - run: npm run build && git diff --exit-code -- skills

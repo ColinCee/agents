@@ -35,7 +35,7 @@ readfile AS (
 -- A renamed skill keeps its loads under the old name: without this it reads as unused for 30 days. A row can go once
 -- its rename is older than the longest window anyone runs.
 renamed(was, now) AS (VALUES ('doc-upkeep', 'updating-docs'), ('deciding', 'comparing-options'),
-  ('session-review', 'reviewing-sessions'), ('housekeeping', 'tidying-repos'), ('restructuring', 'placing-code'),
+  ('session-review', 'reviewing-sessions'), ('restructuring', 'placing-code'),
   ('restructuring-code', 'placing-code'), ('structuring-repos', 'placing-code'), ('designing-modules', 'placing-code'),
   ('reviewing-changes', 'shipping-prs'), ('optimizing-performance', 'comparing-options'), ('homelab-network', 'reaching-homelab-devices')),
 loads AS (

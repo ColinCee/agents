@@ -26,6 +26,8 @@ What an agent learns goes in git, where every machine gets it, never in Claude C
 - A rule for one kind of work goes in a project skill (for Claude Code, `.claude/skills/<name>/SKILL.md`) or a document, with a row in that table.
 - Each rule in the user's own always-loaded rules is one short sentence, as short as possible; detail goes in a skill.
 - A rule says what to do: no people's names, no dates of decisions, no history, and a reason only when it changes what an agent does. Git keeps the rest.
+- A practice ships with a CI check over every instance.
+- Fix a skill's step that failed in that skill, or say how for someone else's; fix what slowed or misled you now if small, else as its own task.
 - Adding a rule condenses the file: merge it with any rule it overlaps, and move what no longer applies to every change into a skill or document. Delete only what is wrong.
 
 ## Decision records
