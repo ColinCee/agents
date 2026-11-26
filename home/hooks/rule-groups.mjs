@@ -32,7 +32,8 @@ try {
     version.update(text);
     const rule = /^## On\n([\s\S]*?)(?=^## |(?![\s\S]))/m.exec(text)?.[1]?.trim();
     trials.push(`${name.slice(0, -3)}=on`);
-    if (rule) rules.push(rule);
+    // Each line of On is a rule of its own, one bullet each.
+    if (rule) rules.push(...rule.split("\n").map((l) => l.trim()).filter(Boolean));
   }
   const stamp = `Rule trials: ${[...trials, `task=${createHash("sha256").update(task).digest("hex").slice(0, 8)}`, `rules=${version.digest("hex").slice(0, 7)}`].join(" ")}`;
   const additionalContext = rules.length

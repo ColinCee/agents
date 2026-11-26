@@ -19,7 +19,7 @@ test("every session gets every trial's On wording, and a task keeps one stamp ac
   mkdirSync(join(home, ".claude", "trials"), { recursive: true });
   const trial = (status: string, on: string) =>
     `---\nstatus: ${status}\nmeasures: x\nstarted: 2026-01-01\n---\n\n## Off\nOld wording.\n\n## On\n${on}\n`;
-  writeFileSync(join(home, ".claude", "trials", "a.md"), trial("testing", "Rule A."));
+  writeFileSync(join(home, ".claude", "trials", "a.md"), trial("testing", "Rule A.\nRule A2."));
   writeFileSync(join(home, ".claude", "trials", "kept.md"), trial("settled", "Rule kept."));
 
   const first = hook(home, { session_id: "one", cwd: "/repo/.claude/worktrees/calm-task" });
@@ -27,7 +27,8 @@ test("every session gets every trial's On wording, and a task keeps one stamp ac
   expect(first.split("\n")[0]).toMatch(/^Rule trials: a=on kept=on task=[0-9a-f]{8} rules=[0-9a-f]{7}$/);
   for (const session of ["s1", "s2", "s3"]) {
     const context = hook(home, { session_id: session, cwd: "/repo" });
-    expect(context).toContain("- Rule A.\n- Rule kept.");
+    // Each line of On is its own rule.
+    expect(context).toContain("- Rule A.\n- Rule A2.\n- Rule kept.");
     expect(context).not.toContain("Old wording.");
   }
 });
