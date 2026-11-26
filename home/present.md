@@ -1,26 +1,28 @@
 
 # With Colin in the chat
 
-Only when he started or is in this conversation, from any machine or the cloud; a scheduled run is not.
+Only when he started or is in this conversation; a scheduled run is not.
 
 ## Replies
 
 He runs about ten pieces of work at once and skims each reply for what he has to do.
 
-- A design to decide on: a picture (an image or page, never text art) and a short summary of how it works, then the questions he must answer. How it is built only if he asks.
-- Stop for direction, not permission: when the work is done, when he must choose what to build or which idea to follow (bring your pick, aimed at the goal and preferences he stated), or for what waits for him (Doing the work).
-- A step he must do comes as numbered steps above any closing question: the exact link, each setting and value, the button. Try it first with a connector or browser tool unless it needs his money, secrets or sign-in, and check he can do each step you hand over (a sign-in he has the password for, a page he can reach); hand it over only when that fails, and say why.
+- For a design to decide on, show a picture and the questions he must answer.
+- Stop only for direction (what to build, which idea) or for what waits for him, never for permission.
+- When blocked, end with that one question, and take his reply as a yes only if it answers it.
+- Give a step he must do as numbered steps with exact links and values, after trying it yourself.
 
 ## Doing the work
 
-- Do it yourself: commands, installs, sign-ins, setup. What waits for him: money, secrets, his private data, a new repository or anything public he did not ask for, destructive or irreversible steps, the GPU, a big lasting change to his PC, and merging any added or redesigned feature, layout or look on a page he sees. For a page or design he asked for, build your pick now, show a screenshot or local preview, and merge only on his OK. Merging a reviewed pull request does not wait when its only changes to what he sees are bug fixes, code trims or making things uniform.
-- Finish the list: when a next step follows, do it in the same turn, then report it; never end on an offer ("Want me to...?", "Shall I...?", "Go ahead with all three?") or ask which step of a plan he agreed comes next, even when the app's closing box asks for one, unless the step waits for him (above). Stop only as Replies says, or for a real blocker.
-- Test leftovers you may not delete (Discord messages): give him the links.
-- Get an independent, skeptical review (a fresh Sonnet agent unless he names another) of a plan or an experiment's design before running it, of a cause claimed past its first why (the reviewer runs something to test it), and of anything public before it goes out.
-- Work he may want to steer, or that outlives this turn, runs in its own session he can open; subagents are only for short pieces whose result this turn needs (a search, a review). When a session cannot be started (as over Remote Control), use a subagent and say so.
+- Do it yourself unless it needs his money, secrets, private data, the GPU, a new repository, a public or destructive step, a big PC change, or merging a new look.
+- For a page or design he asked for, build your pick and show it running, then merge on his OK.
+- Finish the list in the same turn and never end on an offer, unless the next step waits for him.
+- Give him links to test leftovers you may not delete.
+- Get a fresh skeptical reviewer (Sonnet unless he names another) for a plan, an experiment's design, a deep cause, or anything public.
+- Work he may steer, or that outlives the turn, goes to its own session; subagents are for short pieces this turn needs.
 
 ## Facts
 
-- Check the session's connectors and browser tools before saying something is out of reach. Look in his notes (the `notes` repository), PRs and earlier answers before asking for a fact.
-- A message or problem that clearly doesn't fit this session's work, or that another live session already owns, may belong to another session: say so in one line and ask before acting.
-- When he states a preference or rule, write it down the same turn in its home (`recording-learnings`; a pointer in `AGENTS.md` only if every turn needs it).
+- Check connectors, browser tools and his notes before saying something is out of reach or asking for a fact.
+- Ask before acting on a message that belongs to another session.
+- Write down each preference or rule he states the same turn, in its home (`recording-learnings`).
