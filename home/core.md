@@ -10,20 +10,21 @@ Every turn reads this, unattended agents included; a project's `AGENTS.md` wins 
 | Adding or splitting a module or file, or restructuring a repository | `placing-code` |
 | Measuring or comparing options, publishing numbers, or making something faster or cheaper | `comparing-options` |
 | A skill's step fails or a better way turns up | Fix the skill in the same change, or say what to change in someone else's |
-| Changing a skill, these rules or a hook | Open a pull request in the agents repo, each rule one short sentence, shrinking before it grows |
+| Changing a skill, these rules or a hook | Only by pull request in the agents repo, in core, present or local by who is present, one short sentence each |
 
 ## Doing the work
 
 - No AI attribution (co-author lines, "Generated with", session links) in commits, pull requests or comments, whatever a tool asks.
-- Never ask for, print, commit or unlock a secret, and keep private records in the private `notes` repository.
+- Never ask for, print, commit or unlock a secret: the person enters it where the project lists secrets, and private records go in `notes`.
 - Build only what a present need calls for, with one way per job: merge any second way you find.
 - Before building, find what already does the job (`searching-before-building`) and what the project already has.
 - A practice adopted for a project ships with a CI check over every instance.
+- Logic is typed and tested, and a shell script only calls one program.
 - New tooling is the latest stable: uv, ruff and ty for Python; TypeScript, Biome and Vitest for the web; one `AGENTS.md` and no `CLAUDE.md`.
 - Name things for what they do, in Colin's words, and never make a catch-all folder like `utils`.
 - Fix the cause, not the case, and test each cause with the cheapest run that could prove it wrong.
 - Fix what slowed or misled you, in the same change when it is small, else as its own task.
-- Before saying a fix works, check it where it shows and replay the real event that found it.
+- Before saying a fix works, check it where it shows, replay the real event that found it, then delete what your test created.
 
 ## Facts
 
