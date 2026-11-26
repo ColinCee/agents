@@ -45,10 +45,9 @@ const HOME = resolve(dirname(fileURLToPath(import.meta.url)), "..", "home");
 const SOURCES = ["core.md", "present.md", "local.md"].map((f) => join(HOME, f));
 // The hook that refuses `gh pr create` and `gh pr merge` until shipping-prs is loaded; settings.json points at it.
 const HOOK = join(HOME, "hooks", "require-skill.mjs");
-// The hook that gives each session its half of every rule trial (docs/keep-going.md), and the trials it reads.
+// The hook that gives each session every rule trial's wording (docs/keep-going.md), and the trials it reads.
 const GROUPS_HOOK = join(HOME, "hooks", "rule-groups.mjs");
-// What both it and a hook on trial import to find a task's half; the hook that tells an agent its last reply ran long.
-const TRIAL_GROUP = join(HOME, "hooks", "trial-group.mjs");
+// The hook that tells an agent its last reply ran long.
 const REPLY_HOOK = join(HOME, "hooks", "reply-length.mjs");
 const TRIALS = join(HOME, "trials");
 const trialNames = (): string[] => (existsSync(TRIALS) ? readdirSync(TRIALS).filter((f) => f.endsWith(".md")) : []);
@@ -211,7 +210,6 @@ async function main(): Promise<number> {
     [join(homedir(), ".codex", "AGENTS.md"), codex],
     [join(homedir(), ".claude", "hooks", "require-skill.mjs"), readFileSync(HOOK)],
     [join(homedir(), ".claude", "hooks", "rule-groups.mjs"), readFileSync(GROUPS_HOOK)],
-    [join(homedir(), ".claude", "hooks", "trial-group.mjs"), readFileSync(TRIAL_GROUP)],
     [join(homedir(), ".claude", "hooks", "reply-length.mjs"), readFileSync(REPLY_HOOK)],
     ...trials.map(([f, body]): [string, Buffer] => [join(homedir(), ".claude", "trials", f), body]),
     ...skillTargets(),

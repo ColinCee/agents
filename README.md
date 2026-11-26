@@ -48,7 +48,7 @@ rm -rf /opt/agents && git clone --depth 1 https://github.com/ColinCee/agents /op
 | Tool | What it does | Install |
 |---|---|---|
 | `run-job` | Installed but no longer used by agents (ADR 0001). Runs agents' heavy jobs side by side on spare capacity at low priority, by the cores and RAM each used before, holding back while a game runs; locks the GPU or a browser for jobs that cannot share; one row above the Claude Code prompt shows it. | `npm run install-run-job` |
-| [agent-experiments](https://github.com/ColinCee/agent-experiments) | Tests whether a rule change works, on past moments and then on a random half of tasks, and draws one daily page. | Its code is pinned in [reviewing-sessions](skills/reviewing-sessions/SKILL.md), step 6 |
+| [agent-experiments](https://github.com/ColinCee/agent-experiments) | Tests whether a rule change works, on past moments and then by its first three days of real use, and draws one daily page. | Its code is pinned in [reviewing-sessions](skills/reviewing-sessions/SKILL.md), step 6 |
 
 ## Why so few skills
 

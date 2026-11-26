@@ -5,8 +5,6 @@ import { join, resolve } from "node:path";
 import { expect, test } from "vitest";
 // @ts-expect-error: a plain .mjs hook, as installed, with no types
 import { closingWords } from "../home/hooks/reply-length.mjs";
-// @ts-expect-error: as above
-import { trialOn } from "../home/hooks/trial-group.mjs";
 
 const said = (text: string) => ({ type: "user", turnOrigin: "human", message: { content: text } });
 const wrote = (...content: object[]) => ({ type: "assistant", message: { content } });
@@ -42,10 +40,6 @@ test("tells an agent in the trial's On half that its last reply ran long, and sa
       encoding: "utf8",
     }).stdout;
   };
-  const sessions = Array.from({ length: 40 }, (_, i) => `s${i}`);
-  const on = sessions.find((s) => trialOn("reply-length", { session_id: s, cwd: dir })) ?? "";
-  const off = sessions.find((s) => !trialOn("reply-length", { session_id: s, cwd: dir })) ?? "";
-  expect(JSON.parse(run(200, on)).hookSpecificOutput.additionalContext).toContain("200 words");
-  expect(run(140, on)).toBe("");
-  expect(run(200, off)).toBe("");
+  expect(JSON.parse(run(200, "s1")).hookSpecificOutput.additionalContext).toContain("200 words");
+  expect(run(140, "s1")).toBe("");
 });
