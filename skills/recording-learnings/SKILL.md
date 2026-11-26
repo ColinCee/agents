@@ -30,12 +30,12 @@ What an agent learns goes in git, where every machine gets it, never in Claude C
 
 ## Decision records
 
-The current code is the record of what a system does. A decision record (ADR) keeps only what code cannot: options that were tried or measured and lost, so no one runs the comparison again, and the traps. A choice nobody weighed gets a comment in the code, or nothing.
+Code is the record of what a system does. A decision record (ADR) keeps only what code cannot: options that were tried or measured and lost, so no one runs the comparison again, and the traps. A choice nobody weighed gets a comment in the code, or nothing; a current design goes in the architecture overview (`updating-docs`).
 
 - Where: `docs/adr/NNNN-area.md`, one per system or area, in the repository that owns it, numbered from 0001. A decision across repositories lives with the main system; the others, and personal notes, link to it.
 - Shape: one line on what was chosen, then "Lost, and why" (each option that lost, with the number that proves it) and "Traps" (what the code cannot show). No status, migration steps or history, and no timings or tables the code or tests hold. Evidence longer than a line goes in `docs/adr/NNNN-area/`; raw data and harnesses stay out of the repository.
 - Editing: new evidence or a changed choice rewrites that area's record in place, never a new one beside it; records split across one area merge into one.
-- Deleting: a record whose system is gone, or whose method a test or the code now holds, is deleted, and its traps move into a comment in that code.
+- Deleting: a record whose system is gone, or whose lost options a test now fails on, is deleted, and its traps move into a comment in that code.
 
 ## Gotchas
 

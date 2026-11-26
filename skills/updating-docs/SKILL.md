@@ -22,7 +22,7 @@ A project's whole set, by default:
 
 Anything else needs a reason the pull request states.
 
-Every project's checks run a docs test that fails when a doc's link, `#anchor`, backticked repository path or task (`npm run x`, `mise run x`) names something gone, when a code comment names a doc or record that is gone, and when the docs' total words pass a cap that only goes down. lychee (`--offline --include-fragments`) covers links and anchors only, and no maintained tool checks the rest, so write that part.
+Every project's checks run a docs test that fails when a doc's link, `#anchor`, backticked repository path or task (`npm run x`, `mise run x`) names something gone, when a code comment names a doc or record that is gone, and when the docs' total words pass a cap, set at today's count, that only goes down. lychee (`--offline --include-fragments`) covers links and anchors only, and no maintained tool checks the rest, so write that part.
 
 - Still being discussed, or a to-do list: the issue, pull request or conversation holds it.
 - One-time steps (a migration, a switch-over): a checklist in the pull request's description.
@@ -37,7 +37,7 @@ Every project's checks run a docs test that fails when a doc's link, `#anchor`, 
 3. **Fix the stale line where it is**, so the document reads as if it had always been right: never an "Update:", "Note:" or dated line below the old one. If the line restates what code does, step 5 says what stays. Never change what code does here: if the document is right and the code is wrong, say so.
 4. **Delete what describes removed things**, with no "Removed", "Changes" or history entry unless the project keeps a changelog. Git already records what was removed and when; the reader needs what is there now.
 5. **Give each fact one home.** What code does inside (a flag, a limit, a condition, a module's steps) lives in the code: the document names the file, function or constant instead. A document keeps only why, where things run and how they connect, traps, steps a person follows, measured results and the user's standing rules; a list a reader picks from stays a table, its details in the code. Text in two files stays in the one it belongs to, and the other points to it ("Checks: see `AGENTS.md`"): rules every change needs in `AGENTS.md` (kept short: `recording-learnings`), what it is and how to start it in `README.md`, and no copy of what the user's own instructions already say.
-6. **Compare sizes** with `git diff --stat`: no longer than before, unless a new feature needed a section.
+6. **Compare sizes** with `git diff --stat`: a new section cuts as much elsewhere.
 
 ## Shape
 
