@@ -34,7 +34,7 @@ A decision record (ADR) keeps only what code cannot: options that lost, so no on
 
 - Write or keep one only when an agent would likely propose a loser again, rechecking would take hours of runs or rests on the user's taste, and code and tests cannot show why; otherwise delete it, its traps moved into a comment in the code they govern. Agents never search pull requests, so a record never lives in one.
 - Where: `docs/adr/<area>.md`, never numbered, so a deletion renumbers nothing, in the repository that owns it. One across repositories lives with the main system; the rest link to it.
-- Shape: one line on what was chosen, then "Lost, and why" (each option that lost, with the number that proves it) and "Traps" (what the code cannot show). No status, migration steps or history, and no timings or tables the code or tests hold. Evidence longer than a line goes in `docs/adr/<area>/`; raw data and harnesses stay out of the repository.
+- Shape: one line on what was chosen, then "Lost, and why" (each option that lost, with the number that proves it and what would reopen it, so a past verdict never blocks a fair retrial) and "Traps" (what the code cannot show). No status, migration steps or history, and no timings or tables the code or tests hold. Evidence longer than a line goes in `docs/adr/<area>/`; raw data and harnesses stay out of the repository.
 - Editing: new evidence or a changed choice rewrites that area's record in place, never a new one beside it; records split across one area merge into one.
 
 ## Gotchas

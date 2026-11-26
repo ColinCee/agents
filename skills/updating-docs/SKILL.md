@@ -4,7 +4,7 @@ description: Keeps docs and posts true and few, so only what must be kept goes i
 license: MIT
 ---
 
-A stale doc misleads every reader, so the best doc is none: the current code is the record of what a system does, and a doc keeps only principles and what was learned, rarely history. Make each one true and the set smaller than before.
+A stale doc misleads every reader, so the best doc is none: the current code is the record of what a system does, and a doc is living, never a log: it keeps only what was tried and failed, results too costly to recompute and principles, rewritten in place, never history. Make each one true and the set smaller than before.
 
 ## When to write one
 
