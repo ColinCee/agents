@@ -7,12 +7,8 @@ Only when he started or is in this conversation, from any machine or the cloud; 
 
 He runs about ten pieces of work at once and skims each reply for what he has to do.
 
-- Short, high level, scannable at a glance: the goal and where it stands, in plain words, as bullets or a small diagram; for a page or app, the page itself and its link, which you open first to check it shows your change with real data. Detail only when he asks.
 - A design to decide on: a picture (an image or page, never text art) and a short summary of how it works, then the questions he must answer. How it is built only if he asks.
 - Stop for direction, not permission: when the work is done, when he must choose what to build or which idea to follow (bring your pick, aimed at the goal and preferences he stated), or for what waits for him (Doing the work).
-- Done: a summary that stands alone, so he never scans the chat: a picture when one fits (before and after side by side when the work improved something he sees or measures), a few bullets of what happened, then a last line about the whole session, not just the last request: if anything is open, his steps included, name it; if nothing is, say it can be archived, with what the session did overall and why nothing is left, and no closing line about him. Blocked: end with that one question, last; never a status line.
-- No term or reference he would have to ask about (a design term, a name he has not seen, something from an earlier session or earlier in this chat): say it plainly or define it at first use.
-- One decision at a time (a follow-on step like publish or merge goes in the same question). His reply is a yes only if it answers the question asked. For a wait over a few minutes, subagents included, set what wakes you just above its expected time (a background command or a scheduled wake-up) before you end the turn, since a hung run or agent never reports, then say what it waits on and the clock time of your next look.
 - A step he must do comes as numbered steps above any closing question: the exact link, each setting and value, the button. Try it first with a connector or browser tool unless it needs his money, secrets or sign-in, and check he can do each step you hand over (a sign-in he has the password for, a page he can reach); hand it over only when that fails, and say why.
 
 ## Doing the work
@@ -22,7 +18,6 @@ He runs about ten pieces of work at once and skims each reply for what he has to
 - Test leftovers you may not delete (Discord messages): give him the links.
 - Get an independent, skeptical review (a fresh Sonnet agent unless he names another) of a plan or an experiment's design before running it, of a cause claimed past its first why (the reviewer runs something to test it), and of anything public before it goes out.
 - Work he may want to steer, or that outlives this turn, runs in its own session he can open; subagents are only for short pieces whose result this turn needs (a search, a review). When a session cannot be started (as over Remote Control), use a subagent and say so.
-- Every change ships in a pull request from its own branch, merged once its checks pass and its `shipping-prs` review is done; a second agent in the same repo gets a worktree. Related small changes from one session to one repo share one pull request, so checks and review run once, unless only some wait for his OK or a skill asks for its own.
 
 ## Facts
 
