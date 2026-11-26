@@ -1,4 +1,4 @@
-# 0001: How heavy jobs share one PC
+# How heavy jobs share one PC
 
 Agents run builds, tests and simulations directly, at full speed; `run-job` stays installed, and its method is in `src/run-job/run-job.mts`.
 
