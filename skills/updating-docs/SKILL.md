@@ -4,7 +4,7 @@ description: Keeps docs and posts true and few, so only what must be kept goes i
 license: MIT
 ---
 
-Every document is a promise that has to be kept true: make each one true and the set of them smaller than before. Knowing what to cut or move counts as much as what to write.
+A stale doc misleads every reader, so the best doc is none: the current code is the record of what a system does, and a doc keeps only principles and what was learned, rarely history. Make each one true and the set smaller than before.
 
 ## When to write one
 
@@ -20,9 +20,11 @@ A project's whole set, by default:
 | A recovery page, if any | Only hand steps no script can do, when the automation is gone (restore, rebuild) | One screen per task |
 | Decision records | Comparisons that were run (`recording-learnings`) | One page each |
 
-Anything else needs a reason the pull request states. A size cap, where the project keeps one, only goes down: growth cuts the same amount elsewhere first.
+Anything else needs a reason the pull request states.
 
-- Still being discussed, or a to-do list for work about to start: the issue, the pull request or the conversation holds it.
+Every project's checks run a docs test that fails when a doc's link, `#anchor`, backticked repository path or task (`npm run x`, `mise run x`) names something gone, when a code comment names a doc or record that is gone, and when the docs' total words pass a cap, set at today's count, that only goes down. lychee (`--offline --include-fragments`) covers links and anchors only, and no maintained tool checks the rest, so write that part.
+
+- Still being discussed, or a to-do list: the issue, pull request or conversation holds it.
 - One-time steps (a migration, a switch-over): a checklist in the pull request's description.
 - Steps an agent or a script can do are a script or the agent's job, not a runbook.
 - No example file that repeats a list the code already holds, such as `.example` secret files when the deploy script renders the real ones and names every key.
@@ -35,7 +37,7 @@ Anything else needs a reason the pull request states. A size cap, where the proj
 3. **Fix the stale line where it is**, so the document reads as if it had always been right: never an "Update:", "Note:" or dated line below the old one. If the line restates what code does, step 5 says what stays. Never change what code does here: if the document is right and the code is wrong, say so.
 4. **Delete what describes removed things**, with no "Removed", "Changes" or history entry unless the project keeps a changelog. Git already records what was removed and when; the reader needs what is there now.
 5. **Give each fact one home.** What code does inside (a flag, a limit, a condition, a module's steps) lives in the code: the document names the file, function or constant instead. A document keeps only why, where things run and how they connect, traps, steps a person follows, measured results and the user's standing rules; a list a reader picks from stays a table, its details in the code. Text in two files stays in the one it belongs to, and the other points to it ("Checks: see `AGENTS.md`"): rules every change needs in `AGENTS.md` (kept short: `recording-learnings`), what it is and how to start it in `README.md`, and no copy of what the user's own instructions already say.
-6. **Compare sizes.** The documents together should be no longer than before, unless a new feature needed a new section. Check with `git diff --stat`.
+6. **Compare sizes** with `git diff --stat`: a new section cuts as much elsewhere.
 
 ## Shape
 
@@ -64,10 +66,7 @@ Then one line on what was left as it is and why.
 
 From real corrections:
 
-- Agents' docs in one repository reached about 10,000 words in twelve files, four of them runbooks, and had to be cut back to the set above.
-
-- An appended correction ("Update (Sep 30): now 14 tests") is how documents grow and contradict themselves. The fix is to rewrite the first line and delete the second.
-- A rule copied word for word into three files was updated in one and left stale in two. Copies drift; pointers do not.
+- One game's docs reached 17,000 words, a design doc restating code and data numbers and records full of history; cut to 6,000 under a docs test and cap.
 - A design doc grew to ten sections of tables and read as a wall. The user wanted the picture and five lines first, with the detail one click away.
 - A README was rewritten twice because the content was right but the order was not: an introduction first, the main table halfway down, a heading naming a tool nobody had explained. Put the most-used table first and say what each thing is where it appears.
 - An architecture diagram in mermaid grew to twenty boxes and crossing arrows; the user called it a mess. Redrawn by hand in three layers with nine arrows, it read at a glance.
