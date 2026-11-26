@@ -4,7 +4,6 @@
 // his screen when the turn stops, so a rewrite would only add a second reply under it.
 import { closeSync, openSync, readSync, statSync } from "node:fs";
 import { pathToFileURL } from "node:url";
-import { trialOn } from "./trial-group.mjs";
 
 // About what fits on his screen without scrolling; the long-replies measure in agent-experiments uses the same limit.
 const LIMIT = 150;
@@ -65,7 +64,7 @@ export function closingWords(entries) {
 if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
   try {
     const input = JSON.parse(await new Response(process.stdin).text());
-    if (trialOn("reply-length", input) && input.transcript_path) {
+    if (input.transcript_path) {
       const words = closingWords(tail(input.transcript_path));
       if (words > LIMIT) {
         const additionalContext = `Your last closing reply to the user was ${words} words, over the ${LIMIT} he reads without scrolling. Keep this one under ${LIMIT} words: leave out what he did not ask for.`;

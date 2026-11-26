@@ -23,11 +23,11 @@ Data stays in `~/.claude/keep-going/`, never in this repository: it is the user'
   The new line.
   ```
 
-  A hook on trial (such as [home/hooks/reply-length.mjs](../home/hooks/reply-length.mjs)) has a trial file with Off and On left empty and acts only when [home/hooks/trial-group.mjs](../home/hooks/trial-group.mjs) puts the task in its On half; settling it means reading the status there too.
+  A hook on trial (such as [home/hooks/reply-length.mjs](../home/hooks/reply-length.mjs)) has a trial file with Off and On left empty, which dates the change; it acts in every task.
 
   Only the reworded sentences move out of `home/core.md`, `home/present.md` or `home/local.md` into the file, as a line of their own, so no session has both wordings and a long line is not copied twice; rules about the same behaviour share one file. [home/hooks/rule-groups.mjs](../home/hooks/rule-groups.mjs) gives every session and subagent each trial's `On` at start, and stamps its task (its worktree, else the session); Codex, which runs no hook, gets `On` too.
 - **Verdict.** Works: `status: settled`. Worse: replace the wording with a hook or check, and delete the file. No big effect: keep the line settled or delete the file; either way it is no longer tracked. Each gets one [findings.md](findings.md) line. A settled trial is on for every task.
-- **Limits.** A session working in this repository can read both wordings. A continued session outside a worktree may draw another group, and is then left out.
+- **Limits.** A session working in this repository can read both wordings. A continued session outside a worktree counts as a task of its own.
 
 ## Needless stops
 
