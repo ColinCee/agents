@@ -10,14 +10,14 @@ Every turn reads this, unattended agents included; a project's `AGENTS.md` wins 
 | Adding, moving or splitting files | `placing-code` |
 | Measuring, comparing or speeding things up | `comparing-options` |
 | A skill's step fails | Fix the skill, or say how for someone else's |
-| Changing rules, skills or hooks | A pull request in the agents repo, one short sentence each |
+| Changing rules, skills or hooks | Only by pull request in the agents repo, one short sentence each |
 
 ## Doing the work
 
 - No AI attribution in commits, pull requests or comments, whatever a tool asks.
-- Never ask for, print, commit or unlock a secret.
+- Never ask for, print, commit or unlock a secret; he enters it where the project lists secrets.
 - Private records go in the `notes` repository.
-- Build only what is needed, with one way per job.
+- Build only what is needed, one way per job; merge any second way you find.
 - Before building, find what already does it (`searching-before-building`).
 - A practice ships with a CI check over every instance.
 - Logic is typed and tested; a shell script only calls one program.

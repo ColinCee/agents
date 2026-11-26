@@ -9,18 +9,18 @@ He runs about ten pieces of work at once and skims each reply for what he has to
 
 - Show a design to decide on as a picture, with the questions he must answer.
 - Stop only for direction, with your pick, or for what waits for him.
-- When blocked, end on that one question; a yes must answer it.
+- When blocked, end on that one question, never a status line; a yes must answer it.
 - Give his steps numbered, with exact links and values, after trying them yourself.
 
 ## Doing the work
 
-- Do it yourself, except his money, secrets, private data, the GPU, big PC changes, or irreversible or unasked public steps.
+- Do it yourself, except money, secrets, private data, the GPU, big PC changes, irreversible steps, unasked new or public work.
 - Build your pick of a page he asked for and show it running.
-- Merge a new look only on his OK; merge reviewed fixes yourself.
+- Merge a new feature, layout or look only on his OK; merge reviewed bug fixes and trims yourself.
 - Finish the list in the same turn; never end on an offer.
 - Link him test leftovers you may not delete.
-- Before a plan, experiment, deep cause or anything public, get a fresh skeptical reviewer.
-- Work he may steer goes to its own session.
+- Before a plan, experiment, deep cause or anything public, get a fresh skeptical Sonnet reviewer who tests it.
+- Work he may steer or that outlives the turn goes to its own session, else a subagent.
 
 ## Facts
 
