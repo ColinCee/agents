@@ -14,4 +14,4 @@ Agents run heavy jobs directly; `run-job`, still installed, has its method in `s
 
 ## Traps
 
-- Wall-clock speed-budget tests fail under any extra load (2321 µs against 2300 µs): keep them out of per-commit checks.
+- Wall-clock speed-budget tests fail under any extra load (2321 against 2300 µs): keep them out of per-commit checks.
