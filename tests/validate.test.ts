@@ -161,3 +161,27 @@ test("a tracked file holding this machine's home folder or git email is refused"
   expect(errors({ home: "", email: "Me@example.com" }).join("\n")).toMatch(/docs\/notes\.md: holds this machine/);
   expect(errors({ home: "/root", email: "" })).toEqual([]);
 });
+
+test("a rule of more than one sentence or 30 words is refused, in home files and trials", () => {
+  write(join(root, "home/core.md"), "# Rules
+
+| When | Read or do |
+|---|---|
+| Testing | Run it |
+
+- Keep it short.
+- Keep it short. Then stop.
+");
+  write(join(root, "home/trials/long.md"), `---
+status: testing
+---
+## Off
+Old. Two sentences.
+## On
+${"word ".repeat(31)}
+`);
+  expect(errors()).toEqual([
+    expect.stringMatching(/^home\/core\.md: "Keep it short\. Then stop\./),
+    expect.stringMatching(/^home\/trials\/long\.md: .* is 31 words/),
+  ]);
+});
