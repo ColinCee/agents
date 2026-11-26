@@ -4,7 +4,7 @@ description: Decides between options from evidence, with one question, one basel
 license: MIT
 ---
 
-A decision is only as good as the comparison behind it. Follow the steps in order; write each one's answer in the report. A fix is checked the same way: fix the cause, checked by the cheapest run that could prove it wrong.
+A decision is only as good as the comparison behind it. Follow the steps in order; write each one's answer in the report.
 
 ## Steps
 
