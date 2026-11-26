@@ -36,7 +36,7 @@ const FIELDS = new Set([
 ]);
 const NODE_FLOOR = 22; // the oldest Node release line still given security fixes
 const HELP_TIMEOUT_MS = 30_000; // --help only prints, so longer than this means it is waiting for input
-const RULE_WORDS = 30; // the author's rule: each every-turn rule is one short sentence
+const RULE_WORDS = 20; // the author's rule: each every-turn rule is one short sentence
 const CONTENTS_OVER = 100; // lines; an agent may read only the top of a longer reference file
 
 const NAME = /^[a-z0-9]+(-[a-z0-9]+)*$/;

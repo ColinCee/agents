@@ -162,22 +162,22 @@ test("a tracked file holding this machine's home folder or git email is refused"
   expect(errors({ home: "/root", email: "" })).toEqual([]);
 });
 
-test("a rule of more than one sentence or 30 words is refused, in home files and trials", () => {
+test("a rule of more than one sentence or 20 words is refused, in home files and trials", () => {
   const words = (n: number) => "word ".repeat(n).trim();
   write(
     join(root, "home/core.md"),
-    `# Rules\n\n| Where | Do |\n|---|---|\n| Testing | ${words(28)} |\n| Long | ${words(30)} |\n\n- Keep it short, e.g. This.\n- ${words(30)}\n`,
+    `# Rules\n\n| Where | Do |\n|---|---|\n| Testing | ${words(18)} |\n| Long | ${words(20)} |\n\n- Keep it short, e.g. This.\n- ${words(20)}\n`,
   );
   write(join(root, "home/present.md"), "\n# More\n\n* Keep it short. Then stop.\n");
   write(
     join(root, "home/trials/long.md"),
-    `---\nstatus: testing\n---\n## Off\nOld. Two sentences. ${words(40)}\n## On\nNew. Two sentences.\n${words(31)}\n`,
+    `---\nstatus: testing\n---\n## Off\nOld. Two sentences. ${words(40)}\n## On\nNew. Two sentences.\n${words(21)}\n`,
   );
   write(join(root, "home/trials/hook.md"), "---\nstatus: testing\n---\n## Off\n\n## On\n");
   expect(errors()).toEqual([
-    expect.stringMatching(/^home\/core\.md: "Long: .* is 31 words/),
+    expect.stringMatching(/^home\/core\.md: "Long: .* is 21 words/),
     expect.stringMatching(/^home\/present\.md: "Keep it short\. Then stop\./),
     expect.stringMatching(/^home\/trials\/long\.md: "New\. Two sentences\./),
-    expect.stringMatching(/^home\/trials\/long\.md: .* is 31 words/),
+    expect.stringMatching(/^home\/trials\/long\.md: .* is 21 words/),
   ]);
 });
