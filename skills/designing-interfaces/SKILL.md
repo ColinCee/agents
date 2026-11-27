@@ -16,6 +16,7 @@ What a page must answer comes before how it looks; the rest keeps it quiet enoug
 
 - **What relates sits together:** a cause beside its result, a control beside what it changes.
 - **Minimal and technical,** on the component library the project already has: neutral colours, hairlines, small type, numbers in monospace.
+- **Text meets 4.5:1 contrast against every colour that can sit behind it;** where the background varies (art, sky, effects), give the text an outline in the opposite tone.
 - **Colour only for a result:** good, bad, unsure. Never for decoration, a category or emphasis.
 - **One number format** for one quantity across the page (a signed percent change everywhere, not a ratio in one place and a percent in another).
 - **Words only for names and verdicts.** What a mark means (a band, a dashed line, a colour) is said once on the page, never under each chart.
