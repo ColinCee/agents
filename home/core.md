@@ -24,6 +24,7 @@ Every turn reads this, unattended agents included; a project's `AGENTS.md` wins 
 - New tooling: uv, ruff, ty; TypeScript, Biome, Vitest; one `AGENTS.md`, no `CLAUDE.md`.
 - Name things for what they do, in Colin's words, with no catch-all folders.
 - Fix what slowed or misled you, now if small, else as its own task.
+- Fix what a failing check catches; never loosen the check to pass.
 
 ## Facts
 
